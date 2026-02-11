@@ -11,9 +11,12 @@ interface Props {
 }
 
 const ServiceCard = ({ service }: Props) => {
-  const { selectedSize, addToCart, cart, removeFromCart, updateCartQuantity, getPrice } = useApp();
+  const { currentVehicle, addToCart, cart, removeFromCart, updateCartQuantity, getPrice } = useApp();
   const inCart = cart.find(i => i.service.id === service.id);
-  const price = selectedSize ? getPrice(service, selectedSize) : null;
+
+  if (!currentVehicle) return null;
+
+  const price = getPrice(service, currentVehicle.type, currentVehicle.size);
 
   return (
     <div className={cn(
@@ -50,22 +53,18 @@ const ServiceCard = ({ service }: Props) => {
       )}
 
       <div className="mt-auto">
-        {price !== null && price > 0 ? (
+        {price > 0 ? (
           <p className="mb-3 text-xl font-bold text-primary">
             R$ {price.toFixed(0)}
             {service.perUnit && <span className="text-xs font-normal text-muted-foreground">/un</span>}
           </p>
-        ) : price === 0 && service.priceRule ? (
+        ) : service.priceRule ? (
           <p className="mb-3 text-xs text-warning font-medium">{service.priceRule}</p>
         ) : (
-          <p className="mb-3 text-sm text-muted-foreground">Selecione o porte</p>
+          <p className="mb-3 text-sm text-muted-foreground">Consultar</p>
         )}
 
-        {!selectedSize ? (
-          <Button size="sm" variant="secondary" disabled className="w-full text-xs">
-            Selecione o porte
-          </Button>
-        ) : inCart ? (
+        {inCart ? (
           <div className="flex items-center gap-2">
             {service.perUnit ? (
               <>
@@ -90,7 +89,7 @@ const ServiceCard = ({ service }: Props) => {
           </div>
         ) : (
           <Button size="sm" className="w-full text-xs"
-            onClick={() => addToCart(service, selectedSize)}
+            onClick={() => addToCart(service)}
             disabled={price === 0 && !service.priceRule}>
             <Plus className="mr-1 h-3 w-3" />
             Adicionar

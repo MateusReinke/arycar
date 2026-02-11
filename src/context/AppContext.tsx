@@ -1,23 +1,42 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { Service, Employee, CartItem, VehicleSize, OrderSummary } from '@/types';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { Service, Employee, CartItem, VehicleSize, VehicleType, OrderSummary, Customer, Vehicle } from '@/types';
 import { storageService } from '@/services/storage';
 
+export type FlowStep = 'plate' | 'register' | 'services';
+
 interface AppContextType {
+  // Data
   services: Service[];
   setServices: (s: Service[]) => void;
   employees: Employee[];
   setEmployees: (e: Employee[]) => void;
+
+  // Flow
+  step: FlowStep;
+  setStep: (s: FlowStep) => void;
+  currentCustomer: Customer | null;
+  setCurrentCustomer: (c: Customer | null) => void;
+  currentVehicle: Vehicle | null;
+  setCurrentVehicle: (v: Vehicle | null) => void;
+
+  // Cart
   cart: CartItem[];
-  addToCart: (service: Service, size: VehicleSize) => void;
+  addToCart: (service: Service) => void;
   removeFromCart: (serviceId: string) => void;
   updateCartQuantity: (serviceId: string, qty: number) => void;
   clearCart: () => void;
-  selectedSize: VehicleSize | null;
-  setSelectedSize: (s: VehicleSize | null) => void;
-  getPrice: (service: Service, size: VehicleSize) => number;
-  getCost: (service: Service, size: VehicleSize) => number;
+  pickupDelivery: boolean;
+  setPickupDelivery: (v: boolean) => void;
+
+  // Helpers
+  getPrice: (service: Service, vType: VehicleType, size: VehicleSize) => number;
+  getCost: (service: Service, vType: VehicleType, size: VehicleSize) => number;
   cartTotal: number;
   finalizeOrder: () => OrderSummary | null;
+  resetFlow: () => void;
+
+  // Filtered services
+  availableServices: Service[];
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -32,7 +51,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [services, setServicesState] = useState<Service[]>(() => storageService.getServices());
   const [employees, setEmployeesState] = useState<Employee[]>(() => storageService.getEmployees());
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [selectedSize, setSelectedSize] = useState<VehicleSize | null>(null);
+  const [step, setStep] = useState<FlowStep>('plate');
+  const [currentCustomer, setCurrentCustomer] = useState<Customer | null>(null);
+  const [currentVehicle, setCurrentVehicle] = useState<Vehicle | null>(null);
+  const [pickupDelivery, setPickupDelivery] = useState(false);
 
   const setServices = useCallback((s: Service[]) => {
     setServicesState(s);
@@ -44,15 +66,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     storageService.saveEmployees(e);
   }, []);
 
-  const getPrice = (service: Service, size: VehicleSize) => {
-    return size === 'P' ? service.priceP : size === 'M' ? service.priceM : service.priceG;
+  const getPrice = (service: Service, vType: VehicleType, size: VehicleSize) => {
+    const p = service.pricing[vType];
+    return size === 'P' ? p.priceP : size === 'M' ? p.priceM : p.priceG;
   };
 
-  const getCost = (service: Service, size: VehicleSize) => {
-    return size === 'P' ? service.costP : size === 'M' ? service.costM : service.costG;
+  const getCost = (service: Service, vType: VehicleType, size: VehicleSize) => {
+    const p = service.pricing[vType];
+    return size === 'P' ? p.costP : size === 'M' ? p.costM : p.costG;
   };
 
-  const addToCart = useCallback((service: Service, size: VehicleSize) => {
+  const availableServices = currentVehicle
+    ? services.filter(s => s.vehicleTypes.includes(currentVehicle.type))
+    : [];
+
+  const addToCart = useCallback((service: Service) => {
+    if (!currentVehicle) return;
     setCart(prev => {
       const existing = prev.find(i => i.service.id === service.id);
       if (existing) {
@@ -61,9 +90,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         return prev;
       }
-      return [...prev, { service, quantity: 1, size }];
+      return [...prev, { service, quantity: 1, vehicleType: currentVehicle.type, size: currentVehicle.size }];
     });
-  }, []);
+  }, [currentVehicle]);
 
   const removeFromCart = useCallback((serviceId: string) => {
     setCart(prev => prev.filter(i => i.service.id !== serviceId));
@@ -77,29 +106,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const clearCart = useCallback(() => setCart([]), []);
 
   const cartTotal = cart.reduce((sum, item) => {
-    const price = getPrice(item.service, item.size);
+    const price = getPrice(item.service, item.vehicleType, item.size);
     return sum + price * item.quantity;
   }, 0);
 
   const finalizeOrder = useCallback((): OrderSummary | null => {
-    if (!selectedSize || cart.length === 0) return null;
+    if (!currentCustomer || !currentVehicle || cart.length === 0) return null;
     const order: OrderSummary = {
       id: Date.now().toString(),
       items: [...cart],
-      size: selectedSize,
+      vehicleType: currentVehicle.type,
+      size: currentVehicle.size,
       total: cartTotal,
       date: new Date().toLocaleString('pt-BR'),
+      customerId: currentCustomer.id,
+      customerName: currentCustomer.name,
+      vehiclePlate: currentVehicle.plate,
+      pickupDelivery,
     };
     storageService.saveOrder(order);
     setCart([]);
     return order;
-  }, [cart, selectedSize, cartTotal]);
+  }, [cart, currentCustomer, currentVehicle, cartTotal, pickupDelivery]);
+
+  const resetFlow = useCallback(() => {
+    setStep('plate');
+    setCurrentCustomer(null);
+    setCurrentVehicle(null);
+    setCart([]);
+    setPickupDelivery(false);
+  }, []);
 
   return (
     <AppContext.Provider value={{
       services, setServices, employees, setEmployees,
+      step, setStep, currentCustomer, setCurrentCustomer, currentVehicle, setCurrentVehicle,
       cart, addToCart, removeFromCart, updateCartQuantity, clearCart,
-      selectedSize, setSelectedSize, getPrice, getCost, cartTotal, finalizeOrder,
+      pickupDelivery, setPickupDelivery,
+      getPrice, getCost, cartTotal, finalizeOrder, resetFlow,
+      availableServices,
     }}>
       {children}
     </AppContext.Provider>

@@ -1,53 +1,39 @@
-import { Car } from 'lucide-react';
-import { VehicleSize } from '@/types';
+import { Car, Bike, Truck, ArrowLeft } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
-import { cn } from '@/lib/utils';
+import { vehicleTypeLabels } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
-const sizes: { key: VehicleSize; label: string; desc: string }[] = [
-  { key: 'P', label: 'Pequeno', desc: 'Hatch / Sedan compacto' },
-  { key: 'M', label: 'Médio', desc: 'Sedan / SUV compacto' },
-  { key: 'G', label: 'Grande', desc: 'SUV / Picape / Van' },
-];
+const vehicleTypeIcons = {
+  carro: Car,
+  moto: Bike,
+  caminhao: Truck,
+};
 
-const VehicleSizeSelector = () => {
-  const { selectedSize, setSelectedSize } = useApp();
+const VehicleInfoBar = () => {
+  const { currentCustomer, currentVehicle, resetFlow } = useApp();
+
+  if (!currentCustomer || !currentVehicle) return null;
+
+  const Icon = vehicleTypeIcons[currentVehicle.type];
 
   return (
-    <div className="mb-8">
-      <h2 className="mb-4 text-lg font-semibold">Porte do Veículo</h2>
-      <div className="grid grid-cols-3 gap-3">
-        {sizes.map(({ key, label, desc }) => (
-          <button
-            key={key}
-            onClick={() => setSelectedSize(key)}
-            className={cn(
-              'group relative flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all duration-200',
-              selectedSize === key
-                ? 'border-primary bg-primary/10 shadow-lg shadow-primary/20'
-                : 'border-border bg-card hover:border-primary/40 hover:bg-card/80'
-            )}
-          >
-            <Car className={cn(
-              'h-8 w-8 transition-colors',
-              key === 'P' && 'h-6 w-6',
-              key === 'G' && 'h-10 w-10',
-              selectedSize === key ? 'text-primary' : 'text-muted-foreground'
-            )} />
-            <div className="text-center">
-              <span className={cn(
-                'text-2xl font-bold',
-                selectedSize === key ? 'text-primary' : 'text-foreground'
-              )}>
-                {key}
-              </span>
-              <p className="text-xs text-muted-foreground">{label}</p>
-              <p className="text-[10px] text-muted-foreground/70">{desc}</p>
-            </div>
-          </button>
-        ))}
+    <div className="mb-6 flex items-center gap-4 rounded-xl bg-card p-4 border border-border">
+      <Button variant="ghost" size="icon" className="shrink-0" onClick={resetFlow}>
+        <ArrowLeft className="h-5 w-5" />
+      </Button>
+      <Icon className="h-8 w-8 text-primary shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold truncate">{currentCustomer.name}</p>
+        <p className="text-xs text-muted-foreground">
+          {vehicleTypeLabels[currentVehicle.type]} • {currentVehicle.brand} {currentVehicle.model} • {currentVehicle.plate}
+        </p>
       </div>
+      <Badge variant="outline" className="text-lg font-bold px-3 py-1 shrink-0">
+        {currentVehicle.size}
+      </Badge>
     </div>
   );
 };
 
-export default VehicleSizeSelector;
+export default VehicleInfoBar;
