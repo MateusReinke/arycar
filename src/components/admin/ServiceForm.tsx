@@ -1,29 +1,49 @@
 import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Service } from '@/types';
+import { Service, VehicleType, SizePricing, vehicleTypeLabels } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const emptyService: Omit<Service, 'id'> = {
-  name: '', costP: 0, costM: 0, costG: 0,
-  priceP: 0, priceM: 0, priceG: 0,
-  hours: 1, needsScheduling: false,
+const emptyPricing: SizePricing = { costP: 0, costM: 0, costG: 0, priceP: 0, priceM: 0, priceG: 0 };
+
+interface FormData {
+  name: string;
+  pricing: Record<VehicleType, SizePricing>;
+  hours: number;
+  needsScheduling: boolean;
+  products: string;
+  observation: string;
+  priceRule: string;
+  perUnit: boolean;
+  vehicleTypes: VehicleType[];
+}
+
+const emptyForm: FormData = {
+  name: '',
+  pricing: { carro: { ...emptyPricing }, moto: { ...emptyPricing }, caminhao: { ...emptyPricing } },
+  hours: 1,
+  needsScheduling: false,
   products: '', observation: '', priceRule: '', perUnit: false,
+  vehicleTypes: ['carro', 'moto', 'caminhao'],
 };
 
 const ServiceForm = () => {
   const { services, setServices } = useApp();
-  const [form, setForm] = useState<Omit<Service, 'id'>>(emptyService);
+  const [form, setForm] = useState<FormData>({ ...emptyForm });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [pricingType, setPricingType] = useState<VehicleType>('carro');
 
   const handleSave = () => {
     if (!form.name.trim()) { toast.error('Nome obrigatório'); return; }
+    if (form.vehicleTypes.length === 0) { toast.error('Selecione ao menos um tipo de veículo'); return; }
+
     if (editingId) {
       setServices(services.map(s => s.id === editingId ? { ...form, id: editingId } : s));
       toast.success('Serviço atualizado');
@@ -31,7 +51,7 @@ const ServiceForm = () => {
       setServices([...services, { ...form, id: Date.now().toString() }]);
       toast.success('Serviço adicionado');
     }
-    setForm(emptyService);
+    setForm({ ...emptyForm });
     setEditingId(null);
   };
 
@@ -46,17 +66,26 @@ const ServiceForm = () => {
     toast.success('Serviço removido');
   };
 
-  const field = (label: string, key: keyof Omit<Service, 'id'>, type: 'text' | 'number' = 'text') => (
-    <div>
-      <Label className="text-xs">{label}</Label>
-      <Input
-        type={type}
-        className="h-8 text-xs"
-        value={(form as any)[key]}
-        onChange={e => setForm(prev => ({ ...prev, [key]: type === 'number' ? Number(e.target.value) : e.target.value }))}
-      />
-    </div>
-  );
+  const updatePricing = (key: keyof SizePricing, value: number) => {
+    setForm(prev => ({
+      ...prev,
+      pricing: {
+        ...prev.pricing,
+        [pricingType]: { ...prev.pricing[pricingType], [key]: value },
+      },
+    }));
+  };
+
+  const toggleVehicleType = (type: VehicleType) => {
+    setForm(prev => ({
+      ...prev,
+      vehicleTypes: prev.vehicleTypes.includes(type)
+        ? prev.vehicleTypes.filter(t => t !== type)
+        : [...prev.vehicleTypes, type],
+    }));
+  };
+
+  const currentPricing = form.pricing[pricingType];
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
@@ -64,26 +93,98 @@ const ServiceForm = () => {
         <CardHeader>
           <CardTitle className="text-base">{editingId ? 'Editar Serviço' : 'Novo Serviço'}</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3">
-          {field('Nome', 'name')}
-          <div className="grid grid-cols-3 gap-2">
-            {field('Gasto P', 'costP', 'number')}
-            {field('Gasto M', 'costM', 'number')}
-            {field('Gasto G', 'costG', 'number')}
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="text-xs">Nome</Label>
+            <Input value={form.name} onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))} />
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            {field('Preço P', 'priceP', 'number')}
-            {field('Preço M', 'priceM', 'number')}
-            {field('Preço G', 'priceG', 'number')}
+
+          {/* Vehicle Types */}
+          <div>
+            <Label className="text-xs mb-2 block">Tipos de Veículo</Label>
+            <div className="flex gap-4">
+              {(Object.keys(vehicleTypeLabels) as VehicleType[]).map(type => (
+                <label key={type} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Checkbox
+                    checked={form.vehicleTypes.includes(type)}
+                    onCheckedChange={() => toggleVehicleType(type)}
+                  />
+                  {vehicleTypeLabels[type]}
+                </label>
+              ))}
+            </div>
           </div>
-          {field('Prazo (horas)', 'hours', 'number')}
+
+          {/* Pricing per vehicle type */}
+          <div>
+            <Label className="text-xs mb-2 block">Preços por tipo</Label>
+            <div className="flex gap-1 mb-3">
+              {(Object.keys(vehicleTypeLabels) as VehicleType[]).map(type => (
+                <Button
+                  key={type}
+                  size="sm"
+                  variant={pricingType === type ? 'default' : 'outline'}
+                  className="text-xs"
+                  onClick={() => setPricingType(type)}
+                >
+                  {vehicleTypeLabels[type]}
+                </Button>
+              ))}
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <Label className="text-xs">Gasto P</Label>
+                <Input type="number" className="h-8 text-xs" value={currentPricing.costP}
+                  onChange={e => updatePricing('costP', Number(e.target.value))} />
+              </div>
+              <div>
+                <Label className="text-xs">Gasto M</Label>
+                <Input type="number" className="h-8 text-xs" value={currentPricing.costM}
+                  onChange={e => updatePricing('costM', Number(e.target.value))} />
+              </div>
+              <div>
+                <Label className="text-xs">Gasto G</Label>
+                <Input type="number" className="h-8 text-xs" value={currentPricing.costG}
+                  onChange={e => updatePricing('costG', Number(e.target.value))} />
+              </div>
+              <div>
+                <Label className="text-xs">Preço P</Label>
+                <Input type="number" className="h-8 text-xs" value={currentPricing.priceP}
+                  onChange={e => updatePricing('priceP', Number(e.target.value))} />
+              </div>
+              <div>
+                <Label className="text-xs">Preço M</Label>
+                <Input type="number" className="h-8 text-xs" value={currentPricing.priceM}
+                  onChange={e => updatePricing('priceM', Number(e.target.value))} />
+              </div>
+              <div>
+                <Label className="text-xs">Preço G</Label>
+                <Input type="number" className="h-8 text-xs" value={currentPricing.priceG}
+                  onChange={e => updatePricing('priceG', Number(e.target.value))} />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs">Prazo (horas)</Label>
+            <Input type="number" className="h-8 text-xs" value={form.hours}
+              onChange={e => setForm(prev => ({ ...prev, hours: Number(e.target.value) }))} />
+          </div>
           <div>
             <Label className="text-xs">Produtos</Label>
             <Textarea className="text-xs" rows={2} value={form.products}
               onChange={e => setForm(prev => ({ ...prev, products: e.target.value }))} />
           </div>
-          {field('Observação', 'observation')}
-          {field('Regra de preço', 'priceRule')}
+          <div>
+            <Label className="text-xs">Observação</Label>
+            <Input className="h-8 text-xs" value={form.observation}
+              onChange={e => setForm(prev => ({ ...prev, observation: e.target.value }))} />
+          </div>
+          <div>
+            <Label className="text-xs">Regra de preço</Label>
+            <Input className="h-8 text-xs" value={form.priceRule}
+              onChange={e => setForm(prev => ({ ...prev, priceRule: e.target.value }))} />
+          </div>
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <Switch checked={form.needsScheduling}
@@ -102,7 +203,7 @@ const ServiceForm = () => {
               {editingId ? 'Salvar' : 'Adicionar'}
             </Button>
             {editingId && (
-              <Button variant="outline" onClick={() => { setForm(emptyService); setEditingId(null); }}>
+              <Button variant="outline" onClick={() => { setForm({ ...emptyForm }); setEditingId(null); }}>
                 Cancelar
               </Button>
             )}
@@ -117,7 +218,9 @@ const ServiceForm = () => {
             <div key={s.id} className="flex items-center justify-between rounded-lg bg-card p-3">
               <div>
                 <p className="text-sm font-medium">{s.name}</p>
-                <p className="text-xs text-muted-foreground">P: R${s.priceP} | M: R${s.priceM} | G: R${s.priceG}</p>
+                <p className="text-xs text-muted-foreground">
+                  {s.vehicleTypes.map(t => vehicleTypeLabels[t]).join(', ')}
+                </p>
               </div>
               <div className="flex gap-1">
                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleEdit(s)}>
