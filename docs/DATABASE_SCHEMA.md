@@ -1,6 +1,47 @@
-# 🗄️ ARYCAR - Schema PostgreSQL
+# 🗄️ ARYCAR - Schema PostgreSQL + API REST
 
-Este documento descreve a estrutura de banco de dados necessária para migrar o sistema ARYCAR de LocalStorage para PostgreSQL.
+Este documento descreve a estrutura de banco de dados e os endpoints REST necessários para conectar o AryCar ao seu backend Docker.
+
+---
+
+## 🐳 Configuração de Conexão (Docker)
+
+```javascript
+// src/config/api.ts - Altere o API_BASE_URL para apontar para seu backend
+const apiConfig = {
+  API_BASE_URL: 'http://localhost:3001/api', // URL da sua API
+};
+
+// No seu backend (Express/Fastify), configure a conexão:
+const dbConfig = {
+  user: 'seu_usuario_postgre',     // Altere aqui
+  host: 'localhost',                // IP do container ou 'localhost'
+  database: 'arycar_db',           // Nome do banco
+  password: 'sua_senha_aqui',      // Altere aqui
+  port: 5432,                      // Porta do PostgreSQL
+};
+```
+
+### Docker Compose de referência para o banco:
+
+```yaml
+version: '3.8'
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: arycar_user
+      POSTGRES_PASSWORD: arycar_pass_123
+      POSTGRES_DB: arycar_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  pgdata:
+```
 
 ---
 
@@ -20,12 +61,9 @@ orders    1──N order_items
 ## DDL - Criação das Tabelas
 
 ```sql
--- Extensão para UUIDs
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- =====================
 -- CLIENTES
--- =====================
 CREATE TABLE customers (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name        VARCHAR(200) NOT NULL,
@@ -35,12 +73,9 @@ CREATE TABLE customers (
   created_at  TIMESTAMPTZ DEFAULT NOW(),
   updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
-
 CREATE INDEX idx_customers_cpf ON customers(cpf);
 
--- =====================
 -- VEÍCULOS
--- =====================
 CREATE TYPE vehicle_type AS ENUM ('carro', 'moto', 'caminhao');
 CREATE TYPE vehicle_size AS ENUM ('P', 'M', 'G');
 
@@ -53,16 +88,14 @@ CREATE TABLE vehicles (
   model       VARCHAR(100),
   color       VARCHAR(50),
   year        VARCHAR(4),
+  km          VARCHAR(10),
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
-
 CREATE INDEX idx_vehicles_plate ON vehicles(plate);
 CREATE INDEX idx_vehicles_customer ON vehicles(customer_id);
 
--- =====================
 -- SERVIÇOS
--- =====================
 CREATE TABLE services (
   id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name             VARCHAR(200) NOT NULL,
@@ -76,9 +109,7 @@ CREATE TABLE services (
   updated_at       TIMESTAMPTZ DEFAULT NOW()
 );
 
--- =====================
 -- PREÇOS POR TIPO DE VEÍCULO
--- =====================
 CREATE TABLE service_pricing (
   id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   service_id   UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
@@ -92,20 +123,14 @@ CREATE TABLE service_pricing (
   UNIQUE(service_id, vehicle_type)
 );
 
-CREATE INDEX idx_service_pricing_service ON service_pricing(service_id);
-
--- =====================
 -- TIPOS DE VEÍCULO POR SERVIÇO
--- =====================
 CREATE TABLE service_vehicle_types (
   service_id   UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
   vehicle_type vehicle_type NOT NULL,
   PRIMARY KEY (service_id, vehicle_type)
 );
 
--- =====================
 -- FUNCIONÁRIOS
--- =====================
 CREATE TABLE employees (
   id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name       VARCHAR(200) NOT NULL,
@@ -113,29 +138,26 @@ CREATE TABLE employees (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- =====================
 -- ORDENS DE SERVIÇO
--- =====================
 CREATE TABLE orders (
-  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  customer_id      UUID NOT NULL REFERENCES customers(id),
-  vehicle_id       UUID NOT NULL REFERENCES vehicles(id),
-  vehicle_type     vehicle_type NOT NULL,
-  vehicle_size     vehicle_size NOT NULL,
-  total            DECIMAL(10,2) NOT NULL,
-  pickup_delivery  BOOLEAN DEFAULT FALSE,
-  status           VARCHAR(20) DEFAULT 'aberta',
-  created_at       TIMESTAMPTZ DEFAULT NOW(),
-  finished_at      TIMESTAMPTZ
+  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  customer_id       UUID NOT NULL REFERENCES customers(id),
+  vehicle_id        UUID NOT NULL REFERENCES vehicles(id),
+  vehicle_type      vehicle_type NOT NULL,
+  vehicle_size      vehicle_size NOT NULL,
+  total             DECIMAL(10,2) NOT NULL,
+  pickup_delivery   BOOLEAN DEFAULT FALSE,
+  description       TEXT,
+  technical_notes   TEXT,
+  status            VARCHAR(20) DEFAULT 'aberta',
+  created_at        TIMESTAMPTZ DEFAULT NOW(),
+  finished_at       TIMESTAMPTZ
 );
-
 CREATE INDEX idx_orders_customer ON orders(customer_id);
 CREATE INDEX idx_orders_vehicle ON orders(vehicle_id);
 CREATE INDEX idx_orders_status ON orders(status);
 
--- =====================
 -- ITENS DA ORDEM DE SERVIÇO
--- =====================
 CREATE TABLE order_items (
   id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   order_id     UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
@@ -147,46 +169,102 @@ CREATE TABLE order_items (
   subtotal     DECIMAL(10,2) NOT NULL
 );
 
-CREATE INDEX idx_order_items_order ON order_items(order_id);
+-- CONFIGURAÇÕES
+CREATE TABLE settings (
+  key   VARCHAR(50) PRIMARY KEY,
+  value TEXT
+);
+INSERT INTO settings (key, value) VALUES ('whatsapp_number', '');
 ```
 
 ---
 
-## Notas de Migração
+## 📡 Endpoints REST (para seu backend)
 
-1. **Limpar localStorage**: Após migrar, remover as chaves `arycar_*` do localStorage.
-2. **Camada de serviço**: Substituir as chamadas de `storageService` por chamadas à API/Supabase.
-3. **IDs**: O sistema atual usa `Date.now().toString()` como ID. O PostgreSQL usa UUIDs.
-4. **Autenticação**: Considerar adicionar tabela de usuários e autenticação para proteger o painel admin.
-5. **RLS (Row Level Security)**: Configurar políticas de segurança no Supabase para proteger os dados.
+O frontend está preparado para consumir estes endpoints quando `API_BASE_URL` estiver configurado em `src/config/api.ts`:
+
+### Clientes
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/customers` | Listar todos os clientes |
+| GET | `/api/customers/:id` | Buscar por ID |
+| GET | `/api/customers/cpf/:cpf` | Buscar por CPF |
+| POST | `/api/customers` | Criar cliente |
+| PUT | `/api/customers/:id` | Atualizar cliente |
+
+### Veículos
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/vehicles` | Listar todos |
+| GET | `/api/vehicles/plate/:plate` | Buscar por placa |
+| GET | `/api/vehicles/customer/:customerId` | Veículos de um cliente |
+| POST | `/api/vehicles` | Cadastrar veículo |
+
+### Serviços
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/services` | Listar todos (com pricing) |
+| POST | `/api/services` | Criar serviço |
+| PUT | `/api/services/:id` | Atualizar serviço |
+| DELETE | `/api/services/:id` | Remover serviço |
+
+### Ordens de Serviço
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/orders` | Listar todas |
+| GET | `/api/orders/:id` | Buscar por ID |
+| POST | `/api/orders` | Criar OS (com items) |
+| PUT | `/api/orders/:id/status` | Atualizar status |
+
+### Funcionários
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/employees` | Listar todos |
+| POST | `/api/employees` | Criar |
+| PUT | `/api/employees/:id` | Atualizar |
+| DELETE | `/api/employees/:id` | Remover |
+
+### Configurações
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/settings/:key` | Buscar configuração |
+| PUT | `/api/settings/:key` | Atualizar configuração |
+
+### Consulta de Placa (proxy)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/api/plate-lookup/:plate` | Proxy para API de placas |
 
 ---
 
 ## Views Úteis
 
 ```sql
--- Margem de lucro por serviço e tipo de veículo
 CREATE VIEW v_service_margins AS
 SELECT
   s.name AS service_name,
   sp.vehicle_type,
   sp.price_p - sp.cost_p AS margin_p,
   sp.price_m - sp.cost_m AS margin_m,
-  sp.price_g - sp.cost_g AS margin_g,
-  CASE WHEN sp.price_p > 0 THEN ROUND(((sp.price_p - sp.cost_p) / sp.price_p) * 100, 1) ELSE 0 END AS margin_pct_p
+  sp.price_g - sp.cost_g AS margin_g
 FROM services s
 JOIN service_pricing sp ON sp.service_id = s.id;
 
--- Resumo de faturamento por período
 CREATE VIEW v_revenue_summary AS
 SELECT
   DATE_TRUNC('month', o.created_at) AS month,
   COUNT(*) AS total_orders,
-  SUM(o.total) AS revenue,
-  SUM(oi.unit_cost * oi.quantity) AS total_cost,
-  SUM(o.total) - SUM(oi.unit_cost * oi.quantity) AS profit
+  SUM(o.total) AS revenue
 FROM orders o
-JOIN order_items oi ON oi.order_id = o.id
 GROUP BY DATE_TRUNC('month', o.created_at)
 ORDER BY month DESC;
 ```
+
+---
+
+## Notas
+
+1. **Atual**: O sistema usa localStorage. Quando `API_BASE_URL` estiver preenchido em `src/config/api.ts`, o sistema passará a consumir a API REST.
+2. **IDs**: O localStorage usa `Date.now()`. O PostgreSQL usa UUIDs.
+3. **API de Placas**: A chave da API (placas.app.br) deve ser configurada em `src/config/api.ts` ou, preferencialmente, no seu backend como proxy.
+4. **FIPE**: A API FIPE é gratuita e chamada diretamente do frontend.

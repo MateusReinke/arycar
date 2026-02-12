@@ -11,7 +11,7 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-3" onClick={resetFlow}>
+        <Link to="/app" className="flex items-center gap-3" onClick={resetFlow}>
           <div className="flex items-center gap-2">
             <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center font-bold text-primary-foreground text-lg" style={{ fontFamily: 'Space Grotesk' }}>
               A
@@ -31,7 +31,7 @@ const Header = () => {
           )}
           {isAdmin ? (
             <Button variant="ghost" asChild>
-              <Link to="/">
+              <Link to="/app">
                 <LayoutDashboard className="mr-2 h-4 w-4" />
                 Dashboard
               </Link>

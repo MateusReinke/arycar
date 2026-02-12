@@ -5,7 +5,7 @@ import VehicleInfoBar from '@/components/VehicleSizeSelector';
 import ServiceGrid from '@/components/ServiceGrid';
 import Cart from '@/components/Cart';
 
-const Index = () => {
+const Dashboard = () => {
   const { step } = useApp();
 
   if (step === 'plate') return <PlateSearch />;
@@ -22,4 +22,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Dashboard;

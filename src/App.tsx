@@ -5,7 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "@/context/AppContext";
 import Header from "@/components/Header";
-import Index from "./pages/Index";
+import Homepage from "./pages/Homepage";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -18,10 +20,13 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Header />
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/admin" element={<Admin />} />
+            {/* Public */}
+            <Route path="/" element={<Homepage />} />
+            <Route path="/login" element={<Login />} />
+            {/* Private (UI-only, no real auth yet) */}
+            <Route path="/app" element={<><Header /><Dashboard /></>} />
+            <Route path="/admin" element={<><Header /><Admin /></>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
