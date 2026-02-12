@@ -1,4 +1,4 @@
-import { Service, Employee, OrderSummary, Customer, Vehicle } from '@/types';
+import { Service, Employee, OrderSummary, Customer, Vehicle, AppSettings } from '@/types';
 import { initialServices } from '@/data/services';
 
 const KEYS = {
@@ -7,6 +7,7 @@ const KEYS = {
   orders: 'arycar_orders',
   customers: 'arycar_customers',
   vehicles: 'arycar_vehicles',
+  settings: 'arycar_settings',
 };
 
 export const storageService = {
@@ -85,5 +86,14 @@ export const storageService = {
   },
   getVehiclesByCustomer(customerId: string): Vehicle[] {
     return this.getVehicles().filter(v => v.customerId === customerId);
+  },
+
+  // Settings
+  getSettings(): AppSettings {
+    const data = localStorage.getItem(KEYS.settings);
+    return data ? JSON.parse(data) : { whatsappNumber: '' };
+  },
+  saveSettings(settings: AppSettings) {
+    localStorage.setItem(KEYS.settings, JSON.stringify(settings));
   },
 };

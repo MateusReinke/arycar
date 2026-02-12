@@ -59,7 +59,12 @@ export interface Vehicle {
   model: string;
   color: string;
   year: string;
+  km: string;
   customerId: string;
+}
+
+export interface AppSettings {
+  whatsappNumber: string;
 }
 
 export interface Employee {

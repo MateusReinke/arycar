@@ -9,7 +9,7 @@ import { vehicleTypeLabels } from '@/types';
 import { toast } from 'sonner';
 
 const PlateSearch = () => {
-  const { setStep, setCurrentCustomer, setCurrentVehicle } = useApp();
+  const { setStep, setCurrentCustomer, setCurrentVehicle, setPendingPlate } = useApp();
   const [plate, setPlate] = useState('');
 
   const formatPlate = (val: string) => {
@@ -35,8 +35,9 @@ const PlateSearch = () => {
       }
     }
 
-    // Not found - go to registration
+    // Not found - go to registration with plate pre-filled
     toast.info('Veículo não cadastrado. Preencha os dados do cliente.');
+    setPendingPlate(cleanPlate);
     setStep('register');
   };
 

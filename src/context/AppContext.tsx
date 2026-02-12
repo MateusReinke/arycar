@@ -18,6 +18,8 @@ interface AppContextType {
   setCurrentCustomer: (c: Customer | null) => void;
   currentVehicle: Vehicle | null;
   setCurrentVehicle: (v: Vehicle | null) => void;
+  pendingPlate: string;
+  setPendingPlate: (p: string) => void;
 
   // Cart
   cart: CartItem[];
@@ -54,6 +56,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [step, setStep] = useState<FlowStep>('plate');
   const [currentCustomer, setCurrentCustomer] = useState<Customer | null>(null);
   const [currentVehicle, setCurrentVehicle] = useState<Vehicle | null>(null);
+  const [pendingPlate, setPendingPlate] = useState('');
   const [pickupDelivery, setPickupDelivery] = useState(false);
 
   const setServices = useCallback((s: Service[]) => {
@@ -135,12 +138,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentVehicle(null);
     setCart([]);
     setPickupDelivery(false);
+    setPendingPlate('');
   }, []);
 
   return (
     <AppContext.Provider value={{
       services, setServices, employees, setEmployees,
       step, setStep, currentCustomer, setCurrentCustomer, currentVehicle, setCurrentVehicle,
+      pendingPlate, setPendingPlate,
       cart, addToCart, removeFromCart, updateCartQuantity, clearCart,
       pickupDelivery, setPickupDelivery,
       getPrice, getCost, cartTotal, finalizeOrder, resetFlow,
