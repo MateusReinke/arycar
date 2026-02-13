@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Car, Sparkles, Shield, Clock, MapPin, Phone, Mail, ChevronRight, MessageCircle } from 'lucide-react';
+import { Car, Sparkles, Shield, Clock, MapPin, Phone, Mail, ChevronRight, MessageCircle, Droplets, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,11 +8,21 @@ import { useState, useEffect } from 'react';
 import { storageService } from '@/services/storage';
 import { toast } from 'sonner';
 
+import arycarLogo from '@/assets/arycar-logo.png';
+import servicePolimento from '@/assets/service-polimento.jpg';
+import serviceVitrificacao from '@/assets/service-vitrificacao.jpg';
+import serviceLavagem from '@/assets/service-lavagem.jpg';
+import serviceHigienizacao from '@/assets/service-higienizacao.jpg';
+import serviceCouro from '@/assets/service-couro.jpg';
+import serviceFarois from '@/assets/service-farois.jpg';
+
 const services = [
-  { icon: Sparkles, title: 'Polimento', desc: 'Comercial e técnico com resultados profissionais' },
-  { icon: Shield, title: 'Vitrificação', desc: 'Proteção duradoura para pintura, faróis e couro' },
-  { icon: Car, title: 'Lavagem Detalhada', desc: 'Limpeza completa interna e externa' },
-  { icon: Clock, title: 'Higienização', desc: 'Sanitização com ozônio e limpeza profunda' },
+  { icon: Sparkles, title: 'Polimento', desc: 'Polimento comercial e técnico com correção de pintura e brilho espelhado.', image: servicePolimento },
+  { icon: Shield, title: 'Vitrificação', desc: 'Proteção cerâmica duradoura para pintura com acabamento hidrofóbico.', image: serviceVitrificacao },
+  { icon: Droplets, title: 'Lavagem Detalhada', desc: 'Limpeza completa interna e externa com produtos premium.', image: serviceLavagem },
+  { icon: Clock, title: 'Higienização', desc: 'Sanitização com ozônio, limpeza profunda de estofados e carpetes.', image: serviceHigienizacao },
+  { icon: Sun, title: 'Tratamento de Couro', desc: 'Hidratação e proteção de bancos e painéis em couro.', image: serviceCouro },
+  { icon: Car, title: 'Restauração de Faróis', desc: 'Recuperação da transparência e aplicação de proteção UV.', image: serviceFarois },
 ];
 
 const Homepage = () => {
@@ -48,21 +58,16 @@ const Homepage = () => {
       <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center font-bold text-primary-foreground text-lg" style={{ fontFamily: 'Space Grotesk' }}>
-              A
-            </div>
-            <span className="text-xl font-bold tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
-              ARYCAR
-            </span>
+            <img src={arycarLogo} alt="ARYCAR Logo" className="h-10 w-auto" />
           </div>
           <nav className="flex items-center gap-3">
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" size="sm" asChild>
               <a href="#servicos">Serviços</a>
             </Button>
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" size="sm" asChild>
               <a href="#contato">Contato</a>
             </Button>
-            <Button asChild>
+            <Button size="sm" asChild>
               <Link to="/login">
                 Área de Gestão
                 <ChevronRight className="ml-1 h-4 w-4" />
@@ -73,25 +78,31 @@ const Homepage = () => {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden py-24 lg:py-32">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent" />
-        <div className="container relative text-center space-y-6">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+      <section className="relative overflow-hidden py-24 lg:py-36">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-transparent to-primary/5" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.1),transparent_60%)]" />
+        <div className="container relative flex flex-col items-center text-center space-y-8">
+          <img
+            src={arycarLogo}
+            alt="ARYCAR Lava-Rápido"
+            className="h-40 w-auto md:h-52 lg:h-64 drop-shadow-2xl"
+          />
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             Estética Automotiva
             <span className="block text-primary">de Excelência</span>
           </h1>
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+          <p className="mx-auto max-w-2xl text-lg text-muted-foreground leading-relaxed">
             Cuidamos do seu veículo com produtos premium e técnicas profissionais.
-            Carros, motos e caminhões — com serviço de Leva e Traz.
+            Carros, motos e caminhões — com serviço de <strong className="text-foreground">Leva e Traz</strong>.
           </p>
-          <div className="flex justify-center gap-4">
-            <Button size="lg" asChild>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Button size="lg" className="h-12 px-8 text-base" asChild>
               <a href="#contato">
                 Solicitar Orçamento
               </a>
             </Button>
             {whatsappNumber && (
-              <Button size="lg" variant="outline" asChild>
+              <Button size="lg" variant="outline" className="h-12 px-8 text-base" asChild>
                 <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
                   <MessageCircle className="mr-2 h-5 w-5" />
                   WhatsApp
@@ -102,18 +113,40 @@ const Homepage = () => {
         </div>
       </section>
 
-      {/* Services */}
-      <section id="servicos" className="py-16 bg-card/50">
+      {/* Services Grid */}
+      <section id="servicos" className="py-20 bg-card/50">
         <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-12">Nossos Serviços</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="text-center mb-14">
+            <span className="text-sm font-semibold text-primary uppercase tracking-widest">O que fazemos</span>
+            <h2 className="mt-2 text-3xl font-bold sm:text-4xl" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              Nossos Serviços
+            </h2>
+            <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
+              Cada serviço é executado com atenção aos detalhes e produtos de alta performance.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {services.map((s, i) => (
-              <div key={i} className="glass-card rounded-xl p-6 text-center space-y-3 hover:border-primary/40 transition-colors">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                  <s.icon className="h-6 w-6 text-primary" />
+              <div
+                key={i}
+                className="group relative overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
+              >
+                <div className="relative h-48 overflow-hidden">
+                  <img
+                    src={s.image}
+                    alt={s.title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
+                  <div className="absolute bottom-3 left-4 flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 backdrop-blur-sm border border-primary/30">
+                    <s.icon className="h-5 w-5 text-primary" />
+                  </div>
                 </div>
-                <h3 className="font-semibold">{s.title}</h3>
-                <p className="text-sm text-muted-foreground">{s.desc}</p>
+                <div className="p-5">
+                  <h3 className="text-lg font-semibold mb-1">{s.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -121,28 +154,34 @@ const Homepage = () => {
       </section>
 
       {/* Features */}
-      <section className="py-16">
+      <section className="py-20">
         <div className="container">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div className="flex items-start gap-4">
-              <MapPin className="h-8 w-8 text-primary shrink-0" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
+                <MapPin className="h-6 w-6 text-primary" />
+              </div>
               <div>
-                <h3 className="font-semibold mb-1">Leva e Traz</h3>
-                <p className="text-sm text-muted-foreground">Buscamos e entregamos seu veículo no endereço que preferir.</p>
+                <h3 className="font-semibold text-lg mb-1">Leva e Traz</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">Buscamos e entregamos seu veículo no endereço que preferir com total segurança.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
-              <Shield className="h-8 w-8 text-primary shrink-0" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
+                <Shield className="h-6 w-6 text-primary" />
+              </div>
               <div>
-                <h3 className="font-semibold mb-1">Produtos Premium</h3>
-                <p className="text-sm text-muted-foreground">Utilizamos produtos Vonixx e marcas de referência no mercado.</p>
+                <h3 className="font-semibold text-lg mb-1">Produtos Premium</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">Utilizamos Vonixx, Meguiar's e outras marcas referência no mercado.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
-              <Clock className="h-8 w-8 text-primary shrink-0" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
+                <Clock className="h-6 w-6 text-primary" />
+              </div>
               <div>
-                <h3 className="font-semibold mb-1">Agilidade</h3>
-                <p className="text-sm text-muted-foreground">Prazos cumpridos com qualidade profissional garantida.</p>
+                <h3 className="font-semibold text-lg mb-1">Agilidade</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">Prazos cumpridos com qualidade profissional garantida em cada entrega.</p>
               </div>
             </div>
           </div>
@@ -150,10 +189,13 @@ const Homepage = () => {
       </section>
 
       {/* Contact Form */}
-      <section id="contato" className="py-16 bg-card/50">
+      <section id="contato" className="py-20 bg-card/50">
         <div className="container max-w-lg">
-          <h2 className="text-3xl font-bold text-center mb-8">Fale Conosco</h2>
-          <form onSubmit={handleSubmit} className="glass-card rounded-xl p-6 space-y-4">
+          <div className="text-center mb-10">
+            <span className="text-sm font-semibold text-primary uppercase tracking-widest">Contato</span>
+            <h2 className="mt-2 text-3xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Fale Conosco</h2>
+          </div>
+          <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-card p-6 space-y-4 shadow-xl shadow-primary/5">
             <div>
               <Label className="text-xs">Nome *</Label>
               <Input value={name} onChange={e => setName(e.target.value)} placeholder="Seu nome" />
@@ -166,7 +208,7 @@ const Homepage = () => {
               <Label className="text-xs">Mensagem</Label>
               <Textarea value={message} onChange={e => setMessage(e.target.value)} placeholder="Descreva o serviço desejado..." rows={4} />
             </div>
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full h-11">
               <Mail className="mr-2 h-4 w-4" />
               Enviar Mensagem
             </Button>
@@ -176,8 +218,11 @@ const Homepage = () => {
 
       {/* Footer */}
       <footer className="border-t border-border py-8">
-        <div className="container text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} ARYCAR Estética Automotiva. Todos os direitos reservados.</p>
+        <div className="container flex flex-col items-center gap-4">
+          <img src={arycarLogo} alt="ARYCAR" className="h-12 w-auto opacity-60" />
+          <p className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} ARYCAR Estética Automotiva. Todos os direitos reservados.
+          </p>
         </div>
       </footer>
 

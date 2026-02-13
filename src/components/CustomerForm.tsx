@@ -294,7 +294,7 @@ const CustomerForm = () => {
             </div>
 
             {/* FIPE Dropdowns or Manual Entry */}
-            {useManualEntry && !brand ? (
+            {useManualEntry ? (
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <Label className="text-xs">Marca (FIPE)</Label>
@@ -320,8 +320,8 @@ const CustomerForm = () => {
                       <Loader2 className="h-4 w-4 animate-spin" /> Carregando modelos...
                     </div>
                   ) : (
-                    <Select onValueChange={handleModelSelect} disabled={!selectedBrandCode}>
-                      <SelectTrigger><SelectValue placeholder="Selecione o modelo" /></SelectTrigger>
+                    <Select onValueChange={handleModelSelect} value="" disabled={models.length === 0 && !selectedBrandCode}>
+                      <SelectTrigger><SelectValue placeholder={selectedBrandCode ? "Selecione o modelo" : "Selecione a marca primeiro"} /></SelectTrigger>
                       <SelectContent className="max-h-60">
                         {models.map(m => (
                           <SelectItem key={m.codigo} value={m.codigo.toString()}>{m.nome}</SelectItem>
@@ -355,7 +355,7 @@ const CustomerForm = () => {
               </div>
             </div>
 
-            {useManualEntry && brand && (
+            {useManualEntry && (
               <Button variant="link" size="sm" className="text-xs p-0 h-auto" onClick={() => setUseManualEntry(false)}>
                 Preencher marca/modelo manualmente
               </Button>
