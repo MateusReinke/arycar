@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Settings, LayoutDashboard, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/context/AppContext';
+import arycarLogo from '@/assets/arycar-logo.png';
 
 const Header = () => {
   const location = useLocation();
@@ -12,14 +13,10 @@ const Header = () => {
     <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/app" className="flex items-center gap-3" onClick={resetFlow}>
-          <div className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center font-bold text-primary-foreground text-lg" style={{ fontFamily: 'Space Grotesk' }}>
-              A
-            </div>
-            <span className="text-xl font-bold tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
-              ARYCAR
-            </span>
-          </div>
+          <img src={arycarLogo} alt="ARYCAR" className="h-9 w-auto" />
+          <span className="text-xl font-bold tracking-tight">
+            ARYCAR
+          </span>
         </Link>
 
         <nav className="flex items-center gap-2">

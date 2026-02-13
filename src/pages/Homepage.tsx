@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Car, Sparkles, Shield, Clock, MapPin, Phone, Mail, ChevronRight, MessageCircle, Droplets, Sun } from 'lucide-react';
+import { Car, Sparkles, Shield, Clock, MapPin, Phone, Mail, ChevronRight, MessageCircle, Droplets, Sun, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,6 +16,13 @@ import serviceHigienizacao from '@/assets/service-higienizacao.jpg';
 import serviceCouro from '@/assets/service-couro.jpg';
 import serviceFarois from '@/assets/service-farois.jpg';
 
+import before1 from '@/assets/before-1.jpg';
+import after1 from '@/assets/after-1.jpg';
+import before2 from '@/assets/before-2.jpg';
+import after2 from '@/assets/after-2.jpg';
+import before3 from '@/assets/before-3.jpg';
+import after3 from '@/assets/after-3.jpg';
+
 const services = [
   { icon: Sparkles, title: 'Polimento', desc: 'Polimento comercial e técnico com correção de pintura e brilho espelhado.', image: servicePolimento },
   { icon: Shield, title: 'Vitrificação', desc: 'Proteção cerâmica duradoura para pintura com acabamento hidrofóbico.', image: serviceVitrificacao },
@@ -24,6 +31,55 @@ const services = [
   { icon: Sun, title: 'Tratamento de Couro', desc: 'Hidratação e proteção de bancos e painéis em couro.', image: serviceCouro },
   { icon: Car, title: 'Restauração de Faróis', desc: 'Recuperação da transparência e aplicação de proteção UV.', image: serviceFarois },
 ];
+
+const gallery = [
+  { before: before1, after: after1, title: 'Polimento de Pintura', desc: 'Correção de riscos e brilho espelhado' },
+  { before: before2, after: after2, title: 'Higienização Interna', desc: 'Limpeza profunda de estofados' },
+  { before: before3, after: after3, title: 'Restauração de Faróis', desc: 'Recuperação total da transparência' },
+];
+
+const BeforeAfterCard = ({ item }: { item: typeof gallery[0] }) => {
+  const [showAfter, setShowAfter] = useState(false);
+
+  return (
+    <div className="group relative overflow-hidden rounded-2xl border border-border bg-card">
+      <div
+        className="relative h-64 overflow-hidden cursor-pointer"
+        onMouseEnter={() => setShowAfter(true)}
+        onMouseLeave={() => setShowAfter(false)}
+        onClick={() => setShowAfter(v => !v)}
+      >
+        <img
+          src={item.before}
+          alt={`Antes - ${item.title}`}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${showAfter ? 'opacity-0' : 'opacity-100'}`}
+          loading="lazy"
+        />
+        <img
+          src={item.after}
+          alt={`Depois - ${item.title}`}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${showAfter ? 'opacity-100' : 'opacity-0'}`}
+          loading="lazy"
+        />
+        <div className="absolute top-3 left-3">
+          <span className={`inline-block rounded-full px-3 py-1 text-xs font-bold backdrop-blur-sm border ${showAfter ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-destructive/20 border-destructive/40 text-destructive'}`}>
+            {showAfter ? 'DEPOIS' : 'ANTES'}
+          </span>
+        </div>
+        <div className="absolute bottom-3 right-3">
+          <span className="inline-flex items-center gap-1 rounded-full bg-background/70 backdrop-blur-sm px-3 py-1 text-[10px] text-muted-foreground">
+            {showAfter ? 'Voltar para antes' : 'Passe o mouse para ver'}
+            <ArrowRight className="h-3 w-3" />
+          </span>
+        </div>
+      </div>
+      <div className="p-4">
+        <h3 className="font-semibold">{item.title}</h3>
+        <p className="text-sm text-muted-foreground">{item.desc}</p>
+      </div>
+    </div>
+  );
+};
 
 const Homepage = () => {
   const [name, setName] = useState('');
@@ -65,6 +121,9 @@ const Homepage = () => {
               <a href="#servicos">Serviços</a>
             </Button>
             <Button variant="ghost" size="sm" asChild>
+              <a href="#galeria">Galeria</a>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
               <a href="#contato">Contato</a>
             </Button>
             <Button size="sm" asChild>
@@ -87,7 +146,7 @@ const Homepage = () => {
             alt="ARYCAR Lava-Rápido"
             className="h-40 w-auto md:h-52 lg:h-64 drop-shadow-2xl"
           />
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
             Estética Automotiva
             <span className="block text-primary">de Excelência</span>
           </h1>
@@ -97,9 +156,7 @@ const Homepage = () => {
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Button size="lg" className="h-12 px-8 text-base" asChild>
-              <a href="#contato">
-                Solicitar Orçamento
-              </a>
+              <a href="#contato">Solicitar Orçamento</a>
             </Button>
             {whatsappNumber && (
               <Button size="lg" variant="outline" className="h-12 px-8 text-base" asChild>
@@ -118,9 +175,7 @@ const Homepage = () => {
         <div className="container">
           <div className="text-center mb-14">
             <span className="text-sm font-semibold text-primary uppercase tracking-widest">O que fazemos</span>
-            <h2 className="mt-2 text-3xl font-bold sm:text-4xl" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Nossos Serviços
-            </h2>
+            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Nossos Serviços</h2>
             <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
               Cada serviço é executado com atenção aos detalhes e produtos de alta performance.
             </p>
@@ -153,8 +208,26 @@ const Homepage = () => {
         </div>
       </section>
 
+      {/* Before/After Gallery */}
+      <section id="galeria" className="py-20">
+        <div className="container">
+          <div className="text-center mb-14">
+            <span className="text-sm font-semibold text-primary uppercase tracking-widest">Resultados</span>
+            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Antes e Depois</h2>
+            <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
+              Veja a transformação que nossos serviços proporcionam. Passe o mouse para comparar.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {gallery.map((item, i) => (
+              <BeforeAfterCard key={i} item={item} />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Features */}
-      <section className="py-20">
+      <section className="py-20 bg-card/50">
         <div className="container">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div className="flex items-start gap-4">
@@ -189,11 +262,11 @@ const Homepage = () => {
       </section>
 
       {/* Contact Form */}
-      <section id="contato" className="py-20 bg-card/50">
+      <section id="contato" className="py-20">
         <div className="container max-w-lg">
           <div className="text-center mb-10">
             <span className="text-sm font-semibold text-primary uppercase tracking-widest">Contato</span>
-            <h2 className="mt-2 text-3xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Fale Conosco</h2>
+            <h2 className="mt-2 text-3xl font-bold">Fale Conosco</h2>
           </div>
           <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-card p-6 space-y-4 shadow-xl shadow-primary/5">
             <div>
