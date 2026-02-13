@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { Search, ArrowRight, Car, Bike, Truck } from 'lucide-react';
+import { Search, Car, Bike, Truck } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { storageService } from '@/services/storage';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { vehicleTypeLabels } from '@/types';
 import { toast } from 'sonner';
+import arycarLogo from '@/assets/arycar-logo.png';
 
 const PlateSearch = () => {
   const { setStep, setCurrentCustomer, setCurrentVehicle, setPendingPlate } = useApp();
@@ -35,7 +34,6 @@ const PlateSearch = () => {
       }
     }
 
-    // Not found - go to registration with plate pre-filled
     toast.info('Veículo não cadastrado. Preencha os dados do cliente.');
     setPendingPlate(cleanPlate);
     setStep('register');
@@ -48,8 +46,9 @@ const PlateSearch = () => {
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
-        <div className="text-center space-y-2">
-          <div className="flex justify-center gap-4 mb-4">
+        <div className="text-center space-y-4">
+          <img src={arycarLogo} alt="ARYCAR" className="h-20 w-auto mx-auto" />
+          <div className="flex justify-center gap-4">
             <Car className="h-8 w-8 text-primary" />
             <Bike className="h-8 w-8 text-primary" />
             <Truck className="h-8 w-8 text-primary" />

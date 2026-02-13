@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
+import arycarLogo from '@/assets/arycar-logo.png';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -21,7 +22,6 @@ const Login = () => {
     }
 
     setLoading(true);
-    // UI-only login - no real auth yet
     setTimeout(() => {
       setLoading(false);
       toast.success('Login realizado com sucesso!');
@@ -38,11 +38,9 @@ const Login = () => {
             Voltar ao site
           </Link>
           <div className="flex justify-center">
-            <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center font-bold text-primary-foreground text-2xl" style={{ fontFamily: 'Space Grotesk' }}>
-              A
-            </div>
+            <img src={arycarLogo} alt="ARYCAR" className="h-16 w-auto" />
           </div>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk' }}>ARYCAR</h1>
+          <h1 className="text-2xl font-bold">ARYCAR</h1>
           <p className="text-sm text-muted-foreground">Área de Gestão</p>
         </div>
 
