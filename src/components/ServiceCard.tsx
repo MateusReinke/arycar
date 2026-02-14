@@ -1,4 +1,4 @@
-import { Clock, CalendarCheck, Plus, Minus, Info } from 'lucide-react';
+import { Clock, CalendarCheck, Plus, Minus, Info, Ban } from 'lucide-react';
 import { Service } from '@/types';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 
 interface Props {
   service: Service;
+  disabled?: boolean;
+  disabledReason?: string | null;
 }
 
-const ServiceCard = ({ service }: Props) => {
+const ServiceCard = ({ service, disabled, disabledReason }: Props) => {
   const { currentVehicle, addToCart, cart, removeFromCart, updateCartQuantity, getPrice } = useApp();
   const inCart = cart.find(i => i.service.id === service.id);
 
@@ -21,8 +23,18 @@ const ServiceCard = ({ service }: Props) => {
   return (
     <div className={cn(
       'glass-card group relative flex flex-col rounded-xl p-4 transition-all duration-200',
-      inCart && 'ring-2 ring-primary/50'
+      inCart && 'ring-2 ring-primary/50',
+      disabled && 'opacity-50 pointer-events-none'
     )}>
+      {disabled && disabledReason && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/60 backdrop-blur-[2px]">
+          <Badge variant="destructive" className="gap-1 text-xs">
+            <Ban className="h-3 w-3" />
+            {disabledReason}
+          </Badge>
+        </div>
+      )}
+
       <div className="mb-3 flex items-start justify-between">
         <h3 className="text-sm font-semibold leading-tight">{service.name}</h3>
         {service.observation && (
@@ -90,7 +102,7 @@ const ServiceCard = ({ service }: Props) => {
         ) : (
           <Button size="sm" className="w-full text-xs"
             onClick={() => addToCart(service)}
-            disabled={price === 0 && !service.priceRule}>
+            disabled={disabled || (price === 0 && !service.priceRule)}>
             <Plus className="mr-1 h-3 w-3" />
             Adicionar
           </Button>
