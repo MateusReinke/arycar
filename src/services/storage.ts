@@ -43,6 +43,14 @@ export const storageService = {
     orders.push(order);
     localStorage.setItem(KEYS.orders, JSON.stringify(orders));
   },
+  updateOrder(order: OrderSummary) {
+    const orders = this.getOrders().map(o => o.id === order.id ? order : o);
+    localStorage.setItem(KEYS.orders, JSON.stringify(orders));
+  },
+  deleteOrder(id: string) {
+    const orders = this.getOrders().filter(o => o.id !== id);
+    localStorage.setItem(KEYS.orders, JSON.stringify(orders));
+  },
 
   // Customers
   getCustomers(): Customer[] {
