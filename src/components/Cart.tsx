@@ -1,4 +1,4 @@
-import { ShoppingCart, Trash2, FileText, X, MapPin } from 'lucide-react';
+import { ShoppingCart, Trash2, FileText, X, MapPin, Clock } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,9 @@ const Cart = () => {
     currentCustomer, currentVehicle, pickupDelivery, setPickupDelivery,
   } = useApp();
   const [open, setOpen] = useState(false);
+
+  // Calculate total estimated time
+  const totalHours = cart.reduce((sum, item) => sum + item.service.hours * item.quantity, 0);
 
   const handleFinalize = () => {
     const order = finalizeOrder();
@@ -77,6 +80,15 @@ const Cart = () => {
                 </Label>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Estimated time */}
+        {cart.length > 0 && (
+          <div className="mb-3 flex items-center gap-2 rounded-lg bg-accent/50 px-3 py-2 text-sm">
+            <Clock className="h-4 w-4 text-primary" />
+            <span className="font-medium">Tempo estimado:</span>
+            <span className="ml-auto font-bold text-primary">{totalHours}h</span>
           </div>
         )}
 
