@@ -28,7 +28,7 @@ const PlateSearch = () => {
       if (customer) {
         setCurrentCustomer(customer);
         setCurrentVehicle(vehicle);
-        setStep('services');
+        setStep('returning');
         toast.success(`Veículo encontrado! Cliente: ${customer.name}`);
         return;
       }

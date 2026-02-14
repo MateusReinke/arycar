@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Service, Employee, CartItem, VehicleSize, VehicleType, OrderSummary, Customer, Vehicle } from '@/types';
 import { storageService } from '@/services/storage';
 
-export type FlowStep = 'plate' | 'register' | 'services';
+export type FlowStep = 'plate' | 'register' | 'returning' | 'services';
 
 interface AppContextType {
   // Data

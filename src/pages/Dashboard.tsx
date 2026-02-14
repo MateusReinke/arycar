@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import PlateSearch from '@/components/PlateSearch';
 import CustomerForm from '@/components/CustomerForm';
+import ReturningVehicle from '@/components/ReturningVehicle';
 import VehicleInfoBar from '@/components/VehicleSizeSelector';
 import ServiceGrid from '@/components/ServiceGrid';
 import Cart from '@/components/Cart';
@@ -23,6 +24,7 @@ const Dashboard = () => {
 
   if (step === 'plate') return <PlateSearch />;
   if (step === 'register') return <CustomerForm />;
+  if (step === 'returning') return <ReturningVehicle />;
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)]">
