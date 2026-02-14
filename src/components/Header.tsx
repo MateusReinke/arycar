@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Settings, LayoutDashboard, RotateCcw } from 'lucide-react';
+import { Settings, LayoutDashboard, RotateCcw, ListOrdered } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/context/AppContext';
 import arycarLogo from '@/assets/arycar-logo.png';
@@ -26,6 +26,12 @@ const Header = () => {
               Nova OS
             </Button>
           )}
+          <Button variant="ghost" asChild>
+            <Link to="/queue">
+              <ListOrdered className="mr-2 h-4 w-4" />
+              Fila
+            </Link>
+          </Button>
           {isAdmin ? (
             <Button variant="ghost" asChild>
               <Link to="/app">

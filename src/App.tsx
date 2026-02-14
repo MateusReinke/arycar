@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import Homepage from "./pages/Homepage";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Queue from "./pages/Queue";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             {/* Private (UI-only, no real auth yet) */}
             <Route path="/app" element={<><Header /><Dashboard /></>} />
+            <Route path="/queue" element={<><Header /><Queue /></>} />
             <Route path="/admin" element={<><Header /><Admin /></>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

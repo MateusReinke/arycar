@@ -73,6 +73,15 @@ export interface Employee {
   role: string;
 }
 
+export type OrderStatus = 'waiting' | 'in_progress' | 'done' | 'delivered';
+
+export const orderStatusLabels: Record<OrderStatus, string> = {
+  waiting: 'Aguardando',
+  in_progress: 'Em Andamento',
+  done: 'Finalizado',
+  delivered: 'Entregue',
+};
+
 export interface OrderSummary {
   id: string;
   items: CartItem[];
@@ -84,4 +93,5 @@ export interface OrderSummary {
   customerName: string;
   vehiclePlate: string;
   pickupDelivery: boolean;
+  status: OrderStatus;
 }

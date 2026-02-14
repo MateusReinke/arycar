@@ -126,6 +126,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       customerName: currentCustomer.name,
       vehiclePlate: currentVehicle.plate,
       pickupDelivery,
+      status: 'waiting' as const,
     };
     storageService.saveOrder(order);
     setCart([]);
