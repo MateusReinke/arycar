@@ -72,9 +72,10 @@ const ServiceForm = () => {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao salvar serviço.');
     }
+    setForm({ ...emptyForm });
+    setEditingId(null);
+    setPricingType('carro');
   };
-
-
 
   const handleEdit = (service: Service) => {
     setEditingId(service.id);
