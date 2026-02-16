@@ -2,49 +2,39 @@
  * ============================================
  * ARYCAR - Configuração de API
  * ============================================
- * 
- * Este arquivo centraliza todas as configurações de conexão.
- * Quando você tiver seu backend Docker rodando, basta alterar
- * o BASE_URL para apontar para sua API.
- * 
- * Exemplo com Docker local:
- *   API_BASE_URL: 'http://localhost:3001/api'
- * 
- * Exemplo com servidor remoto:
- *   API_BASE_URL: 'https://api.arycar.com.br/api'
- * 
- * O backend deve implementar os endpoints documentados em
- * docs/DATABASE_SCHEMA.md
+ *
+ * Todas as configurações devem vir de variáveis de ambiente.
+ * Consulte .env.example para referência.
  */
+
+const env = import.meta.env;
 
 export const apiConfig = {
   // ============================
-  // BACKEND API (seu Docker)
+  // BACKEND API
   // ============================
-  // Altere para a URL da sua API quando estiver pronta
-  API_BASE_URL: '',  // Vazio = usa localStorage como fallback
+  API_BASE_URL: env.VITE_API_BASE_URL || '',
 
   // ============================
   // API DE PLACAS (placas.app.br)
   // ============================
-  PLATE_API_URL: 'https://placas.app.br/api/v1/placas',
-  PLATE_API_TOKEN: '', // Coloque sua API Key aqui
+  PLATE_API_URL: env.VITE_PLATE_API_URL || 'https://placas.app.br/api/v1/placas',
+  PLATE_API_TOKEN: env.VITE_PLATE_API_TOKEN || '',
 
   // ============================
   // API FIPE (gratuita)
   // ============================
-  FIPE_API_URL: 'https://parallelum.com.br/fipe/api/v1',
+  FIPE_API_URL: env.VITE_FIPE_API_URL || 'https://parallelum.com.br/fipe/api/v1',
 
   // ============================
-  // CONFIGURAÇÕES DO BANCO (referência para seu Docker)
+  // CONFIGURAÇÕES DO BANCO (referência para backend)
   // ============================
-  // Use esta referência para configurar seu backend:
   dbConfig: {
-    user: 'seu_usuario_postgre',
-    host: 'localhost',
-    database: 'arycar_db',
-    password: 'sua_senha_aqui',
-    port: 5432,
+    user: env.POSTGRES_USER || 'arycar_user',
+    host: env.POSTGRES_HOST || 'postgres',
+    database: env.POSTGRES_DB || 'arycar_db',
+    password: env.POSTGRES_PASSWORD || 'arycar_pass_123',
+    port: Number(env.POSTGRES_PORT || 5432),
   },
 };
 

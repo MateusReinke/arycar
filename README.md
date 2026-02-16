@@ -71,3 +71,8 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Deploy com Docker + PostgreSQL
+
+A estrutura de deploy com banco PostgreSQL automático já está pronta.
+Consulte: **`DEPLOY_DOCKER_POSTGRES.md`**.
