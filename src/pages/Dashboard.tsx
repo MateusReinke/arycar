@@ -3,6 +3,7 @@ import { useApp } from '@/context/AppContext';
 import PlateSearch from '@/components/PlateSearch';
 import CustomerForm from '@/components/CustomerForm';
 import ReturningVehicle from '@/components/ReturningVehicle';
+import OpenOrderSummary from '@/components/OpenOrderSummary';
 import VehicleInfoBar from '@/components/VehicleSizeSelector';
 import ServiceGrid from '@/components/ServiceGrid';
 import Cart from '@/components/Cart';
@@ -25,6 +26,7 @@ const Dashboard = () => {
   if (step === 'plate') return <PlateSearch />;
   if (step === 'register') return <CustomerForm />;
   if (step === 'returning') return <ReturningVehicle />;
+  if (step === 'order-summary') return <OpenOrderSummary />;
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)]">

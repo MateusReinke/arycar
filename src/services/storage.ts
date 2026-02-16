@@ -1,5 +1,4 @@
 import { Service, Employee, OrderSummary, Customer, Vehicle, AppSettings } from '@/types';
-import { initialServices } from '@/data/services';
 
 const KEYS = {
   services: 'arycar_services',
@@ -14,11 +13,7 @@ export const storageService = {
   // Services
   getServices(): Service[] {
     const data = localStorage.getItem(KEYS.services);
-    if (!data) {
-      localStorage.setItem(KEYS.services, JSON.stringify(initialServices));
-      return initialServices;
-    }
-    return JSON.parse(data);
+    return data ? JSON.parse(data) : [];
   },
   saveServices(services: Service[]) {
     localStorage.setItem(KEYS.services, JSON.stringify(services));
@@ -50,6 +45,24 @@ export const storageService = {
   deleteOrder(id: string) {
     const orders = this.getOrders().filter(o => o.id !== id);
     localStorage.setItem(KEYS.orders, JSON.stringify(orders));
+  },
+
+  findOpenOrderByPlate(plate: string): OrderSummary | undefined {
+    const normalizedPlate = plate.toUpperCase();
+    return this.getOrders()
+      .filter(order => order.vehiclePlate.toUpperCase() === normalizedPlate)
+      .find(order => order.status === 'waiting' || order.status === 'in_progress');
+  },
+
+  hasOpenOrderByVehicle(plate: string): boolean {
+    return Boolean(this.findOpenOrderByPlate(plate));
+  },
+
+  getOrdersByCustomerPhone(phone: string): OrderSummary[] {
+    const normalizedPhone = phone.replace(/\D/g, '');
+    const customers = this.getCustomers().filter(c => c.phone === normalizedPhone);
+    const customerIds = new Set(customers.map(c => c.id));
+    return this.getOrders().filter(order => customerIds.has(order.customerId));
   },
 
   // Customers
@@ -99,7 +112,7 @@ export const storageService = {
   // Settings
   getSettings(): AppSettings {
     const data = localStorage.getItem(KEYS.settings);
-    return data ? JSON.parse(data) : { whatsappNumber: '' };
+    return data ? JSON.parse(data) : { whatsappNumber: '', customStatuses: [] };
   },
   saveSettings(settings: AppSettings) {
     localStorage.setItem(KEYS.settings, JSON.stringify(settings));

@@ -7,26 +7,48 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
 import arycarLogo from '@/assets/arycar-logo.png';
+import { useAuth } from '@/context/AuthContext';
+import { backendApi } from '@/services/backendApi';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const { login } = useAuth();
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error('Preencha todos os campos');
+
+    if (!identifier.trim()) {
+      toast.error('Informe e-mail corporativo ou telefone.');
+      return;
+    }
+
+    const clean = identifier.trim();
+    const isEmail = clean.includes('@');
+
+    if (isEmail && !password) {
+      toast.error('Senha é obrigatória para acesso interno.');
       return;
     }
 
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const user = await backendApi.login(clean, password);
+      login({
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+      });
+      toast.success(`Login realizado como ${user.role}.`);
+      navigate(user.role === 'customer' ? '/customer' : '/app');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Falha no login.');
+    } finally {
       setLoading(false);
-      toast.success('Login realizado com sucesso!');
-      navigate('/app');
-    }, 800);
+    }
   };
 
   return (
@@ -41,54 +63,55 @@ const Login = () => {
             <img src={arycarLogo} alt="ARYCAR" className="h-16 w-auto" />
           </div>
           <h1 className="text-2xl font-bold">ARYCAR</h1>
-          <p className="text-sm text-muted-foreground">Área de Gestão</p>
+          <p className="text-sm text-muted-foreground">Acesso automático por cadastro/papel</p>
         </div>
 
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">Entrar</CardTitle>
-            <CardDescription>Acesse o painel de gestão</CardDescription>
+            <CardDescription>
+              Equipe: e-mail corporativo • Cliente: telefone cadastrado
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-xs">E-mail</Label>
+                <Label htmlFor="identifier" className="text-xs">E-mail ou Telefone</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="admin@arycar.com.br"
+                    id="identifier"
+                    value={identifier}
+                    onChange={e => setIdentifier(e.target.value)}
+                    placeholder="admin@arycar.com.br ou (11) 99999-9999"
                     className="pl-10"
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-xs">Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="pl-10"
-                  />
+
+              {identifier.includes('@') && (
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-xs">Senha</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
+
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Entrando...' : 'Entrar'}
               </Button>
             </form>
           </CardContent>
         </Card>
-
-        <p className="text-center text-xs text-muted-foreground">
-          Login apenas visual (UI). Autenticação real será implementada com o backend.
-        </p>
       </div>
     </div>
   );
