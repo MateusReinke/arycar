@@ -5,47 +5,44 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: arycar-web
     ports:
-      - '8089:80'
+      - "8080:80"
     depends_on:
-      arycar-api:
-        condition: service_healthy
+      - arycar-api
     restart: unless-stopped
 
   arycar-api:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: arycar-api
     environment:
       NODE_ENV: production
       PORT: 3001
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arycar-db:5432/${POSTGRES_DB}}
-      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-arycar_user}:${POSTGRES_PASSWORD:-arycar_pass_123}@postgres:5432/${POSTGRES_DB:-arycar_db}
+      CORS_ORIGIN: http://localhost:8080
     depends_on:
-      arycar-db:
+      postgres:
         condition: service_healthy
-    healthcheck:
-      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-      start_period: 15s
+    ports:
+      - "3001:3001"
     restart: unless-stopped
 
-  arycar-db:
+  postgres:
     image: postgres:16-alpine
+    container_name: arycar-postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-arycar_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-arycar_pass_123}
+      POSTGRES_DB: ${POSTGRES_DB:-arycar_db}
+    ports:
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-arycar_user} -d ${POSTGRES_DB:-arycar_db}"]
       interval: 10s
       timeout: 5s
       retries: 10

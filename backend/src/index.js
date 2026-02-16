@@ -12,21 +12,8 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-const rawCorsOrigin = process.env.CORS_ORIGIN || '*';
-const allowedOrigins = rawCorsOrigin
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
-      callback(null, true);
-      return;
-    }
-
-    callback(new Error('Not allowed by CORS'));
-  },
+  origin: process.env.CORS_ORIGIN || '*',
 }));
 app.use(express.json());
 
