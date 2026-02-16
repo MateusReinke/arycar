@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Service, VehicleType, SizePricing, vehicleTypeLabels } from '@/types';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { backendApi } from '@/services/backendApi';
 
 const emptyPricing: SizePricing = { costP: 0, costM: 0, costG: 0, priceP: 0, priceM: 0, priceG: 0 };
 
@@ -40,30 +41,65 @@ const ServiceForm = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pricingType, setPricingType] = useState<VehicleType>('carro');
 
-  const handleSave = () => {
+
+  const loadServices = async () => {
+    try {
+      const remoteServices = await backendApi.listServices();
+      setServices(remoteServices);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao carregar serviços do banco.');
+    }
+  };
+
+
+  const handleSave = async () => {
     if (!form.name.trim()) { toast.error('Nome obrigatório'); return; }
     if (form.vehicleTypes.length === 0) { toast.error('Selecione ao menos um tipo de veículo'); return; }
 
-    if (editingId) {
-      setServices(services.map(s => s.id === editingId ? { ...form, id: editingId } : s));
-      toast.success('Serviço atualizado');
-    } else {
-      setServices([...services, { ...form, id: Date.now().toString() }]);
-      toast.success('Serviço adicionado');
+    try {
+      if (editingId) {
+        await backendApi.updateService({ ...form, id: editingId });
+        toast.success('Serviço atualizado');
+      } else {
+        await backendApi.createService({ ...form, id: Date.now().toString() });
+        toast.success('Serviço adicionado');
+      }
+
+      await loadServices();
+      setForm({ ...emptyForm });
+      setEditingId(null);
+      setPricingType('carro');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao salvar serviço.');
     }
-    setForm({ ...emptyForm });
-    setEditingId(null);
   };
 
-  const handleEdit = (s: Service) => {
-    setEditingId(s.id);
-    const { id, ...rest } = s;
-    setForm(rest);
+
+
+  const handleEdit = (service: Service) => {
+    setEditingId(service.id);
+    const { id, ...rest } = service;
+    const clonedForm: FormData = {
+      ...rest,
+      pricing: {
+        carro: { ...rest.pricing.carro },
+        moto: { ...rest.pricing.moto },
+        caminhao: { ...rest.pricing.caminhao },
+      },
+      vehicleTypes: [...rest.vehicleTypes],
+    };
+    setForm(clonedForm);
+    setPricingType(clonedForm.vehicleTypes[0] || 'carro');
   };
 
-  const handleDelete = (id: string) => {
-    setServices(services.filter(s => s.id !== id));
-    toast.success('Serviço removido');
+  const handleDelete = async (id: string) => {
+    try {
+      await backendApi.deleteService(id);
+      await loadServices();
+      toast.success('Serviço removido');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao remover serviço.');
+    }
   };
 
   const updatePricing = (key: keyof SizePricing, value: number) => {
@@ -86,6 +122,10 @@ const ServiceForm = () => {
   };
 
   const currentPricing = form.pricing[pricingType];
+
+  useEffect(() => {
+    void loadServices();
+  }, []);
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
