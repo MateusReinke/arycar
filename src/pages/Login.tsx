@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Lock, User, ArrowLeft } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Lock, User } from 'lucide-react';
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -63,13 +66,18 @@ const Login = () => {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-2">
-          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
+          <Link
+            to="/"
+            className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="h-4 w-4" />
             Voltar ao site
           </Link>
+
           <div className="flex justify-center">
             <img src={arycarLogo} alt="ARYCAR" className="h-16 w-auto" />
           </div>
+
           <h1 className="text-2xl font-bold">ARYCAR</h1>
           <p className="text-sm text-muted-foreground">Acesso por perfil</p>
         </div>
@@ -79,6 +87,7 @@ const Login = () => {
             <CardTitle className="text-lg">Entrar</CardTitle>
             <CardDescription>Admin: gestão | Funcionário: criar/ver OS | Cliente: status e solicitação</CardDescription>
           </CardHeader>
+
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
