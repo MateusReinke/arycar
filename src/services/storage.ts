@@ -1,5 +1,4 @@
 import { Service, Employee, OrderSummary, Customer, Vehicle, AppSettings } from '@/types';
-import { initialServices } from '@/data/services';
 
 const KEYS = {
   services: 'arycar_services',
@@ -14,11 +13,7 @@ export const storageService = {
   // Services
   getServices(): Service[] {
     const data = localStorage.getItem(KEYS.services);
-    if (!data) {
-      localStorage.setItem(KEYS.services, JSON.stringify(initialServices));
-      return initialServices;
-    }
-    return JSON.parse(data);
+    return data ? JSON.parse(data) : [];
   },
   saveServices(services: Service[]) {
     localStorage.setItem(KEYS.services, JSON.stringify(services));

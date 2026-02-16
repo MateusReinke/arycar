@@ -20,7 +20,7 @@ const Login = () => {
   const [role, setRole] = useState<UserRole>('employee');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (role === 'customer') {
@@ -34,7 +34,19 @@ const Login = () => {
     }
 
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const user = await backendApi.login(clean, password);
+      login({
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+      });
+      toast.success(`Login realizado como ${user.role}.`);
+      navigate(user.role === 'customer' ? '/customer' : '/app');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Falha no login.');
+    } finally {
       setLoading(false);
       login({
         name: role === 'admin' ? 'Administrador' : role === 'employee' ? 'Funcionário' : 'Cliente',

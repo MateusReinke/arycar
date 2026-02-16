@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { Service, Employee, CartItem, VehicleSize, VehicleType, OrderSummary, Customer, Vehicle } from '@/types';
 import { storageService } from '@/services/storage';
+import { backendApi } from '@/services/backendApi';
 
 export type FlowStep = 'plate' | 'register' | 'returning' | 'order-summary' | 'services';
 
@@ -61,6 +62,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [pendingPlate, setPendingPlate] = useState('');
   const [currentOpenOrder, setCurrentOpenOrder] = useState<OrderSummary | null>(null);
   const [pickupDelivery, setPickupDelivery] = useState(false);
+
+
+  useEffect(() => {
+    let active = true;
+
+    backendApi.listServices()
+      .then((remoteServices) => {
+        if (!active) return;
+        setServicesState(remoteServices);
+        storageService.saveServices(remoteServices);
+      })
+      .catch(() => {
+        // fallback local already loaded
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const setServices = useCallback((s: Service[]) => {
     setServicesState(s);
