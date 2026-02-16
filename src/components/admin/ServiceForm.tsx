@@ -53,12 +53,23 @@ const ServiceForm = () => {
     }
     setForm({ ...emptyForm });
     setEditingId(null);
+    setPricingType('carro');
   };
 
-  const handleEdit = (s: Service) => {
-    setEditingId(s.id);
-    const { id, ...rest } = s;
-    setForm(rest);
+  const handleEdit = (service: Service) => {
+    setEditingId(service.id);
+    const { id, ...rest } = service;
+    const clonedForm: FormData = {
+      ...rest,
+      pricing: {
+        carro: { ...rest.pricing.carro },
+        moto: { ...rest.pricing.moto },
+        caminhao: { ...rest.pricing.caminhao },
+      },
+      vehicleTypes: [...rest.vehicleTypes],
+    };
+    setForm(clonedForm);
+    setPricingType(clonedForm.vehicleTypes[0] || 'carro');
   };
 
   const handleDelete = (id: string) => {

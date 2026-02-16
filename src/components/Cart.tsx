@@ -25,6 +25,11 @@ const Cart = () => {
         description: `Total: R$ ${order.total.toFixed(2)} | ${order.customerName}`,
       });
       setOpen(false);
+      return;
+    }
+
+    if (currentVehicle) {
+      toast.error(`Já existe OS em aberto para a placa ${currentVehicle.plate}. Edite a OS existente.`);
     }
   };
 
