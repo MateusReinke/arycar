@@ -20,6 +20,9 @@ const vehicleTypeIcons: Record<VehicleType, React.ReactNode> = {
   caminhao: <Truck className="h-6 w-6" />,
 };
 
+const OTHER_BRAND_CODE = 'other-brand';
+const OTHER_MODEL_CODE = 'other-model';
+
 const CustomerForm = () => {
   const { setStep, setCurrentCustomer, setCurrentVehicle, pendingPlate } = useApp();
 
@@ -44,7 +47,10 @@ const CustomerForm = () => {
   const [selectedModelCode, setSelectedModelCode] = useState('');
   const [loadingBrands, setLoadingBrands] = useState(false);
   const [loadingModels, setLoadingModels] = useState(false);
-  const [useManualEntry, setUseManualEntry] = useState(false);
+
+  const isOtherBrandSelected = selectedBrandCode === OTHER_BRAND_CODE;
+  const isOtherModelSelected = selectedModelCode === OTHER_MODEL_CODE;
+  const canSelectFipeModel = Boolean(selectedBrandCode) && !isOtherBrandSelected;
 
   // Plate API state
   const [lookingUpPlate, setLookingUpPlate] = useState(false);
@@ -55,11 +61,12 @@ const CustomerForm = () => {
     if (pendingPlate && isPlateApiConfigured() && !plateLooked) {
       handlePlateLookup(pendingPlate);
     }
-  }, [pendingPlate]);
+  }, [pendingPlate, plateLooked]);
 
   // Load FIPE brands when vehicle type changes
   useEffect(() => {
-    if (!useManualEntry) return;
+    let cancelled = false;
+
     setLoadingBrands(true);
     setBrands([]);
     setModels([]);
@@ -67,24 +74,61 @@ const CustomerForm = () => {
     setSelectedModelCode('');
     setBrand('');
     setModel('');
-    fetchFipeBrands(vehicleType).then(b => {
-      setBrands(b);
-      setLoadingBrands(false);
-    });
-  }, [vehicleType, useManualEntry]);
+
+    fetchFipeBrands(vehicleType)
+      .then(b => {
+        if (cancelled) return;
+        setBrands(b);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        toast.error('Não foi possível carregar as marcas FIPE.');
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoadingBrands(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [vehicleType]);
 
   // Load FIPE models when brand changes
   useEffect(() => {
-    if (!selectedBrandCode || !useManualEntry) return;
+    let cancelled = false;
+
+    if (!selectedBrandCode || selectedBrandCode === OTHER_BRAND_CODE) {
+      setLoadingModels(false);
+      setModels([]);
+      setSelectedModelCode('');
+      setModel('');
+      return;
+    }
+
     setLoadingModels(true);
     setModels([]);
     setSelectedModelCode('');
     setModel('');
-    fetchFipeModels(vehicleType, selectedBrandCode).then(m => {
-      setModels(m);
-      setLoadingModels(false);
-    });
-  }, [selectedBrandCode, vehicleType, useManualEntry]);
+
+    fetchFipeModels(vehicleType, selectedBrandCode)
+      .then(m => {
+        if (cancelled) return;
+        setModels(m);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        toast.error('Não foi possível carregar os modelos FIPE.');
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoadingModels(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedBrandCode, vehicleType]);
 
   const handlePlateLookup = async (plateValue: string) => {
     setLookingUpPlate(true);
@@ -102,19 +146,32 @@ const CustomerForm = () => {
       setVehicleSize(translateSubSegmentToSize(data.sub_segmento || ''));
       toast.success('Dados do veículo preenchidos automaticamente!');
     } else {
-      toast.info('Veículo não encontrado na API. Use a tabela FIPE ou preencha manualmente.');
-      setUseManualEntry(true);
+      toast.info('Veículo não encontrado na API. Selecione marca/modelo na tabela FIPE ou use Outro.');
     }
   };
 
   const handleBrandSelect = (code: string) => {
     setSelectedBrandCode(code);
+    setSelectedModelCode('');
+    setModel('');
+
+    if (code === OTHER_BRAND_CODE) {
+      setBrand('');
+      return;
+    }
+
     const found = brands.find(b => b.codigo === code);
     setBrand(found?.nome || '');
   };
 
   const handleModelSelect = (code: string) => {
     setSelectedModelCode(code);
+
+    if (code === OTHER_MODEL_CODE) {
+      setModel('');
+      return;
+    }
+
     const found = models.find(m => m.codigo.toString() === code);
     setModel(found?.nome || '');
   };
@@ -297,56 +354,67 @@ const CustomerForm = () => {
               </div>
             </div>
 
-            {/* FIPE Dropdowns or Manual Entry */}
-            {useManualEntry ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label className="text-xs">Marca (FIPE)</Label>
-                  {loadingBrands ? (
-                    <div className="flex items-center gap-2 h-10 px-3 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Carregando marcas...
-                    </div>
-                  ) : (
+            {/* FIPE Dropdowns */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label className="text-xs">Marca (FIPE)</Label>
+                {loadingBrands ? (
+                  <div className="flex items-center gap-2 h-10 px-3 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Carregando marcas...
+                  </div>
+                ) : (
+                  <>
                     <Select onValueChange={handleBrandSelect} value={selectedBrandCode}>
                       <SelectTrigger><SelectValue placeholder="Selecione a marca" /></SelectTrigger>
                       <SelectContent className="max-h-60">
                         {brands.map(b => (
                           <SelectItem key={b.codigo} value={b.codigo}>{b.nome}</SelectItem>
                         ))}
+                        <SelectItem value={OTHER_BRAND_CODE}>Outro</SelectItem>
                       </SelectContent>
                     </Select>
-                  )}
-                </div>
-                <div>
-                  <Label className="text-xs">Modelo (FIPE)</Label>
-                  {loadingModels ? (
-                    <div className="flex items-center gap-2 h-10 px-3 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Carregando modelos...
-                    </div>
-                  ) : (
-                    <Select onValueChange={handleModelSelect} value={selectedModelCode} disabled={models.length === 0 && !selectedBrandCode}>
+                    {isOtherBrandSelected && (
+                      <Input
+                        className="mt-2"
+                        value={brand}
+                        onChange={e => setBrand(e.target.value)}
+                        placeholder="Digite a marca"
+                      />
+                    )}
+                  </>
+                )}
+              </div>
+              <div>
+                <Label className="text-xs">Modelo (FIPE)</Label>
+                {loadingModels ? (
+                  <div className="flex items-center gap-2 h-10 px-3 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Carregando modelos...
+                  </div>
+                ) : (
+                  <>
+                    <Select onValueChange={handleModelSelect} value={selectedModelCode} disabled={!canSelectFipeModel}>
                       <SelectTrigger><SelectValue placeholder={selectedBrandCode ? "Selecione o modelo" : "Selecione a marca primeiro"} /></SelectTrigger>
                       <SelectContent className="max-h-60">
                         {models.map(m => (
                           <SelectItem key={m.codigo} value={m.codigo.toString()}>{m.nome}</SelectItem>
                         ))}
+                        {canSelectFipeModel && (
+                          <SelectItem value={OTHER_MODEL_CODE}>Outro</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
-                  )}
-                </div>
+                    {(isOtherModelSelected || isOtherBrandSelected) && (
+                      <Input
+                        className="mt-2"
+                        value={model}
+                        onChange={e => setModel(e.target.value)}
+                        placeholder="Digite o modelo"
+                      />
+                    )}
+                  </>
+                )}
               </div>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label className="text-xs">Marca</Label>
-                  <Input value={brand} onChange={e => setBrand(e.target.value)} placeholder="Toyota" />
-                </div>
-                <div>
-                  <Label className="text-xs">Modelo</Label>
-                  <Input value={model} onChange={e => setModel(e.target.value)} placeholder="Corolla" />
-                </div>
-              </div>
-            )}
+            </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
@@ -359,16 +427,6 @@ const CustomerForm = () => {
               </div>
             </div>
 
-            {useManualEntry && (
-              <Button variant="link" size="sm" className="text-xs p-0 h-auto" onClick={() => setUseManualEntry(false)}>
-                Preencher marca/modelo manualmente
-              </Button>
-            )}
-            {!useManualEntry && !lookingUpPlate && (
-              <Button variant="link" size="sm" className="text-xs p-0 h-auto" onClick={() => setUseManualEntry(true)}>
-                Buscar marca/modelo pela tabela FIPE
-              </Button>
-            )}
           </div>
 
           <Button className="w-full h-12 text-base" onClick={handleSubmit} disabled={lookingUpPlate}>
