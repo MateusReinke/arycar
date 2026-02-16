@@ -2,45 +2,104 @@ import { useState } from 'react';
 import { Search, Car, Bike, Truck } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { storageService } from '@/services/storage';
+import { backendApi } from '@/services/backendApi';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import arycarLogo from '@/assets/arycar-logo.png';
 
 const PlateSearch = () => {
-  const { setStep, setCurrentCustomer, setCurrentVehicle, setPendingPlate } = useApp();
+  const {
+    setStep,
+    setCurrentCustomer,
+    setCurrentVehicle,
+    setPendingPlate,
+    setCurrentOpenOrder,
+  } = useApp();
+
   const [plate, setPlate] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const formatPlate = (val: string) => {
     return val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
   };
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     const cleanPlate = formatPlate(plate);
     if (cleanPlate.length < 7) {
       toast.error('Placa inválida. Use o formato ABC1D23 ou ABC1234');
       return;
     }
 
-    const vehicle = storageService.findVehicleByPlate(cleanPlate);
-    if (vehicle) {
-      const customer = storageService.findCustomerById(vehicle.customerId);
-      if (customer) {
-        setCurrentCustomer(customer);
-        setCurrentVehicle(vehicle);
+    setLoading(true);
+
+    try {
+      const vehicle = storageService.findVehicleByPlate(cleanPlate);
+
+      if (vehicle) {
+        const customer = storageService.findCustomerById(vehicle.customerId);
+        if (customer) {
+          const openOrder = storageService.findOpenOrderByPlate(cleanPlate);
+          setCurrentCustomer(customer);
+          setCurrentVehicle(vehicle);
+
+          if (openOrder) {
+            setCurrentOpenOrder(openOrder);
+            setStep('order-summary');
+            toast.warning(`Já existe OS em aberto para esta placa (#${openOrder.id.slice(-4)}).`);
+            return;
+          }
+
+          setCurrentOpenOrder(null);
+          setStep('returning');
+          toast.success(`Veículo encontrado! Cliente: ${customer.name}`);
+          return;
+        }
+      }
+
+      const remoteResult = await backendApi.findOpenOrderByPlate(cleanPlate);
+      if (remoteResult?.found && remoteResult.customer && remoteResult.vehicle) {
+        setCurrentCustomer(remoteResult.customer);
+        setCurrentVehicle(remoteResult.vehicle);
+
+        if (remoteResult.openOrder && remoteResult.order) {
+          setCurrentOpenOrder({
+            id: remoteResult.order.id,
+            items: [],
+            vehicleType: remoteResult.vehicle.type,
+            size: remoteResult.vehicle.size,
+            total: remoteResult.order.total,
+            date: new Date(remoteResult.order.date).toLocaleString('pt-BR'),
+            customerId: remoteResult.customer.id,
+            customerName: remoteResult.customer.name,
+            vehiclePlate: remoteResult.vehicle.plate,
+            pickupDelivery: false,
+            status: remoteResult.order.status,
+          });
+          setStep('order-summary');
+          toast.warning('Cliente e OS em aberto encontrados no banco de dados.');
+          return;
+        }
+
+        setCurrentOpenOrder(null);
         setStep('returning');
-        toast.success(`Veículo encontrado! Cliente: ${customer.name}`);
+        toast.success(`Veículo encontrado no banco! Cliente: ${remoteResult.customer.name}`);
         return;
       }
-    }
 
-    toast.info('Veículo não cadastrado. Preencha os dados do cliente.');
-    setPendingPlate(cleanPlate);
-    setStep('register');
+      toast.info('Veículo não cadastrado. Preencha os dados do cliente.');
+      setCurrentOpenOrder(null);
+      setPendingPlate(cleanPlate);
+      setStep('register');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleSearch();
+    if (e.key === 'Enter') {
+      void handleSearch();
+    }
   };
 
   return (
@@ -73,13 +132,13 @@ const PlateSearch = () => {
             />
           </div>
 
-          <Button className="w-full h-12 text-base" onClick={handleSearch} disabled={plate.length < 7}>
+          <Button className="w-full h-12 text-base" onClick={() => void handleSearch()} disabled={plate.length < 7 || loading}>
             <Search className="mr-2 h-5 w-5" />
-            Buscar Veículo
+            {loading ? 'Consultando...' : 'Buscar Veículo'}
           </Button>
 
           <p className="text-center text-xs text-muted-foreground">
-            Se o veículo não estiver cadastrado, você poderá registrar o cliente e o veículo
+            Se houver OS em aberto para a placa, o sistema exibirá um resumo antes de continuar
           </p>
         </div>
       </div>
