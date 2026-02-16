@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { Service, Employee, CartItem, VehicleSize, VehicleType, OrderSummary, Customer, Vehicle } from '@/types';
 import { storageService } from '@/services/storage';
+import { backendApi } from '@/services/backendApi';
 
-export type FlowStep = 'plate' | 'register' | 'returning' | 'services';
+export type FlowStep = 'plate' | 'register' | 'returning' | 'order-summary' | 'services';
 
 interface AppContextType {
   // Data
@@ -20,6 +21,8 @@ interface AppContextType {
   setCurrentVehicle: (v: Vehicle | null) => void;
   pendingPlate: string;
   setPendingPlate: (p: string) => void;
+  currentOpenOrder: OrderSummary | null;
+  setCurrentOpenOrder: (o: OrderSummary | null) => void;
 
   // Cart
   cart: CartItem[];
@@ -57,7 +60,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [currentCustomer, setCurrentCustomer] = useState<Customer | null>(null);
   const [currentVehicle, setCurrentVehicle] = useState<Vehicle | null>(null);
   const [pendingPlate, setPendingPlate] = useState('');
+  const [currentOpenOrder, setCurrentOpenOrder] = useState<OrderSummary | null>(null);
   const [pickupDelivery, setPickupDelivery] = useState(false);
+
+
+  useEffect(() => {
+    let active = true;
+
+    backendApi.listServices()
+      .then((remoteServices) => {
+        if (!active) return;
+        setServicesState(remoteServices);
+        storageService.saveServices(remoteServices);
+      })
+      .catch(() => {
+        // fallback local already loaded
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const setServices = useCallback((s: Service[]) => {
     setServicesState(s);
@@ -115,6 +138,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const finalizeOrder = useCallback((): OrderSummary | null => {
     if (!currentCustomer || !currentVehicle || cart.length === 0) return null;
+    if (storageService.hasOpenOrderByVehicle(currentVehicle.plate)) return null;
     const order: OrderSummary = {
       id: Date.now().toString(),
       items: [...cart],
@@ -140,13 +164,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCart([]);
     setPickupDelivery(false);
     setPendingPlate('');
+    setCurrentOpenOrder(null);
   }, []);
 
   return (
     <AppContext.Provider value={{
       services, setServices, employees, setEmployees,
       step, setStep, currentCustomer, setCurrentCustomer, currentVehicle, setCurrentVehicle,
-      pendingPlate, setPendingPlate,
+      pendingPlate, setPendingPlate, currentOpenOrder, setCurrentOpenOrder,
       cart, addToCart, removeFromCart, updateCartQuantity, clearCart,
       pickupDelivery, setPickupDelivery,
       getPrice, getCost, cartTotal, finalizeOrder, resetFlow,
