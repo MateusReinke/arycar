@@ -71,3 +71,59 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Deploy no Coolify (1 stack Docker Compose: web + api + db)
+
+Este repositório está pronto para deploy como **um único stack compose** no Coolify.
+
+### 1) Criar o Resource Docker Compose
+
+1. No Coolify, crie um novo resource do tipo **Docker Compose**.
+2. Aponte para este repositório e branch desejada.
+3. Garanta que o arquivo usado seja o `docker-compose.yml` da raiz.
+
+### 2) Definir variáveis/Secrets no Coolify
+
+Defina, no mínimo, as variáveis abaixo:
+
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `POSTGRES_DB`
+- `CORS_ORIGIN`
+
+Opcional:
+
+- `DATABASE_URL` (se quiser sobrescrever a URL montada automaticamente)
+
+### 3) Publicação de serviço
+
+- **Publique apenas o serviço `arycar-web`**.
+- **Não publique `arycar-api`** (uso interno da rede compose).
+- **Não exponha porta do banco (`arycar-db`)**.
+
+### 4) Rede interna do stack
+
+- O Nginx do web acessa a API por hostname interno: `http://arycar-api:3001/api/`.
+- A API acessa o banco por hostname interno: `arycar-db:5432`.
+
+### 5) Banco automático
+
+Na primeira inicialização do volume do Postgres, o script em `docker/postgres/init/01_init.sql` é executado automaticamente para criar schema/tabelas/índices iniciais.
+
+## Execução local (sem quebrar desenvolvimento)
+
+Para rodar localmente com Docker Compose:
+
+```bash
+cp .env.example .env
+# ajuste as variáveis do .env
+
+docker compose up -d --build
+```
+
+Depois:
+
+- Web: `http://localhost:8089`
+- API health: `http://localhost:8089/api/health` (via proxy do Nginx)
+
+> Dica: para desenvolvimento frontend puro, `npm run dev` continua funcionando normalmente.
