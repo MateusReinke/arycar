@@ -78,6 +78,25 @@ CREATE TABLE IF NOT EXISTS employees (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name VARCHAR(200) NOT NULL,
+  email VARCHAR(200) UNIQUE,
+  phone VARCHAR(20) UNIQUE,
+  password_hash TEXT,
+  role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'employee', 'customer')),
+  active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS order_statuses (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  code VARCHAR(50) UNIQUE NOT NULL,
+  label VARCHAR(100) NOT NULL,
+  color_class VARCHAR(100) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS orders (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   customer_id UUID NOT NULL REFERENCES customers(id),
@@ -109,9 +128,58 @@ CREATE TABLE IF NOT EXISTS settings (
   value TEXT
 );
 
+INSERT INTO users (name, email, password_hash, role)
+VALUES ('Administrador', 'admin@arycar.com.br', 'admin123', 'admin')
+ON CONFLICT (email) DO NOTHING;
+
+INSERT INTO order_statuses (code, label, color_class)
+VALUES
+  ('waiting', 'Aguardando', 'bg-yellow-500/10 border-yellow-500/40'),
+  ('in_progress', 'Em Andamento', 'bg-blue-500/10 border-blue-500/40'),
+  ('done', 'Finalizado', 'bg-green-500/10 border-green-500/40'),
+  ('delivered', 'Entregue', 'bg-muted border-border')
+ON CONFLICT (code) DO NOTHING;
+
 INSERT INTO settings (key, value)
 VALUES ('whatsapp_number', '')
 ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO services (name)
+VALUES
+  ('Lavagem Simples'),
+  ('Lavagem Detalhada'),
+  ('Lavagem de Motor - Parcial'),
+  ('Lavagem de Motor - Completo'),
+  ('Lavagem de Chassi'),
+  ('Lavagem Caixa de Roda'),
+  ('Remoção de Chuva Ácida'),
+  ('Cristalização de Vidros'),
+  ('Polimento Comercial'),
+  ('Polimento Técnico'),
+  ('Vitrificação de Pintura'),
+  ('Clareamento de Faróis'),
+  ('Vitrificação de Faróis'),
+  ('Vitrificação de Plásticos'),
+  ('Vitrificação de Couro'),
+  ('Higienização'),
+  ('Oxi Sanitização'),
+  ('Descontaminação de Pintura'),
+  ('Martelinho de Ouro'),
+  ('Envelopamento'),
+  ('Pequenos Reparos Express')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO service_vehicle_types (service_id, vehicle_type)
+SELECT s.id, v.type
+FROM services s
+CROSS JOIN (VALUES ('carro'::vehicle_type), ('moto'::vehicle_type), ('caminhao'::vehicle_type)) v(type)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO service_pricing (service_id, vehicle_type, cost_p, cost_m, cost_g, price_p, price_m, price_g)
+SELECT s.id, v.type, 0, 0, 0, 0, 0, 0
+FROM services s
+CROSS JOIN (VALUES ('carro'::vehicle_type), ('moto'::vehicle_type), ('caminhao'::vehicle_type)) v(type)
+ON CONFLICT (service_id, vehicle_type) DO NOTHING;
 
 CREATE INDEX IF NOT EXISTS idx_customers_cpf ON customers(cpf);
 CREATE INDEX IF NOT EXISTS idx_vehicles_plate ON vehicles(plate);
@@ -119,3 +187,7 @@ CREATE INDEX IF NOT EXISTS idx_vehicles_customer ON vehicles(customer_id);
 CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id);
 CREATE INDEX IF NOT EXISTS idx_orders_vehicle ON orders(vehicle_id);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_open_order_per_vehicle
+  ON orders(vehicle_id)
+  WHERE status IN ('waiting', 'in_progress');

@@ -63,8 +63,41 @@ export interface Vehicle {
   customerId: string;
 }
 
+export type UserRole = 'admin' | 'employee' | 'customer';
+
+export interface AuthUser {
+  name: string;
+  email?: string;
+  phone?: string;
+  role: UserRole;
+}
+
+export type BaseOrderStatus = 'waiting' | 'in_progress' | 'done' | 'delivered';
+export type OrderStatus = BaseOrderStatus | string;
+
+export interface CustomStatus {
+  key: string;
+  label: string;
+  colorClass: string;
+}
+
+export const defaultOrderStatusLabels: Record<BaseOrderStatus, string> = {
+  waiting: 'Aguardando',
+  in_progress: 'Em Andamento',
+  done: 'Finalizado',
+  delivered: 'Entregue',
+};
+
+export const defaultStatusColors: Record<BaseOrderStatus, string> = {
+  waiting: 'bg-yellow-500/10 border-yellow-500/40',
+  in_progress: 'bg-blue-500/10 border-blue-500/40',
+  done: 'bg-green-500/10 border-green-500/40',
+  delivered: 'bg-muted border-border',
+};
+
 export interface AppSettings {
   whatsappNumber: string;
+  customStatuses: CustomStatus[];
 }
 
 export interface Employee {
@@ -72,15 +105,6 @@ export interface Employee {
   name: string;
   role: string;
 }
-
-export type OrderStatus = 'waiting' | 'in_progress' | 'done' | 'delivered';
-
-export const orderStatusLabels: Record<OrderStatus, string> = {
-  waiting: 'Aguardando',
-  in_progress: 'Em Andamento',
-  done: 'Finalizado',
-  delivered: 'Entregue',
-};
 
 export interface OrderSummary {
   id: string;
@@ -94,4 +118,19 @@ export interface OrderSummary {
   vehiclePlate: string;
   pickupDelivery: boolean;
   status: OrderStatus;
+  description?: string;
 }
+
+export const getOrderStatusLabel = (status: OrderStatus, customStatuses: CustomStatus[] = []) => {
+  const defaultLabel = defaultOrderStatusLabels[status as BaseOrderStatus];
+  if (defaultLabel) return defaultLabel;
+  const custom = customStatuses.find((item) => item.key === status);
+  return custom?.label || status;
+};
+
+export const getStatusColorClass = (status: OrderStatus, customStatuses: CustomStatus[] = []) => {
+  const defaultColor = defaultStatusColors[status as BaseOrderStatus];
+  if (defaultColor) return defaultColor;
+  const custom = customStatuses.find((item) => item.key === status);
+  return custom?.colorClass || 'bg-card border-border';
+};
