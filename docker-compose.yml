@@ -1,7 +1,53 @@
-version: '3.8'
+version: '3.9'
+
 services:
-  arycar:
-    build: .
+  arycar-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arycar-web
     ports:
       - "8080:80"
+    depends_on:
+      - arycar-api
     restart: unless-stopped
+
+  arycar-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: arycar-api
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-arycar_user}:${POSTGRES_PASSWORD:-arycar_pass_123}@postgres:5432/${POSTGRES_DB:-arycar_db}
+      CORS_ORIGIN: http://localhost:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: arycar-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-arycar_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-arycar_pass_123}
+      POSTGRES_DB: ${POSTGRES_DB:-arycar_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-arycar_user} -d ${POSTGRES_DB:-arycar_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  pgdata:
