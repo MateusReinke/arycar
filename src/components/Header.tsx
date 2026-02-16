@@ -1,38 +1,46 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Settings, LayoutDashboard, RotateCcw, ListOrdered } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Settings, LayoutDashboard, RotateCcw, ListOrdered, LogOut, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
 import arycarLogo from '@/assets/arycar-logo.png';
 
 const Header = () => {
   const location = useLocation();
-  const isAdmin = location.pathname === '/admin';
+  const navigate = useNavigate();
   const { resetFlow, step } = useApp();
+  const { user, logout } = useAuth();
+
+  const isAdminPage = location.pathname === '/admin';
+  const canManage = user?.role === 'admin';
+  const canUseOps = user?.role === 'admin' || user?.role === 'employee';
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/app" className="flex items-center gap-3" onClick={resetFlow}>
+        <Link to={canUseOps ? '/app' : '/customer'} className="flex items-center gap-3" onClick={resetFlow}>
           <img src={arycarLogo} alt="ARYCAR" className="h-9 w-auto" />
-          <span className="text-xl font-bold tracking-tight">
-            ARYCAR
-          </span>
+          <span className="text-xl font-bold tracking-tight">ARYCAR</span>
         </Link>
 
         <nav className="flex items-center gap-2">
-          {step !== 'plate' && !isAdmin && (
+          {canUseOps && step !== 'plate' && !isAdminPage && (
             <Button variant="ghost" size="sm" onClick={resetFlow}>
               <RotateCcw className="mr-2 h-4 w-4" />
               Nova OS
             </Button>
           )}
-          <Button variant="ghost" asChild>
-            <Link to="/queue">
-              <ListOrdered className="mr-2 h-4 w-4" />
-              Fila
-            </Link>
-          </Button>
-          {isAdmin ? (
+
+          {canUseOps && (
+            <Button variant="ghost" asChild>
+              <Link to="/queue">
+                <ListOrdered className="mr-2 h-4 w-4" />
+                Fila
+              </Link>
+            </Button>
+          )}
+
+          {canManage && (isAdminPage ? (
             <Button variant="ghost" asChild>
               <Link to="/app">
                 <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -46,6 +54,24 @@ const Header = () => {
                 Admin
               </Link>
             </Button>
+          ))}
+
+          {user && (
+            <>
+              <span className="hidden md:inline-flex text-xs text-muted-foreground items-center gap-1 px-2">
+                <UserCircle className="h-4 w-4" /> {user.role}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  logout();
+                  navigate('/login');
+                }}
+              >
+                <LogOut className="h-4 w-4 mr-1" /> Sair
+              </Button>
+            </>
           )}
         </nav>
       </div>
