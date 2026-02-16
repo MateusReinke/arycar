@@ -389,11 +389,7 @@ const CustomerForm = () => {
                   </div>
                 ) : (
                   <>
-                    <Select
-                      onValueChange={handleModelSelect}
-                      value={selectedModelCode}
-                      disabled={!selectedBrandCode || selectedBrandCode === OTHER_BRAND_CODE}
-                    >
+                    <Select onValueChange={handleModelSelect} value={selectedModelCode} disabled={!selectedBrandCode || selectedBrandCode === OTHER_BRAND_CODE}>
                       <SelectTrigger><SelectValue placeholder={selectedBrandCode ? "Selecione o modelo" : "Selecione a marca primeiro"} /></SelectTrigger>
                       <SelectContent className="max-h-60">
                         {models.map(m => (
