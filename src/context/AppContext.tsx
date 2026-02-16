@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Service, Employee, CartItem, VehicleSize, VehicleType, OrderSummary, Customer, Vehicle } from '@/types';
 import { storageService } from '@/services/storage';
 
-export type FlowStep = 'plate' | 'register' | 'returning' | 'services';
+export type FlowStep = 'plate' | 'register' | 'returning' | 'order-summary' | 'services';
 
 interface AppContextType {
   // Data
@@ -20,6 +20,8 @@ interface AppContextType {
   setCurrentVehicle: (v: Vehicle | null) => void;
   pendingPlate: string;
   setPendingPlate: (p: string) => void;
+  currentOpenOrder: OrderSummary | null;
+  setCurrentOpenOrder: (o: OrderSummary | null) => void;
 
   // Cart
   cart: CartItem[];
@@ -57,6 +59,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [currentCustomer, setCurrentCustomer] = useState<Customer | null>(null);
   const [currentVehicle, setCurrentVehicle] = useState<Vehicle | null>(null);
   const [pendingPlate, setPendingPlate] = useState('');
+  const [currentOpenOrder, setCurrentOpenOrder] = useState<OrderSummary | null>(null);
   const [pickupDelivery, setPickupDelivery] = useState(false);
 
   const setServices = useCallback((s: Service[]) => {
@@ -140,13 +143,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCart([]);
     setPickupDelivery(false);
     setPendingPlate('');
+    setCurrentOpenOrder(null);
   }, []);
 
   return (
     <AppContext.Provider value={{
       services, setServices, employees, setEmployees,
       step, setStep, currentCustomer, setCurrentCustomer, currentVehicle, setCurrentVehicle,
-      pendingPlate, setPendingPlate,
+      pendingPlate, setPendingPlate, currentOpenOrder, setCurrentOpenOrder,
       cart, addToCart, removeFromCart, updateCartQuantity, clearCart,
       pickupDelivery, setPickupDelivery,
       getPrice, getCost, cartTotal, finalizeOrder, resetFlow,
