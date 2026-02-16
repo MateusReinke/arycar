@@ -41,6 +41,7 @@ const CustomerForm = () => {
   const [brands, setBrands] = useState<FipeBrand[]>([]);
   const [models, setModels] = useState<FipeModel[]>([]);
   const [selectedBrandCode, setSelectedBrandCode] = useState('');
+  const [selectedModelCode, setSelectedModelCode] = useState('');
   const [loadingBrands, setLoadingBrands] = useState(false);
   const [loadingModels, setLoadingModels] = useState(false);
   const [useManualEntry, setUseManualEntry] = useState(false);
@@ -63,6 +64,7 @@ const CustomerForm = () => {
     setBrands([]);
     setModels([]);
     setSelectedBrandCode('');
+    setSelectedModelCode('');
     setBrand('');
     setModel('');
     fetchFipeBrands(vehicleType).then(b => {
@@ -76,6 +78,7 @@ const CustomerForm = () => {
     if (!selectedBrandCode || !useManualEntry) return;
     setLoadingModels(true);
     setModels([]);
+    setSelectedModelCode('');
     setModel('');
     fetchFipeModels(vehicleType, selectedBrandCode).then(m => {
       setModels(m);
@@ -111,6 +114,7 @@ const CustomerForm = () => {
   };
 
   const handleModelSelect = (code: string) => {
+    setSelectedModelCode(code);
     const found = models.find(m => m.codigo.toString() === code);
     setModel(found?.nome || '');
   };
@@ -320,7 +324,7 @@ const CustomerForm = () => {
                       <Loader2 className="h-4 w-4 animate-spin" /> Carregando modelos...
                     </div>
                   ) : (
-                    <Select onValueChange={handleModelSelect} value="" disabled={models.length === 0 && !selectedBrandCode}>
+                    <Select onValueChange={handleModelSelect} value={selectedModelCode} disabled={models.length === 0 && !selectedBrandCode}>
                       <SelectTrigger><SelectValue placeholder={selectedBrandCode ? "Selecione o modelo" : "Selecione a marca primeiro"} /></SelectTrigger>
                       <SelectContent className="max-h-60">
                         {models.map(m => (
