@@ -59,10 +59,6 @@ export const storageService = {
       .find(order => order.status === 'waiting' || order.status === 'in_progress');
   },
 
-  hasOpenOrderByVehicle(plate: string): boolean {
-    return Boolean(this.findOpenOrderByPlate(plate));
-  },
-
   getOrdersByCustomerPhone(phone: string): OrderSummary[] {
     const normalizedPhone = phone.replace(/\D/g, '');
     const customers = this.getCustomers().filter(c => c.phone === normalizedPhone);
