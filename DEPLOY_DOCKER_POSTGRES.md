@@ -57,7 +57,7 @@ Esperado: JSON com `status: "ok"` e `db: "connected"`.
 
 - Frontend: `http://localhost:8080`
 - API: `http://localhost:3001/api`
-- PostgreSQL: `localhost:5432`
+- PostgreSQL: `localhost:5455`
 
 ## Observações importantes
 
