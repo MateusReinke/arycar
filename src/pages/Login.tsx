@@ -7,9 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
 import arycarLogo from '@/assets/arycar-logo.png';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
@@ -37,29 +35,24 @@ const Login = () => {
     }
 
     setLoading(true);
+
     try {
-      const user = await backendApi.login(clean, password);
-      login({
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-      });
-      toast.success(`Login realizado como ${user.role}.`);
-      navigate(user.role === 'customer' ? '/customer' : '/app');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Falha no login.');
-    } finally {
-      setLoading(false);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       login({
         name: role === 'admin' ? 'Administrador' : role === 'employee' ? 'Funcionário' : 'Cliente',
         email: role === 'customer' ? undefined : email,
         phone: role === 'customer' ? phone.replace(/\D/g, '') : undefined,
         role,
       });
+
       toast.success('Login realizado com sucesso!');
       navigate(role === 'customer' ? '/customer' : '/app');
-    }, 500);
+    } catch {
+      toast.error('Falha no login.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
