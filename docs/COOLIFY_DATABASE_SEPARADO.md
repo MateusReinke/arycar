@@ -35,7 +35,7 @@ Use o arquivo:
 Exemplo (local, usando `psql`):
 
 ```bash
-psql "postgresql://USER:PASSWORD@HOST:5455/arycar_db" -f docker/postgres/standalone/001_schema.sql
+psql "postgresql://USER:PASSWORD@HOST:5432/arycar_db" -f docker/postgres/standalone/001_schema.sql
 ```
 
 Esse script cria:
@@ -57,7 +57,7 @@ Use o arquivo:
 Exemplo:
 
 ```bash
-psql "postgresql://USER:PASSWORD@HOST:5455/arycar_db" -f docker/postgres/standalone/002_roles_policies.sql
+psql "postgresql://USER:PASSWORD@HOST:5432/arycar_db" -f docker/postgres/standalone/002_roles_policies.sql
 ```
 
 Esse script cria:
@@ -77,7 +77,7 @@ Esse script cria:
 No app/API, use variável única de conexão, por exemplo:
 
 ```env
-DATABASE_URL=postgresql://arycar_runtime:SENHA@HOST:5455/arycar_db
+DATABASE_URL=postgresql://arycar_runtime:SENHA@HOST:5432/arycar_db
 ```
 
 Assim você mantém:
