@@ -18,7 +18,7 @@ const dbConfig = {
   host: 'localhost',                // IP do container ou 'localhost'
   database: 'arycar_db',           // Nome do banco
   password: 'sua_senha_aqui',      // Altere aqui
-  port: 5432,                      // Porta do PostgreSQL
+  port: 5455,                      // Porta do PostgreSQL
 };
 ```
 
@@ -34,7 +34,7 @@ services:
       POSTGRES_PASSWORD: arycar_pass_123
       POSTGRES_DB: arycar_db
     ports:
-      - "5432:5432"
+      - "5455:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
