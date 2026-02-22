@@ -77,3 +77,9 @@ docker compose up -d --build
 - Implementar endpoints completos da API conforme `docs/DATABASE_SCHEMA.md`.
 - Adicionar migrations versionadas (ex.: Prisma, Knex ou Flyway).
 - Remover fallback de `localStorage` quando backend estiver finalizado.
+
+## Banco separado no Coolify
+
+Se você quiser manter o PostgreSQL totalmente independente deste projeto (recomendado para produção), siga o guia:
+
+- `docs/COOLIFY_DATABASE_SEPARADO.md`
