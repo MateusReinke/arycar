@@ -117,6 +117,32 @@ CREATE TABLE IF NOT EXISTS service_requests (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS cpf VARCHAR(14);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS birth_date DATE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS emergency_contact VARCHAR(120);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS department VARCHAR(120);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS job_title VARCHAR(120);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+CREATE TABLE IF NOT EXISTS policy_rules (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  code VARCHAR(120) NOT NULL UNIQUE,
+  title VARCHAR(200) NOT NULL,
+  description TEXT,
+  enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO policy_rules (code, title, description)
+VALUES
+  ('password_min_length', 'Senha mínima de 8 caracteres', 'Regra base de proteção para credenciais.'),
+  ('password_complexity', 'Senha com letras maiúsculas, minúsculas, número e símbolo', 'Aumenta a segurança contra ataques de força bruta.'),
+  ('mandatory_password_rotation', 'Troca de senha para contas compartilhadas', 'Recomendado para usuários administrativos.')
+ON CONFLICT (code) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS order_statuses (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   code VARCHAR(50) UNIQUE NOT NULL,
@@ -179,6 +205,38 @@ ON CONFLICT (code) DO NOTHING;
 INSERT INTO settings (key, value)
 VALUES ('whatsapp_number', '')
 ON CONFLICT (key) DO NOTHING;
+
+
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name VARCHAR(200) NOT NULL,
+  email VARCHAR(200) UNIQUE,
+  phone VARCHAR(20) UNIQUE,
+  password_hash TEXT,
+  role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'employee', 'customer')),
+  active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS order_statuses (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  code VARCHAR(50) UNIQUE NOT NULL,
+  label VARCHAR(100) NOT NULL,
+  color_class VARCHAR(100) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO users (name, email, password_hash, role)
+VALUES ('Administrador', 'admin@arycar.com', crypt('Admin@123', gen_salt('bf')), 'admin')
+ON CONFLICT (email) DO NOTHING;
+
+INSERT INTO order_statuses (code, label, color_class)
+VALUES
+  ('waiting', 'Aguardando', 'bg-yellow-500/10 border-yellow-500/40'),
+  ('in_progress', 'Em Andamento', 'bg-blue-500/10 border-blue-500/40'),
+  ('done', 'Finalizado', 'bg-green-500/10 border-green-500/40'),
+  ('delivered', 'Entregue', 'bg-muted border-border')
+ON CONFLICT (code) DO NOTHING;
 
 CREATE INDEX IF NOT EXISTS idx_customers_cpf ON customers(cpf);
 CREATE INDEX IF NOT EXISTS idx_vehicles_plate ON vehicles(plate);
