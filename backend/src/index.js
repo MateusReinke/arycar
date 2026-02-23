@@ -31,7 +31,23 @@ if (Number.isNaN(databaseConfig.port)) {
 
 const pool = new Pool(databaseConfig);
 
-const ensureServiceRequestsTable = async () => {
+const ensureCoreAuthTables = async () => {
+  await pool.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      name VARCHAR(200) NOT NULL,
+      email VARCHAR(200) UNIQUE,
+      phone VARCHAR(20) UNIQUE,
+      password_hash TEXT,
+      role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'employee', 'customer')),
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS service_requests (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -426,7 +442,7 @@ app.get('/api/orders/open-by-plate/:plate', async (req, res) => {
 
 const bootstrap = async () => {
   try {
-    await ensureServiceRequestsTable();
+    await ensureCoreAuthTables();
     app.listen(port, '0.0.0.0', () => {
       console.log(`AryCar API on http://0.0.0.0:${port}`);
     });
