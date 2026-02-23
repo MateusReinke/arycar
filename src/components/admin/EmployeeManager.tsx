@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const defaultForm = {
   name: '',
@@ -21,6 +22,7 @@ const EmployeeManager = () => {
   const { employees, setEmployees } = useApp();
   const [form, setForm] = useState(defaultForm);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
 
   const handleSave = () => {
     if (!form.name.trim()) { toast.error('Nome obrigatório'); return; }
@@ -46,6 +48,7 @@ const EmployeeManager = () => {
 
     setForm(defaultForm);
     setEditingId(null);
+    setOpen(false);
   };
 
   const handleEdit = (employee: Employee) => {
@@ -58,32 +61,14 @@ const EmployeeManager = () => {
       department: employee.department || '',
       shift: employee.shift || '',
     });
+    setOpen(true);
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{editingId ? 'Editar Funcionário' : 'Novo Funcionário'}</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div><Label className="text-xs">Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-            <div><Label className="text-xs">Cargo *</Label><Input value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} /></div>
-            <div><Label className="text-xs">E-mail</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-            <div><Label className="text-xs">Telefone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-            <div><Label className="text-xs">Departamento</Label><Input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} /></div>
-            <div><Label className="text-xs">Turno</Label><Input value={form.shift} onChange={(e) => setForm({ ...form, shift: e.target.value })} placeholder="Ex.: Manhã" /></div>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={handleSave} className="flex-1">
-              {editingId ? <Pencil className="mr-1 h-4 w-4" /> : <Plus className="mr-1 h-4 w-4" />}
-              {editingId ? 'Salvar' : 'Adicionar'}
-            </Button>
-            {editingId && <Button variant="outline" onClick={() => { setForm(defaultForm); setEditingId(null); }}>Cancelar</Button>}
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-3">
+      <div className="flex items-center justify-center">
+        <Button onClick={() => { setEditingId(null); setForm(defaultForm); setOpen(true); }}><Plus className="mr-2 h-4 w-4" />Novo funcionário</Button>
+      </div>
 
       <div className="space-y-2">
         <h3 className="text-sm font-semibold mb-2">Funcionários ({employees.length})</h3>
@@ -109,6 +94,25 @@ const EmployeeManager = () => {
           </div>
         )}
       </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editingId ? 'Editar Funcionário' : 'Novo Funcionário'}</DialogTitle></DialogHeader>
+          <Card>
+            <CardContent className="grid gap-3 pt-6">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div><Label className="text-xs">Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+                <div><Label className="text-xs">Cargo *</Label><Input value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} /></div>
+                <div><Label className="text-xs">E-mail</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+                <div><Label className="text-xs">Telefone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+                <div><Label className="text-xs">Departamento</Label><Input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} /></div>
+                <div><Label className="text-xs">Turno</Label><Input value={form.shift} onChange={(e) => setForm({ ...form, shift: e.target.value })} placeholder="Ex.: Manhã" /></div>
+              </div>
+              <Button onClick={handleSave} className="w-full">{editingId ? 'Salvar' : 'Adicionar'}</Button>
+            </CardContent>
+          </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
