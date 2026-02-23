@@ -11,6 +11,8 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Dashboard from './pages/vendedores/Dashboard';
 import Queue from './pages/vendedores/Queue';
+import Customers from './pages/vendedores/Customers';
+import Vehicles from './pages/vendedores/Vehicles';
 import Admin from './pages/admin/Admin';
 import CustomerPortal from './pages/client/CustomerPortal';
 import NotFound from './pages/NotFound';
@@ -56,6 +58,14 @@ const App = () => (
               <Route
                 path="/vendedores/fila"
                 element={<Protected roles={['admin', 'employee']}><Header /><Queue /></Protected>}
+              />
+              <Route
+                path="/vendedores/clientes"
+                element={<Protected roles={['admin', 'employee']}><Header /><Customers /></Protected>}
+              />
+              <Route
+                path="/vendedores/veiculos"
+                element={<Protected roles={['admin', 'employee']}><Header /><Vehicles /></Protected>}
               />
               <Route
                 path="/admin"
