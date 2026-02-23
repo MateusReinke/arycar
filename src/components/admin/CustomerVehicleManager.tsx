@@ -411,15 +411,22 @@ const CustomerVehicleManager = () => {
       </Card>
 
       <Dialog open={customerOpen} onOpenChange={setCustomerOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{customerEditingId ? 'Editar cliente' : 'Novo cliente'}</DialogTitle></DialogHeader>
-          <div className="grid gap-3 md:grid-cols-2">
-            <div><Label>Nome completo *</Label><Input value={customerForm.name} onChange={(e) => setCustomerForm({ ...customerForm, name: e.target.value })} /></div>
-            <div><Label>Tipo do usuário</Label><Select value={customerForm.userType} onValueChange={(v) => setCustomerForm({ ...customerForm, userType: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cliente"><span className="flex items-center gap-1"><UserCircle2 className="h-3 w-3" />Cliente</span></SelectItem><SelectItem value="empresa"><span className="flex items-center gap-1"><Building2 className="h-3 w-3" />Empresa</span></SelectItem></SelectContent></Select></div>
-            <div><Label>CPF</Label><Input value={customerForm.cpf} onChange={(e) => setCustomerForm({ ...customerForm, cpf: formatCpf(e.target.value) })} /></div>
-            <div><Label>Celular *</Label><Input value={customerForm.phone} onChange={(e) => setCustomerForm({ ...customerForm, phone: formatPhone(e.target.value) })} /></div>
-            <div className="md:col-span-2"><Label>E-mail</Label><Input value={customerForm.email} onChange={(e) => setCustomerForm({ ...customerForm, email: e.target.value })} /></div>
-          </div>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader className="border-b pb-3">
+            <DialogTitle>{customerEditingId ? 'Editar cliente' : 'Novo cliente'}</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            <div className="space-y-3 rounded-xl border bg-card/40 p-4">
+              <p className="text-sm font-semibold">Dados principais</p>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div><Label>Nome completo *</Label><Input value={customerForm.name} onChange={(e) => setCustomerForm({ ...customerForm, name: e.target.value })} /></div>
+                <div><Label>Tipo do usuário</Label><Select value={customerForm.userType} onValueChange={(v) => setCustomerForm({ ...customerForm, userType: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cliente"><span className="flex items-center gap-1"><UserCircle2 className="h-3 w-3" />Cliente</span></SelectItem><SelectItem value="empresa"><span className="flex items-center gap-1"><Building2 className="h-3 w-3" />Empresa</span></SelectItem></SelectContent></Select></div>
+                <div><Label>CPF</Label><Input value={customerForm.cpf} onChange={(e) => setCustomerForm({ ...customerForm, cpf: formatCpf(e.target.value) })} /></div>
+                <div><Label>Celular *</Label><Input value={customerForm.phone} onChange={(e) => setCustomerForm({ ...customerForm, phone: formatPhone(e.target.value) })} /></div>
+                <div className="md:col-span-2"><Label>E-mail</Label><Input value={customerForm.email} onChange={(e) => setCustomerForm({ ...customerForm, email: e.target.value })} /></div>
+              </div>
+            </div>
 
           <div className="space-y-3 rounded-lg border p-3">
             <p className="text-sm font-semibold flex items-center gap-1"><MapPin className="h-4 w-4" />Endereço para Leva e Traz</p>
@@ -443,17 +450,17 @@ const CustomerVehicleManager = () => {
               <div><Label>UF</Label><Input value={customerForm.state} onChange={(e) => setCustomerForm({ ...customerForm, state: e.target.value.toUpperCase().slice(0, 2) })} /></div>
               <div className="md:col-span-3"><Label>Complemento</Label><Input value={customerForm.complement} onChange={(e) => setCustomerForm({ ...customerForm, complement: e.target.value })} /></div>
             </div>
-          </div>
 
-          <div className="flex items-center justify-between rounded-md border p-3">
-            <div>
-              <p className="text-sm font-medium">Receber notificações via WhatsApp</p>
-              <p className="text-xs text-muted-foreground">Cliente escolhe se quer receber atualização do andamento do serviço.</p>
+            <div className="flex items-center justify-between rounded-xl border bg-card/40 p-4">
+              <div>
+                <p className="text-sm font-medium">Receber notificações via WhatsApp</p>
+                <p className="text-xs text-muted-foreground">Cliente escolhe se quer receber atualização do andamento do serviço.</p>
+              </div>
+              <Switch checked={customerForm.whatsappNotifications} onCheckedChange={(checked) => setCustomerForm({ ...customerForm, whatsappNotifications: checked })} />
             </div>
-            <Switch checked={customerForm.whatsappNotifications} onCheckedChange={(checked) => setCustomerForm({ ...customerForm, whatsappNotifications: checked })} />
-          </div>
 
-          <Button onClick={upsertCustomer}>{customerEditingId ? 'Salvar alterações' : 'Cadastrar cliente'}</Button>
+            <Button className="h-11 text-base" onClick={upsertCustomer}>{customerEditingId ? 'Salvar alterações' : 'Cadastrar cliente'}</Button>
+          </div>
         </DialogContent>
       </Dialog>
 
