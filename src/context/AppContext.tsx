@@ -93,12 +93,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const getPrice = (service: Service, vType: VehicleType, size: VehicleSize) => {
-    const p = service.pricing[vType];
+    const p = service.pricing[vType] || { costP: 0, costM: 0, costG: 0, priceP: 0, priceM: 0, priceG: 0 };
     return size === 'P' ? p.priceP : size === 'M' ? p.priceM : p.priceG;
   };
 
   const getCost = (service: Service, vType: VehicleType, size: VehicleSize) => {
-    const p = service.pricing[vType];
+    const p = service.pricing[vType] || { costP: 0, costM: 0, costG: 0, priceP: 0, priceM: 0, priceG: 0 };
     return size === 'P' ? p.costP : size === 'M' ? p.costM : p.costG;
   };
 

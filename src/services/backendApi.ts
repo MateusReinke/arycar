@@ -76,28 +76,53 @@ const toNumber = (value: unknown) => {
   return Number.isFinite(num) ? num : 0;
 };
 
+const parseVehicleTypes = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim().toLowerCase()).filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      return trimmed.slice(1, -1)
+        .split(',')
+        .map((part) => part.replace(/"/g, '').trim().toLowerCase())
+        .filter(Boolean);
+    }
+
+    if (trimmed) {
+      return trimmed.split(',').map((item) => item.trim().toLowerCase()).filter(Boolean);
+    }
+  }
+
+  return [];
+};
+
 const normalizeService = (raw: Record<string, unknown>): Service => {
   const pricingFromApi = raw.pricing && typeof raw.pricing === 'object'
-    ? (raw.pricing as Partial<Record<VehicleType, Partial<SizePricing>>>)
+    ? (raw.pricing as Record<string, Partial<SizePricing>>)
     : {};
 
-  const rawVehicleTypes = Array.isArray(raw.vehicleTypes)
-    ? raw.vehicleTypes
-    : Array.isArray(raw.vehicle_types)
-      ? raw.vehicle_types
-      : vehicleTypes;
+  const parsedVehicleTypes = parseVehicleTypes(raw.vehicleTypes ?? raw.vehicle_types);
+  const normalizedVehicleTypes = Array.from(new Set(parsedVehicleTypes));
+  const fallbackVehicleTypes = normalizedVehicleTypes.length > 0 ? normalizedVehicleTypes : [...vehicleTypes];
 
-  const validVehicleTypes = rawVehicleTypes.filter((type): type is VehicleType =>
-    vehicleTypes.includes(type as VehicleType),
-  );
-
-  const buildTypePricing = (type: VehicleType): SizePricing => ({
-    costP: toNumber(pricingFromApi[type]?.costP),
-    costM: toNumber(pricingFromApi[type]?.costM),
-    costG: toNumber(pricingFromApi[type]?.costG),
-    priceP: toNumber(pricingFromApi[type]?.priceP),
-    priceM: toNumber(pricingFromApi[type]?.priceM),
-    priceG: toNumber(pricingFromApi[type]?.priceG),
+  const normalizedPricing = fallbackVehicleTypes.reduce<Record<string, SizePricing>>((acc, type) => {
+    const source = pricingFromApi[type] || {};
+    acc[type] = {
+      costP: toNumber(source.costP),
+      costM: toNumber(source.costM),
+      costG: toNumber(source.costG),
+      priceP: toNumber(source.priceP),
+      priceM: toNumber(source.priceM),
+      priceG: toNumber(source.priceG),
+    };
+    return acc;
+  }, {
+    carro: { ...emptyPricing },
+    moto: { ...emptyPricing },
+    caminhao: { ...emptyPricing },
   });
 
   return {
@@ -109,7 +134,7 @@ const normalizeService = (raw: Record<string, unknown>): Service => {
     observation: String(raw.observation ?? ''),
     priceRule: String(raw.priceRule ?? raw.price_rule ?? ''),
     perUnit: Boolean(raw.perUnit ?? raw.per_unit ?? false),
-    vehicleTypes: validVehicleTypes.length > 0 ? validVehicleTypes : [...vehicleTypes],
+    vehicleTypes: fallbackVehicleTypes,
     active: Boolean(raw.active ?? true),
     averageTimeMinutes: toNumber(raw.averageTimeMinutes ?? raw.average_time_minutes ?? 0),
     productConsumption: Array.isArray(raw.productConsumption)
@@ -117,11 +142,7 @@ const normalizeService = (raw: Record<string, unknown>): Service => {
       : Array.isArray(raw.product_consumption)
         ? (raw.product_consumption as ServiceProductConsumption[])
         : [],
-    pricing: {
-      carro: buildTypePricing('carro') || { ...emptyPricing },
-      moto: buildTypePricing('moto') || { ...emptyPricing },
-      caminhao: buildTypePricing('caminhao') || { ...emptyPricing },
-    },
+    pricing: normalizedPricing,
   };
 };
 

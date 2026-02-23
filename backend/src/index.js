@@ -204,7 +204,7 @@ const ensureBusinessTables = async () => {
     CREATE TABLE IF NOT EXISTS service_pricing (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
       service_id UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
-      vehicle_type vehicle_type NOT NULL,
+      vehicle_type VARCHAR(50) NOT NULL,
       cost_p NUMERIC(10,2) NOT NULL DEFAULT 0,
       cost_m NUMERIC(10,2) NOT NULL DEFAULT 0,
       cost_g NUMERIC(10,2) NOT NULL DEFAULT 0,
@@ -218,9 +218,21 @@ const ensureBusinessTables = async () => {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS service_vehicle_types (
       service_id UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
-      vehicle_type vehicle_type NOT NULL,
+      vehicle_type VARCHAR(50) NOT NULL,
       PRIMARY KEY (service_id, vehicle_type)
     )
+  `);
+
+  await pool.query(`
+    ALTER TABLE service_pricing
+    ALTER COLUMN vehicle_type TYPE VARCHAR(50)
+    USING vehicle_type::text
+  `);
+
+  await pool.query(`
+    ALTER TABLE service_vehicle_types
+    ALTER COLUMN vehicle_type TYPE VARCHAR(50)
+    USING vehicle_type::text
   `);
 
   await pool.query(`
@@ -862,7 +874,7 @@ app.get('/api/services', async (_req, res) => {
         ) AS pricing,
         COALESCE(
           array_remove(array_agg(DISTINCT svt.vehicle_type), NULL),
-          ARRAY['carro'::vehicle_type, 'moto'::vehicle_type, 'caminhao'::vehicle_type]
+          ARRAY['carro', 'moto', 'caminhao']::text[]
         ) AS vehicle_types
       FROM services s
       LEFT JOIN service_products sp ON sp.service_id = s.id
@@ -910,7 +922,15 @@ app.post('/api/services', async (req, res) => {
 
     const service = rows[0];
 
-    for (const type of vehicleTypes) {
+    const normalizedVehicleTypes = Array.from(new Set((Array.isArray(vehicleTypes) ? vehicleTypes : [])
+      .map((type) => String(type || '').trim().toLowerCase())
+      .filter(Boolean)));
+
+    const safeVehicleTypes = normalizedVehicleTypes.length > 0
+      ? normalizedVehicleTypes
+      : ['carro', 'moto', 'caminhao'];
+
+    for (const type of safeVehicleTypes) {
       await pool.query(
         `INSERT INTO service_vehicle_types(service_id, vehicle_type)
          VALUES($1, $2)
@@ -1009,9 +1029,18 @@ app.put('/api/services/:id', async (req, res) => {
     }
 
     await pool.query('DELETE FROM service_vehicle_types WHERE service_id = $1', [id]);
+    await pool.query('DELETE FROM service_pricing WHERE service_id = $1', [id]);
     await pool.query('DELETE FROM service_products WHERE service_id = $1', [id]);
 
-    for (const type of vehicleTypes) {
+    const normalizedVehicleTypes = Array.from(new Set((Array.isArray(vehicleTypes) ? vehicleTypes : [])
+      .map((type) => String(type || '').trim().toLowerCase())
+      .filter(Boolean)));
+
+    const safeVehicleTypes = normalizedVehicleTypes.length > 0
+      ? normalizedVehicleTypes
+      : ['carro', 'moto', 'caminhao'];
+
+    for (const type of safeVehicleTypes) {
       await pool.query(
         `INSERT INTO service_vehicle_types(service_id, vehicle_type)
          VALUES($1, $2)
@@ -1226,7 +1255,7 @@ app.get('/api/orders/open-by-plate/:plate', async (req, res) => {
 const bootstrap = async () => {
   try {
     await ensureCoreAuthTables();
-    await runBusinessBootstrap();
+    await ensureBusinessTables();
     await ensureInventoryFeature();
     app.listen(port, '0.0.0.0', () => {
       console.log(`AryCar API on http://0.0.0.0:${port}`);
