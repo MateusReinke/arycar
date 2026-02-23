@@ -160,11 +160,7 @@ const StockManager = () => {
               <div key={product.id} className={`rounded-lg border p-3 ${levelStyles[level]}`}>
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-medium">{product.productType} • {product.brand} • {product.name}</p>
-                  <p className="text-xs">Qtd: {product.stockCurrent} {product.unit} • Mínimo: {product.stockMin} {product.unit} • Preço/litro: R$ {Number(product.pricePerLiter || 0).toFixed(2)}</p>
-                </div>
-                <div className="mt-2 flex justify-end gap-1">
-                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(product)}><Pencil className="h-3 w-3" /></Button>
-                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => deleteProduct(product)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+                  <p className="text-xs">Qtd: {product.stockCurrent} {product.unit} • Mínimo: {product.stockMin} {product.unit} • Preço/litro: R$ {product.pricePerLiter.toFixed(2)}</p>
                 </div>
                 <div className="mt-2 h-2 rounded-full bg-background/70">
                   <div
