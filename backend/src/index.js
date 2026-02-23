@@ -142,6 +142,216 @@ const ensureCoreAuthTables = async () => {
   );
 };
 
+const ensureBusinessTables = async () => {
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'vehicle_type') THEN
+        CREATE TYPE vehicle_type AS ENUM ('carro', 'moto', 'caminhao');
+      END IF;
+
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'vehicle_size') THEN
+        CREATE TYPE vehicle_size AS ENUM ('P', 'M', 'G');
+      END IF;
+    END $$;
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS customers (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      name VARCHAR(200) NOT NULL,
+      cpf VARCHAR(11) UNIQUE NOT NULL,
+      phone VARCHAR(11),
+      address TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS vehicles (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      plate VARCHAR(7) UNIQUE NOT NULL,
+      type vehicle_type NOT NULL,
+      size vehicle_size NOT NULL,
+      brand VARCHAR(100),
+      model VARCHAR(100),
+      color VARCHAR(50),
+      year VARCHAR(4),
+      km VARCHAR(10),
+      customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS services (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      name VARCHAR(200) NOT NULL,
+      hours NUMERIC(4,1) NOT NULL DEFAULT 1,
+      needs_scheduling BOOLEAN NOT NULL DEFAULT FALSE,
+      products TEXT,
+      observation TEXT,
+      price_rule TEXT,
+      per_unit BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS service_pricing (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      service_id UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+      vehicle_type vehicle_type NOT NULL,
+      cost_p NUMERIC(10,2) NOT NULL DEFAULT 0,
+      cost_m NUMERIC(10,2) NOT NULL DEFAULT 0,
+      cost_g NUMERIC(10,2) NOT NULL DEFAULT 0,
+      price_p NUMERIC(10,2) NOT NULL DEFAULT 0,
+      price_m NUMERIC(10,2) NOT NULL DEFAULT 0,
+      price_g NUMERIC(10,2) NOT NULL DEFAULT 0,
+      UNIQUE(service_id, vehicle_type)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS service_vehicle_types (
+      service_id UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+      vehicle_type vehicle_type NOT NULL,
+      PRIMARY KEY (service_id, vehicle_type)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      customer_id UUID NOT NULL REFERENCES customers(id),
+      vehicle_id UUID NOT NULL REFERENCES vehicles(id),
+      vehicle_type vehicle_type NOT NULL,
+      vehicle_size vehicle_size NOT NULL,
+      total NUMERIC(10,2) NOT NULL,
+      pickup_delivery BOOLEAN NOT NULL DEFAULT FALSE,
+      description TEXT,
+      technical_notes TEXT,
+      status VARCHAR(20) NOT NULL DEFAULT 'waiting',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      finished_at TIMESTAMPTZ,
+      CONSTRAINT orders_total_non_negative CHECK (total >= 0)
+    )
+  `);
+
+
+  await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_code VARCHAR(20)`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS order_daily_counters (
+      ref_date DATE PRIMARY KEY,
+      last_value INTEGER NOT NULL DEFAULT 0
+    )
+  `);
+
+  await pool.query(`
+    CREATE OR REPLACE FUNCTION generate_order_code()
+    RETURNS TEXT
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE
+      next_value INTEGER;
+      today DATE := CURRENT_DATE;
+    BEGIN
+      INSERT INTO order_daily_counters(ref_date, last_value)
+      VALUES (today, 1)
+      ON CONFLICT (ref_date)
+      DO UPDATE SET last_value = order_daily_counters.last_value + 1
+      RETURNING last_value INTO next_value;
+
+      RETURN TO_CHAR(today, 'DDMMYY') || '-' || LPAD(next_value::TEXT, 4, '0');
+    END;
+    $$
+  `);
+
+  await pool.query(`
+    UPDATE orders
+    SET order_code = generate_order_code()
+    WHERE order_code IS NULL
+  `);
+
+  await pool.query(`ALTER TABLE orders ALTER COLUMN order_code SET DEFAULT generate_order_code()`);
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uniq_orders_order_code ON orders(order_code)`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS order_items (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+      service_id UUID NOT NULL REFERENCES services(id),
+      service_name VARCHAR(200) NOT NULL,
+      quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+      unit_price NUMERIC(10,2) NOT NULL CHECK (unit_price >= 0),
+      unit_cost NUMERIC(10,2) NOT NULL CHECK (unit_cost >= 0),
+      subtotal NUMERIC(10,2) NOT NULL CHECK (subtotal >= 0)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS order_statuses (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      code VARCHAR(50) UNIQUE NOT NULL,
+      label VARCHAR(100) NOT NULL,
+      color_class VARCHAR(100) NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key VARCHAR(50) PRIMARY KEY,
+      value TEXT
+    )
+  `);
+
+  await pool.query(`
+    INSERT INTO order_statuses (code, label, color_class)
+    VALUES
+      ('waiting', 'Aguardando', 'bg-yellow-500/10 border-yellow-500/40'),
+      ('in_progress', 'Em Andamento', 'bg-blue-500/10 border-blue-500/40'),
+      ('done', 'Finalizado', 'bg-green-500/10 border-green-500/40'),
+      ('delivered', 'Entregue', 'bg-muted border-border')
+    ON CONFLICT (code) DO NOTHING
+  `);
+
+  await pool.query(`INSERT INTO settings (key, value) VALUES ('whatsapp_number', '') ON CONFLICT (key) DO NOTHING`);
+
+  await pool.query(`
+    INSERT INTO services (name, hours, needs_scheduling, products, observation, price_rule, per_unit)
+    SELECT seed.name, seed.hours, seed.needs_scheduling, seed.products, seed.observation, seed.price_rule, seed.per_unit
+    FROM (
+      VALUES
+        ('Lavagem Simples', 1.0, FALSE, '', 'Lavagem externa padrão.', 'Tabela fixa', FALSE),
+        ('Lavagem Completa', 2.0, TRUE, '', 'Lavagem externa e interna detalhada.', 'Tabela fixa', FALSE),
+        ('Polimento Técnico', 4.0, TRUE, '', 'Correção leve de pintura com proteção.', 'Por avaliação', FALSE),
+        ('Higienização Interna', 3.0, TRUE, '', 'Higienização completa de bancos e carpetes.', 'Tabela fixa', FALSE),
+        ('Vitrificação', 6.0, TRUE, '', 'Proteção cerâmica com acabamento premium.', 'Por avaliação', FALSE)
+    ) AS seed(name, hours, needs_scheduling, products, observation, price_rule, per_unit)
+    WHERE NOT EXISTS (
+      SELECT 1 FROM services s WHERE LOWER(s.name) = LOWER(seed.name)
+    )
+  `);
+
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_customers_cpf ON customers(cpf)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_vehicles_plate ON vehicles(plate)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_vehicles_customer ON vehicles(customer_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_orders_vehicle ON orders(vehicle_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)`);
+
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS uniq_open_order_per_vehicle
+      ON orders(vehicle_id)
+      WHERE status IN ('waiting', 'in_progress')
+  `);
+};
+
 const ensureInventoryFeature = async () => {
   await pool.query(`
     DO $$
@@ -1011,6 +1221,7 @@ app.get('/api/orders/open-by-plate/:plate', async (req, res) => {
         COALESCE(v.year, '') AS vehicle_year,
         COALESCE(v.km, '') AS vehicle_km,
         o.id AS order_id,
+        o.order_code AS order_code,
         o.status AS order_status,
         o.total AS order_total,
         o.created_at AS order_created_at
@@ -1057,6 +1268,8 @@ app.get('/api/orders/open-by-plate/:plate', async (req, res) => {
       order: row.order_id
         ? {
             id: row.order_id,
+            code: row.order_code,
+            displayId: row.order_code || row.order_id,
             status: row.order_status,
             total: Number(row.order_total || 0),
             date: row.order_created_at,
@@ -1069,12 +1282,6 @@ app.get('/api/orders/open-by-plate/:plate', async (req, res) => {
 });
 
 const bootstrap = async () => {
-  const runBusinessBootstrap = typeof ensureBusinessTables === 'function'
-    ? ensureBusinessTables
-    : async () => {
-      console.warn('[arycar-api] ensureBusinessTables não encontrado, seguindo sem bootstrap de tabelas de negócio.');
-    };
-
   try {
     await ensureCoreAuthTables();
     await ensureBusinessTables();
