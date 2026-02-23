@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import arycarLogo from '@/assets/arycar-logo.png';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
+import { backendApi } from '@/services/backendApi';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -37,19 +38,33 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      if (role === 'customer') {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        login({
+          name: 'Cliente',
+          phone: phone.replace(/\D/g, ''),
+          role,
+        });
+        toast.success('Login realizado com sucesso!');
+        navigate('/customer');
+        return;
+      }
 
-      login({
-        name: role === 'admin' ? 'Administrador' : role === 'employee' ? 'Funcionário' : 'Cliente',
-        email: role === 'customer' ? undefined : email,
-        phone: role === 'customer' ? phone.replace(/\D/g, '') : undefined,
-        role,
+      const authUser = await backendApi.login({
+        email,
+        password,
       });
 
+      if (authUser.role !== role) {
+        toast.error(`Este usuário é do perfil ${authUser.role}. Selecione o perfil correto.`);
+        return;
+      }
+
+      login(authUser);
       toast.success('Login realizado com sucesso!');
-      navigate(role === 'customer' ? '/customer' : '/app');
-    } catch {
-      toast.error('Falha no login.');
+      navigate('/app');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Falha no login.');
     } finally {
       setLoading(false);
     }
