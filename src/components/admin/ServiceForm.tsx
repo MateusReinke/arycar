@@ -293,6 +293,11 @@ const ServiceForm = () => {
 
   const currentPricing = form.pricing[pricingType] || emptyPricing;
 
+  const filteredServices = useMemo(
+    () => services.filter((service) => safeVehicleFilter === 'all' || service.vehicleTypes.includes(safeVehicleFilter)),
+    [services, safeVehicleFilter],
+  );
+
   useEffect(() => {
     void loadServices();
     void loadProducts();
