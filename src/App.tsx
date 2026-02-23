@@ -7,20 +7,27 @@ import { AppProvider } from '@/context/AppContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import Header from '@/components/Header';
 import Homepage from './pages/Homepage';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Queue from './pages/Queue';
-import Admin from './pages/Admin';
-import CustomerPortal from './pages/CustomerPortal';
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import Dashboard from './pages/vendedores/Dashboard';
+import Queue from './pages/vendedores/Queue';
+import Admin from './pages/admin/Admin';
+import CustomerPortal from './pages/client/CustomerPortal';
 import NotFound from './pages/NotFound';
 import { UserRole } from './types';
 
 const queryClient = new QueryClient();
 
+const destinationByRole: Record<UserRole, string> = {
+  admin: '/admin',
+  employee: '/vendedores',
+  customer: '/client',
+};
+
 const Protected = ({ roles, children }: { roles: UserRole[]; children: React.ReactNode }) => {
   const { user, hasRole } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
-  if (!hasRole(roles)) return <Navigate to={user.role === 'customer' ? '/customer' : '/app'} replace />;
+  if (!hasRole(roles)) return <Navigate to={destinationByRole[user.role]} replace />;
   return <>{children}</>;
 };
 
@@ -35,13 +42,18 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Homepage />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/cadastro" element={<Register />} />
+
+              <Route path="/app" element={<Navigate to="/vendedores" replace />} />
+              <Route path="/queue" element={<Navigate to="/vendedores/fila" replace />} />
+              <Route path="/customer" element={<Navigate to="/client" replace />} />
 
               <Route
-                path="/app"
+                path="/vendedores"
                 element={<Protected roles={['admin', 'employee']}><Header /><Dashboard /></Protected>}
               />
               <Route
-                path="/queue"
+                path="/vendedores/fila"
                 element={<Protected roles={['admin', 'employee']}><Header /><Queue /></Protected>}
               />
               <Route
@@ -49,7 +61,7 @@ const App = () => (
                 element={<Protected roles={['admin']}><Header /><Admin /></Protected>}
               />
               <Route
-                path="/customer"
+                path="/client"
                 element={<Protected roles={['customer']}><Header /><CustomerPortal /></Protected>}
               />
 

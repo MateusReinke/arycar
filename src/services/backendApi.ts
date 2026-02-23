@@ -1,5 +1,15 @@
 import { apiConfig } from '@/config/api';
-import { Customer, OrderStatus, Service, SizePricing, Vehicle, VehicleType } from '@/types';
+import {
+  AuthUser,
+  Customer,
+  LoginPayload,
+  OrderStatus,
+  RegisterCustomerPayload,
+  Service,
+  SizePricing,
+  Vehicle,
+  VehicleType,
+} from '@/types';
 
 interface OpenOrderResponse {
   found: boolean;
@@ -109,6 +119,20 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
 };
 
 export const backendApi = {
+  async login(payload: LoginPayload): Promise<AuthUser> {
+    return requestJson<AuthUser>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async registerCustomer(payload: RegisterCustomerPayload): Promise<AuthUser> {
+    return requestJson<AuthUser>('/api/auth/register-customer', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
   async listServices(): Promise<Service[]> {
     const rows = await requestJson<unknown[]>('/api/services');
     if (!Array.isArray(rows)) return [];

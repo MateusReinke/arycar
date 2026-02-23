@@ -18,7 +18,7 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
       <div className="container flex h-16 items-center justify-between">
-        <Link to={canUseOps ? '/app' : '/customer'} className="flex items-center gap-3" onClick={resetFlow}>
+        <Link to={canUseOps ? '/vendedores' : '/client'} className="flex items-center gap-3" onClick={resetFlow}>
           <img src={arycarLogo} alt="ARYCAR" className="h-9 w-auto" />
           <span className="text-xl font-bold tracking-tight">ARYCAR</span>
         </Link>
@@ -33,7 +33,7 @@ const Header = () => {
 
           {canUseOps && (
             <Button variant="ghost" asChild>
-              <Link to="/queue">
+              <Link to="/vendedores/fila">
                 <ListOrdered className="mr-2 h-4 w-4" />
                 Fila
               </Link>
@@ -42,7 +42,7 @@ const Header = () => {
 
           {canManage && (isAdminPage ? (
             <Button variant="ghost" asChild>
-              <Link to="/app">
+              <Link to="/vendedores">
                 <LayoutDashboard className="mr-2 h-4 w-4" />
                 Dashboard
               </Link>
