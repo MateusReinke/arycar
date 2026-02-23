@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { storageService } from '@/services/storage';
 import { toast } from 'sonner';
 
@@ -40,7 +40,7 @@ import after2 from '@/assets/after-2.jpg';
 import before3 from '@/assets/before-3.jpg';
 import after3 from '@/assets/after-3.jpg';
 
-const MAX_COMPARE_CASES = 4;
+const MAX_GALLERY_IMAGES = 12;
 const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL;
 
 const services = [
@@ -100,43 +100,17 @@ const services = [
   },
 ];
 
-const beforeAfterCases = [
-  {
-    id: 0,
-    service: 'Polimento técnico',
-    title: 'Pintura com brilho renovado',
-    before: before1,
-    after: after1,
-  },
-  {
-    id: 1,
-    service: 'Higienização interna',
-    title: 'Cabine limpa e revitalizada',
-    before: before2,
-    after: after2,
-  },
-  {
-    id: 2,
-    service: 'Restauração de faróis',
-    title: 'Farol com transparência recuperada',
-    before: before3,
-    after: after3,
-  },
-  {
-    id: 3,
-    service: 'Detalhamento premium',
-    title: 'Resultado final com acabamento superior',
-    before: before1,
-    after: after3,
-  },
-];
+const fallbackGallery = [before1, after1, before2, after2, before3, after3];
+
+const galleryImagesModules = import.meta.glob('/src/assets/gallery/*.{png,jpg,jpeg,webp,avif}', {
+  eager: true,
+  import: 'default',
+}) as Record<string, string>;
 
 const Homepage = () => {
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [activeServiceId, setActiveServiceId] = useState(0);
   const [contactOpen, setContactOpen] = useState(false);
-  const [activeCaseId, setActiveCaseId] = useState(0);
-  const [comparePosition, setComparePosition] = useState(50);
   const [leadName, setLeadName] = useState('');
   const [leadPhone, setLeadPhone] = useState('');
   const [leadMessage, setLeadMessage] = useState('');
@@ -147,8 +121,13 @@ const Homepage = () => {
     setWhatsappNumber(settings.whatsappNumber || '');
   }, []);
 
-  const visibleCases = beforeAfterCases.slice(0, MAX_COMPARE_CASES);
-  const activeCase = visibleCases.find((item) => item.id === activeCaseId) || visibleCases[0];
+  const galleryImages = useMemo(() => {
+    const dynamicImages = Object.entries(galleryImagesModules)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, value]) => value);
+
+    return (dynamicImages.length ? dynamicImages : fallbackGallery).slice(0, MAX_GALLERY_IMAGES);
+  }, []);
 
   const whatsappLink = whatsappNumber ? `https://wa.me/55${whatsappNumber.replace(/\D/g, '')}` : '#';
 
@@ -371,70 +350,23 @@ const Homepage = () => {
         <section id="galeria" className="py-20">
           <div className="container">
             <div className="mb-12 text-center">
-              <span className="text-sm font-semibold uppercase tracking-widest text-primary">Resultados reais</span>
-              <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Comparador antes e depois (Diff Checker)</h2>
+              <span className="text-sm font-semibold uppercase tracking-widest text-primary">Galeria dinâmica</span>
+              <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Resultados reais em cada detalhe</h2>
               <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-                Escolha um dos 4 serviços e deslize a barra horizontal para comparar o resultado com precisão.
+                Esta seção usa as imagens da pasta <strong>/src/assets/gallery</strong> automaticamente. Limite atual: {MAX_GALLERY_IMAGES} fotos exibidas para manter performance no desktop e mobile.
               </p>
             </div>
-
-            <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {visibleCases.map((item) => {
-                const isActive = item.id === activeCase.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setActiveCaseId(item.id);
-                      setComparePosition(50);
-                    }}
-                    className={`rounded-xl border p-4 text-left transition-all ${
-                      isActive ? 'border-primary bg-primary/10 shadow-lg shadow-primary/20' : 'border-border bg-card hover:border-primary/40'
-                    }`}
-                  >
-                    <p className="text-xs uppercase tracking-widest text-primary">{item.service}</p>
-                    <h3 className="mt-1 font-semibold">{item.title}</h3>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="overflow-hidden rounded-2xl border border-primary/30 bg-card p-4 sm:p-6">
-              <div className="relative mx-auto aspect-[16/9] w-full max-w-5xl overflow-hidden rounded-xl border border-border/80">
-                <img src={activeCase.before} alt={`Antes - ${activeCase.title}`} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
-                <img
-                  src={activeCase.after}
-                  alt={`Depois - ${activeCase.title}`}
-                  className="absolute inset-0 h-full w-full object-cover"
-                  style={{ clipPath: `inset(0 ${100 - comparePosition}% 0 0)` }}
-                  loading="lazy"
-                />
-
-                <div className="pointer-events-none absolute inset-y-0 z-10" style={{ left: `${comparePosition}%`, transform: 'translateX(-50%)' }}>
-                  <div className="h-full w-0.5 bg-white/80 shadow-[0_0_0_1px_rgba(0,0,0,0.25)]" />
-                  <div className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-background/90 text-xs font-bold">
-                    ⇆
-                  </div>
-                </div>
-
-                <span className="absolute left-3 top-3 rounded-full border border-destructive/40 bg-destructive/20 px-3 py-1 text-xs font-semibold text-destructive">Antes</span>
-                <span className="absolute right-3 top-3 rounded-full border border-primary/40 bg-primary/20 px-3 py-1 text-xs font-semibold text-primary">Depois</span>
-              </div>
-
-              <div className="mx-auto mt-5 w-full max-w-5xl">
-                <Label htmlFor="before-after-range" className="mb-2 block text-sm text-muted-foreground">
-                  Deslize para comparar ({comparePosition}%)
-                </Label>
-                <Input
-                  id="before-after-range"
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={comparePosition}
-                  onChange={(e) => setComparePosition(Number(e.target.value))}
-                  className="h-3 cursor-ew-resize"
-                />
-              </div>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {galleryImages.map((image, index) => (
+                <figure key={image} className="group overflow-hidden rounded-2xl border border-border/80 bg-card">
+                  <img
+                    src={image}
+                    alt={`Resultado de estética automotiva Arycar ${index + 1}`}
+                    className="h-36 w-full object-cover transition-transform duration-500 group-hover:scale-110 sm:h-48"
+                    loading="lazy"
+                  />
+                </figure>
+              ))}
             </div>
           </div>
         </section>
