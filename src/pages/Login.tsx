@@ -18,19 +18,13 @@ const Login = () => {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
   const [role, setRole] = useState<UserRole>('employee');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (role === 'customer') {
-      if (!phone.replace(/\D/g, '')) {
-        toast.error('Informe seu telefone para acessar como cliente');
-        return;
-      }
-    } else if (!email || !password) {
+    if (!email || !password) {
       toast.error('Preencha e-mail e senha');
       return;
     }
@@ -112,52 +106,34 @@ const Login = () => {
                 </Select>
               </div>
 
-              {role === 'customer' ? (
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-xs">Telefone</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      value={phone}
-                      onChange={e => setPhone(e.target.value)}
-                      placeholder="(11) 99999-9999"
-                      className="pl-10"
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-xs">E-mail</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="admin@arycar.com.br"
+                    className="pl-10"
+                  />
                 </div>
-              ) : (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-xs">E-mail</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        type="email"
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        placeholder="admin@arycar.com.br"
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-xs">Senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="password"
-                        type="password"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-xs">Senha</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="pl-10"
+                  />
+                </div>
+              </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Entrando...' : 'Entrar'}
