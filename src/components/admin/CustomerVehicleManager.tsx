@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Building2, Car, Edit, MapPin, Plus, Trash2, UserCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -85,6 +85,9 @@ const CustomerVehicleManager = () => {
     year: '',
     km: '',
   });
+  const [isLoadingCep, setIsLoadingCep] = useState(false);
+  const [lastResolvedCep, setLastResolvedCep] = useState('');
+  const cepDebounceRef = useRef<number | null>(null);
 
   const refresh = () => {
     setCustomers(storageService.getCustomers());
@@ -118,35 +121,84 @@ const CustomerVehicleManager = () => {
     }, {});
   }, [vehicles]);
 
-  const fetchCep = async () => {
-    const cep = customerForm.cep.replace(/\D/g, '');
-    if (cep.length !== 8) {
-      toast.error('Informe um CEP válido com 8 dígitos.');
-      return;
-    }
+  const fillAddressByCep = async (cep: string) => {
+    if (cep.length !== 8 || isLoadingCep || lastResolvedCep === cep) return;
 
-    try {
-      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-      const data = await response.json() as Record<string, string | boolean>;
+    setIsLoadingCep(true);
 
-      if (data.erro) {
-        toast.error('CEP não encontrado.');
-        return;
-      }
-
+    const applyAddress = (payload: { street?: string; district?: string; city?: string; state?: string }) => {
       setCustomerForm((prev) => ({
         ...prev,
         cep,
-        street: String(data.logradouro || ''),
-        district: String(data.bairro || ''),
-        city: String(data.localidade || ''),
-        state: String(data.uf || ''),
+        street: payload.street || prev.street,
+        district: payload.district || prev.district,
+        city: payload.city || prev.city,
+        state: (payload.state || prev.state || '').toUpperCase().slice(0, 2),
       }));
+      setLastResolvedCep(cep);
       toast.success('Endereço preenchido automaticamente pelo CEP.');
+    };
+
+    try {
+      const viaCepResponse = await fetch(`https://viacep.com.br/ws/${cep}/json/`, { cache: 'no-store' });
+      if (!viaCepResponse.ok) throw new Error('viacep_http_error');
+      const viaCepData = await viaCepResponse.json() as Record<string, string | boolean>;
+
+      if (!viaCepData.erro) {
+        applyAddress({
+          street: String(viaCepData.logradouro || ''),
+          district: String(viaCepData.bairro || ''),
+          city: String(viaCepData.localidade || ''),
+          state: String(viaCepData.uf || ''),
+        });
+        return;
+      }
+
+      const brasilApiResponse = await fetch(`https://brasilapi.com.br/api/cep/v1/${cep}`, { cache: 'no-store' });
+      if (!brasilApiResponse.ok) throw new Error('brasilapi_http_error');
+      const brasilApiData = await brasilApiResponse.json() as Record<string, string>;
+
+      applyAddress({
+        street: String(brasilApiData.street || ''),
+        district: String(brasilApiData.neighborhood || ''),
+        city: String(brasilApiData.city || ''),
+        state: String(brasilApiData.state || ''),
+      });
     } catch (_error) {
-      toast.error('Não foi possível consultar o CEP agora.');
+      setLastResolvedCep('');
+      toast.error('Não foi possível consultar o CEP agora. Verifique a conexão no deploy.');
+    } finally {
+      setIsLoadingCep(false);
     }
   };
+
+  useEffect(() => {
+    const cep = customerForm.cep.replace(/\D/g, '');
+
+    if (cep.length !== 8) {
+      setLastResolvedCep('');
+      if (cepDebounceRef.current) {
+        window.clearTimeout(cepDebounceRef.current);
+        cepDebounceRef.current = null;
+      }
+      return;
+    }
+
+    if (cepDebounceRef.current) {
+      window.clearTimeout(cepDebounceRef.current);
+    }
+
+    cepDebounceRef.current = window.setTimeout(() => {
+      fillAddressByCep(cep);
+    }, 350);
+
+    return () => {
+      if (cepDebounceRef.current) {
+        window.clearTimeout(cepDebounceRef.current);
+        cepDebounceRef.current = null;
+      }
+    };
+  }, [customerForm.cep]);
 
   const upsertCustomer = async () => {
     if (!customerForm.name.trim()) {
@@ -359,40 +411,47 @@ const CustomerVehicleManager = () => {
       </Card>
 
       <Dialog open={customerOpen} onOpenChange={setCustomerOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{customerEditingId ? 'Editar cliente' : 'Novo cliente'}</DialogTitle></DialogHeader>
-          <div className="grid gap-3 md:grid-cols-2">
-            <div><Label>Nome completo *</Label><Input value={customerForm.name} onChange={(e) => setCustomerForm({ ...customerForm, name: e.target.value })} /></div>
-            <div><Label>Tipo do usuário</Label><Select value={customerForm.userType} onValueChange={(v) => setCustomerForm({ ...customerForm, userType: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cliente"><span className="flex items-center gap-1"><UserCircle2 className="h-3 w-3" />Cliente</span></SelectItem><SelectItem value="empresa"><span className="flex items-center gap-1"><Building2 className="h-3 w-3" />Empresa</span></SelectItem></SelectContent></Select></div>
-            <div><Label>CPF</Label><Input value={customerForm.cpf} onChange={(e) => setCustomerForm({ ...customerForm, cpf: formatCpf(e.target.value) })} /></div>
-            <div><Label>Celular *</Label><Input value={customerForm.phone} onChange={(e) => setCustomerForm({ ...customerForm, phone: formatPhone(e.target.value) })} /></div>
-            <div className="md:col-span-2"><Label>E-mail</Label><Input value={customerForm.email} onChange={(e) => setCustomerForm({ ...customerForm, email: e.target.value })} /></div>
-          </div>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader className="border-b pb-3">
+            <DialogTitle>{customerEditingId ? 'Editar cliente' : 'Novo cliente'}</DialogTitle>
+          </DialogHeader>
 
-          <div className="space-y-3 rounded-lg border p-3">
-            <p className="text-sm font-semibold flex items-center gap-1"><MapPin className="h-4 w-4" />Endereço para Leva e Traz</p>
-            <div className="grid gap-3 md:grid-cols-3">
-              <div><Label>Rótulo</Label><Input value={customerForm.addressLabel} onChange={(e) => setCustomerForm({ ...customerForm, addressLabel: e.target.value })} /></div>
-              <div><Label>CEP</Label><Input value={customerForm.cep} onChange={(e) => setCustomerForm({ ...customerForm, cep: e.target.value.replace(/\D/g, '').slice(0, 8) })} /></div>
-              <div className="self-end"><Button type="button" variant="secondary" onClick={fetchCep}>Buscar CEP</Button></div>
-              <div className="md:col-span-2"><Label>Rua</Label><Input value={customerForm.street} onChange={(e) => setCustomerForm({ ...customerForm, street: e.target.value })} /></div>
-              <div><Label>Número</Label><Input value={customerForm.number} onChange={(e) => setCustomerForm({ ...customerForm, number: e.target.value })} /></div>
-              <div><Label>Bairro</Label><Input value={customerForm.district} onChange={(e) => setCustomerForm({ ...customerForm, district: e.target.value })} /></div>
-              <div><Label>Cidade</Label><Input value={customerForm.city} onChange={(e) => setCustomerForm({ ...customerForm, city: e.target.value })} /></div>
-              <div><Label>UF</Label><Input value={customerForm.state} onChange={(e) => setCustomerForm({ ...customerForm, state: e.target.value.toUpperCase().slice(0, 2) })} /></div>
-              <div className="md:col-span-3"><Label>Complemento</Label><Input value={customerForm.complement} onChange={(e) => setCustomerForm({ ...customerForm, complement: e.target.value })} /></div>
+          <div className="space-y-5">
+            <div className="space-y-3 rounded-xl border bg-card/40 p-4">
+              <p className="text-sm font-semibold">Dados principais</p>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div><Label>Nome completo *</Label><Input value={customerForm.name} onChange={(e) => setCustomerForm({ ...customerForm, name: e.target.value })} /></div>
+                <div><Label>Tipo do usuário</Label><Select value={customerForm.userType} onValueChange={(v) => setCustomerForm({ ...customerForm, userType: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cliente"><span className="flex items-center gap-1"><UserCircle2 className="h-3 w-3" />Cliente</span></SelectItem><SelectItem value="empresa"><span className="flex items-center gap-1"><Building2 className="h-3 w-3" />Empresa</span></SelectItem></SelectContent></Select></div>
+                <div><Label>CPF</Label><Input value={customerForm.cpf} onChange={(e) => setCustomerForm({ ...customerForm, cpf: formatCpf(e.target.value) })} /></div>
+                <div><Label>Celular *</Label><Input value={customerForm.phone} onChange={(e) => setCustomerForm({ ...customerForm, phone: formatPhone(e.target.value) })} /></div>
+                <div className="md:col-span-2"><Label>E-mail</Label><Input value={customerForm.email} onChange={(e) => setCustomerForm({ ...customerForm, email: e.target.value })} /></div>
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center justify-between rounded-md border p-3">
-            <div>
-              <p className="text-sm font-medium">Receber notificações via WhatsApp</p>
-              <p className="text-xs text-muted-foreground">Cliente escolhe se quer receber atualização do andamento do serviço.</p>
+            <div className="space-y-3 rounded-xl border bg-card/40 p-4">
+              <p className="text-sm font-semibold flex items-center gap-1"><MapPin className="h-4 w-4" />Endereço para Leva e Traz</p>
+              <div className="grid gap-3 md:grid-cols-4">
+                <div className="md:col-span-2"><Label>Rótulo</Label><Input value={customerForm.addressLabel} onChange={(e) => setCustomerForm({ ...customerForm, addressLabel: e.target.value })} /></div>
+                <div className="md:col-span-2"><Label>CEP</Label><Input value={customerForm.cep} onChange={(e) => setCustomerForm({ ...customerForm, cep: e.target.value.replace(/\D/g, '').slice(0, 8) })} placeholder={isLoadingCep ? 'Consultando CEP...' : 'Digite 8 dígitos'} /></div>
+                <div className="md:col-span-4"><Label>Rua</Label><Input value={customerForm.street} onChange={(e) => setCustomerForm({ ...customerForm, street: e.target.value })} /></div>
+                <div><Label>Número</Label><Input value={customerForm.number} onChange={(e) => setCustomerForm({ ...customerForm, number: e.target.value })} /></div>
+                <div><Label>Bairro</Label><Input value={customerForm.district} onChange={(e) => setCustomerForm({ ...customerForm, district: e.target.value })} /></div>
+                <div><Label>Cidade</Label><Input value={customerForm.city} onChange={(e) => setCustomerForm({ ...customerForm, city: e.target.value })} /></div>
+                <div><Label>UF</Label><Input value={customerForm.state} onChange={(e) => setCustomerForm({ ...customerForm, state: e.target.value.toUpperCase().slice(0, 2) })} /></div>
+                <div className="md:col-span-4"><Label>Complemento</Label><Input value={customerForm.complement} onChange={(e) => setCustomerForm({ ...customerForm, complement: e.target.value })} /></div>
+              </div>
             </div>
-            <Switch checked={customerForm.whatsappNotifications} onCheckedChange={(checked) => setCustomerForm({ ...customerForm, whatsappNotifications: checked })} />
-          </div>
 
-          <Button onClick={upsertCustomer}>{customerEditingId ? 'Salvar alterações' : 'Cadastrar cliente'}</Button>
+            <div className="flex items-center justify-between rounded-xl border bg-card/40 p-4">
+              <div>
+                <p className="text-sm font-medium">Receber notificações via WhatsApp</p>
+                <p className="text-xs text-muted-foreground">Cliente escolhe se quer receber atualização do andamento do serviço.</p>
+              </div>
+              <Switch checked={customerForm.whatsappNotifications} onCheckedChange={(checked) => setCustomerForm({ ...customerForm, whatsappNotifications: checked })} />
+            </div>
+
+            <Button className="h-11 text-base" onClick={upsertCustomer}>{customerEditingId ? 'Salvar alterações' : 'Cadastrar cliente'}</Button>
+          </div>
         </DialogContent>
       </Dialog>
 
