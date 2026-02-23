@@ -14,6 +14,7 @@ import Queue from './pages/vendedores/Queue';
 import Admin from './pages/admin/Admin';
 import CustomerPortal from './pages/client/CustomerPortal';
 import NotFound from './pages/NotFound';
+import AccountSettings from './pages/account/AccountSettings';
 import { UserRole } from './types';
 
 const queryClient = new QueryClient();
@@ -60,6 +61,12 @@ const App = () => (
                 path="/admin"
                 element={<Protected roles={['admin']}><Header /><Admin /></Protected>}
               />
+
+              <Route
+                path="/minha-conta"
+                element={<Protected roles={['admin', 'employee', 'customer']}><Header /><AccountSettings /></Protected>}
+              />
+
               <Route
                 path="/client"
                 element={<Protected roles={['customer']}><Header /><CustomerPortal /></Protected>}

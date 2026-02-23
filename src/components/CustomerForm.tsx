@@ -29,7 +29,10 @@ const CustomerForm = () => {
   const [name, setName] = useState('');
   const [cpf, setCpf] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
+  const [emergencyContact, setEmergencyContact] = useState('');
+  const [notes, setNotes] = useState('');
 
   const [plate, setPlate] = useState(pendingPlate || '');
   const [vehicleType, setVehicleType] = useState<VehicleType>('carro');
@@ -210,6 +213,9 @@ const CustomerForm = () => {
         cpf: cpf.replace(/\D/g, ''),
         phone: phone.replace(/\D/g, ''),
         address: address.trim(),
+        email: email.trim(),
+        emergencyContact: emergencyContact.trim(),
+        notes: notes.trim(),
       };
       storageService.addCustomer(customer);
     }
@@ -273,8 +279,20 @@ const CustomerForm = () => {
                 <Input value={phone} onChange={e => setPhone(formatPhone(e.target.value))} placeholder="(11) 99999-9999" />
               </div>
               <div>
+                <Label className="text-xs">E-mail</Label>
+                <Input value={email} onChange={e => setEmail(e.target.value)} placeholder="cliente@email.com" />
+              </div>
+              <div>
                 <Label className="text-xs">Endereço (Leva e Traz)</Label>
                 <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Rua, nº - Bairro - Cidade" />
+              </div>
+              <div>
+                <Label className="text-xs">Contato de Emergência</Label>
+                <Input value={emergencyContact} onChange={e => setEmergencyContact(formatPhone(e.target.value))} placeholder="(11) 98888-7777" />
+              </div>
+              <div className="sm:col-span-2">
+                <Label className="text-xs">Observações do Cliente</Label>
+                <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Preferências, restrições, observações" />
               </div>
             </div>
           </div>

@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import pg from 'pg';
+import crypto from 'crypto';
 
 const { Pool } = pg;
 const app = express();
@@ -30,6 +31,44 @@ if (Number.isNaN(databaseConfig.port)) {
 }
 
 const pool = new Pool(databaseConfig);
+const DEFAULT_ADMIN_EMAIL = 'admin@arycar.com';
+const DEFAULT_ADMIN_PASSWORD = 'Admin@123';
+
+
+const hashPassword = async (plainTextPassword) => {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(String(plainTextPassword), salt, 64).toString('hex');
+  return `${salt}:${hash}`;
+};
+
+const verifyPassword = async (plainTextPassword, storedPasswordHash) => {
+  if (!storedPasswordHash) return false;
+  if (!storedPasswordHash.includes(':')) return String(plainTextPassword) === String(storedPasswordHash);
+  const [salt, savedHash] = String(storedPasswordHash).split(':');
+  const derived = crypto.scryptSync(String(plainTextPassword), salt, 64).toString('hex');
+  return crypto.timingSafeEqual(Buffer.from(savedHash, 'hex'), Buffer.from(derived, 'hex'));
+};
+
+
+const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
+const normalizePhone = (phone) => String(phone || '').replace(/\D/g, '').slice(0, 20);
+
+const sanitizeUser = (row) => ({
+  id: row.id,
+  name: row.name,
+  email: row.email,
+  phone: row.phone,
+  role: row.role,
+  active: row.active,
+  cpf: row.cpf,
+  address: row.address,
+  birthDate: row.birth_date,
+  emergencyContact: row.emergency_contact,
+  department: row.department,
+  jobTitle: row.job_title,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
 
 const ensureCoreAuthTables = async () => {
   await pool.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
@@ -43,10 +82,24 @@ const ensureCoreAuthTables = async () => {
       password_hash TEXT,
       role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'employee', 'customer')),
       active BOOLEAN NOT NULL DEFAULT TRUE,
+      cpf VARCHAR(14),
+      address TEXT,
+      birth_date DATE,
+      emergency_contact VARCHAR(120),
+      department VARCHAR(120),
+      job_title VARCHAR(120),
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS cpf VARCHAR(14)');
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT');
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS birth_date DATE');
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS emergency_contact VARCHAR(120)');
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS department VARCHAR(120)');
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS job_title VARCHAR(120)');
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()');
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS service_requests (
@@ -56,6 +109,192 @@ const ensureCoreAuthTables = async () => {
       status VARCHAR(30) NOT NULL DEFAULT 'pending',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS policy_rules (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      code VARCHAR(120) NOT NULL UNIQUE,
+      title VARCHAR(200) NOT NULL,
+      description TEXT,
+      enabled BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    INSERT INTO policy_rules (code, title, description)
+    VALUES
+      ('password_min_length', 'Senha mínima de 8 caracteres', 'Regra base de proteção para credenciais.'),
+      ('password_complexity', 'Senha com letras maiúsculas, minúsculas, número e símbolo', 'Aumenta a segurança contra ataques de força bruta.'),
+      ('mandatory_password_rotation', 'Troca de senha para contas compartilhadas', 'Recomendado para usuários administrativos.')
+    ON CONFLICT (code) DO NOTHING
+  `);
+
+  const adminPasswordHash = await hashPassword(DEFAULT_ADMIN_PASSWORD);
+
+  await pool.query(
+    `INSERT INTO users(name, email, password_hash, role, active)
+     VALUES($1, $2, $3, 'admin', TRUE)
+     ON CONFLICT (email) DO NOTHING`,
+    ['Administrador padrão', DEFAULT_ADMIN_EMAIL, adminPasswordHash],
+  );
+};
+
+
+const ensureBusinessTables = async () => {
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'vehicle_type') THEN
+        CREATE TYPE vehicle_type AS ENUM ('carro', 'moto', 'caminhao');
+      END IF;
+
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'vehicle_size') THEN
+        CREATE TYPE vehicle_size AS ENUM ('P', 'M', 'G');
+      END IF;
+    END $$;
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS customers (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      name VARCHAR(200) NOT NULL,
+      cpf VARCHAR(11) UNIQUE NOT NULL,
+      phone VARCHAR(11),
+      address TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS vehicles (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      plate VARCHAR(7) UNIQUE NOT NULL,
+      type vehicle_type NOT NULL,
+      size vehicle_size NOT NULL,
+      brand VARCHAR(100),
+      model VARCHAR(100),
+      color VARCHAR(50),
+      year VARCHAR(4),
+      km VARCHAR(10),
+      customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS services (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      name VARCHAR(200) NOT NULL,
+      hours NUMERIC(4,1) NOT NULL DEFAULT 1,
+      needs_scheduling BOOLEAN NOT NULL DEFAULT FALSE,
+      products TEXT,
+      observation TEXT,
+      price_rule TEXT,
+      per_unit BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS service_pricing (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      service_id UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+      vehicle_type vehicle_type NOT NULL,
+      cost_p NUMERIC(10,2) NOT NULL DEFAULT 0,
+      cost_m NUMERIC(10,2) NOT NULL DEFAULT 0,
+      cost_g NUMERIC(10,2) NOT NULL DEFAULT 0,
+      price_p NUMERIC(10,2) NOT NULL DEFAULT 0,
+      price_m NUMERIC(10,2) NOT NULL DEFAULT 0,
+      price_g NUMERIC(10,2) NOT NULL DEFAULT 0,
+      UNIQUE(service_id, vehicle_type)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS service_vehicle_types (
+      service_id UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+      vehicle_type vehicle_type NOT NULL,
+      PRIMARY KEY (service_id, vehicle_type)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      customer_id UUID NOT NULL REFERENCES customers(id),
+      vehicle_id UUID NOT NULL REFERENCES vehicles(id),
+      vehicle_type vehicle_type NOT NULL,
+      vehicle_size vehicle_size NOT NULL,
+      total NUMERIC(10,2) NOT NULL,
+      pickup_delivery BOOLEAN NOT NULL DEFAULT FALSE,
+      description TEXT,
+      technical_notes TEXT,
+      status VARCHAR(20) NOT NULL DEFAULT 'waiting',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      finished_at TIMESTAMPTZ,
+      CONSTRAINT orders_total_non_negative CHECK (total >= 0)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS order_items (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+      service_id UUID NOT NULL REFERENCES services(id),
+      service_name VARCHAR(200) NOT NULL,
+      quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+      unit_price NUMERIC(10,2) NOT NULL CHECK (unit_price >= 0),
+      unit_cost NUMERIC(10,2) NOT NULL CHECK (unit_cost >= 0),
+      subtotal NUMERIC(10,2) NOT NULL CHECK (subtotal >= 0)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS order_statuses (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      code VARCHAR(50) UNIQUE NOT NULL,
+      label VARCHAR(100) NOT NULL,
+      color_class VARCHAR(100) NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key VARCHAR(50) PRIMARY KEY,
+      value TEXT
+    )
+  `);
+
+  await pool.query(`
+    INSERT INTO order_statuses (code, label, color_class)
+    VALUES
+      ('waiting', 'Aguardando', 'bg-yellow-500/10 border-yellow-500/40'),
+      ('in_progress', 'Em Andamento', 'bg-blue-500/10 border-blue-500/40'),
+      ('done', 'Finalizado', 'bg-green-500/10 border-green-500/40'),
+      ('delivered', 'Entregue', 'bg-muted border-border')
+    ON CONFLICT (code) DO NOTHING
+  `);
+
+  await pool.query(`INSERT INTO settings (key, value) VALUES ('whatsapp_number', '') ON CONFLICT (key) DO NOTHING`);
+
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_customers_cpf ON customers(cpf)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_vehicles_plate ON vehicles(plate)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_vehicles_customer ON vehicles(customer_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_orders_vehicle ON orders(vehicle_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)`);
+
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS uniq_open_order_per_vehicle
+      ON orders(vehicle_id)
+      WHERE status IN ('waiting', 'in_progress')
   `);
 };
 
@@ -333,8 +572,8 @@ app.post('/api/auth/register-customer', async (req, res) => {
     return res.status(400).json({ message: 'name, email, phone, password e serviceRequest são obrigatórios.' });
   }
 
-  const normalizedEmail = String(email).trim().toLowerCase();
-  const normalizedPhone = String(phone).replace(/\D/g, '').slice(0, 20);
+  const normalizedEmail = normalizeEmail(email);
+  const normalizedPhone = normalizePhone(phone);
 
   try {
     await pool.query('BEGIN');
@@ -349,11 +588,13 @@ app.post('/api/auth/register-customer', async (req, res) => {
       return res.status(409).json({ message: 'Já existe um usuário com esse e-mail ou telefone.' });
     }
 
+    const passwordHash = await hashPassword(String(password));
+
     const createdUser = await pool.query(
       `INSERT INTO users(name, email, phone, password_hash, role, active)
        VALUES($1, $2, $3, $4, 'customer', TRUE)
        RETURNING id, name, email, phone, role`,
-      [String(name).trim(), normalizedEmail, normalizedPhone, String(password)],
+      [String(name).trim(), normalizedEmail, normalizedPhone, passwordHash],
     );
 
     await pool.query(
@@ -384,7 +625,7 @@ app.post('/api/auth/login', async (req, res) => {
        FROM users
        WHERE email = $1
        LIMIT 1`,
-      [String(email).trim().toLowerCase()],
+      [normalizeEmail(email)],
     );
 
     if (rows.length === 0) {
@@ -397,7 +638,11 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(403).json({ message: 'Usuário inativo.' });
     }
 
-    if (!user.password_hash || user.password_hash !== password) {
+    const passwordMatches = user.password_hash
+      ? await verifyPassword(String(password), user.password_hash)
+      : false;
+
+    if (!passwordMatches) {
       return res.status(401).json({ message: 'Credenciais inválidas.' });
     }
 
@@ -423,21 +668,158 @@ app.get('/api/users', async (_req, res) => {
 });
 
 app.post('/api/users', async (req, res) => {
-  const { name, email, phone, role } = req.body;
+  const {
+    name,
+    email,
+    phone,
+    role,
+    password,
+    cpf,
+    address,
+    birthDate,
+    emergencyContact,
+    department,
+    jobTitle,
+  } = req.body;
+
   if (!name || !role) {
     return res.status(400).json({ message: 'name e role são obrigatórios.' });
   }
 
+  if (!['admin', 'employee', 'customer'].includes(role)) {
+    return res.status(400).json({ message: 'role inválido.' });
+  }
+
   try {
+    const normalizedUserEmail = normalizeEmail(email);
+    const normalizedUserPhone = normalizePhone(phone);
+    const passwordHash = password ? await hashPassword(String(password)) : null;
+
     const { rows } = await pool.query(
-      `INSERT INTO users(name, email, phone, role)
-       VALUES($1, NULLIF($2, ''), NULLIF($3, ''), $4)
-       RETURNING id, name, email, phone, role, active, created_at`,
-      [name, email || '', phone || '', role],
+      `INSERT INTO users(name, email, phone, password_hash, role, cpf, address, birth_date, emergency_contact, department, job_title)
+       VALUES($1, NULLIF($2, ''), NULLIF($3, ''), $4, $5, NULLIF($6, ''), NULLIF($7, ''), NULLIF($8, '')::DATE, NULLIF($9, ''), NULLIF($10, ''), NULLIF($11, ''))
+       RETURNING id, name, email, phone, role, active, cpf, address, birth_date, emergency_contact, department, job_title, created_at, updated_at`,
+      [
+        String(name).trim(),
+        normalizedUserEmail,
+        normalizedUserPhone,
+        passwordHash,
+        role,
+        String(cpf || '').replace(/\D/g, '').slice(0, 14),
+        address || '',
+        birthDate || '',
+        emergencyContact || '',
+        department || '',
+        jobTitle || '',
+      ],
     );
-    return res.status(201).json(rows[0]);
+    return res.status(201).json(sanitizeUser(rows[0]));
   } catch (error) {
     return res.status(500).json({ message: 'Erro ao criar usuário.', details: error.message });
+  }
+});
+
+
+app.get('/api/users/:id/profile', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, name, email, phone, role, active, cpf, address, birth_date, emergency_contact, department, job_title, created_at, updated_at
+       FROM users
+       WHERE id = $1
+       LIMIT 1`,
+      [req.params.id],
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+
+    return res.status(200).json(sanitizeUser(rows[0]));
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao carregar perfil.', details: error.message });
+  }
+});
+
+app.put('/api/users/:id/profile', async (req, res) => {
+  const { name, email, phone, cpf, address, birthDate, emergencyContact, department, jobTitle } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ message: 'name é obrigatório.' });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `UPDATE users
+       SET name = $1,
+           email = NULLIF($2, ''),
+           phone = NULLIF($3, ''),
+           cpf = NULLIF($4, ''),
+           address = NULLIF($5, ''),
+           birth_date = NULLIF($6, '')::DATE,
+           emergency_contact = NULLIF($7, ''),
+           department = NULLIF($8, ''),
+           job_title = NULLIF($9, ''),
+           updated_at = NOW()
+      WHERE id = $10
+      RETURNING id, name, email, phone, role, active, cpf, address, birth_date, emergency_contact, department, job_title, created_at, updated_at`,
+      [
+        String(name).trim(),
+        normalizeEmail(email),
+        normalizePhone(phone),
+        String(cpf || '').replace(/\D/g, '').slice(0, 14),
+        address || '',
+        birthDate || '',
+        emergencyContact || '',
+        department || '',
+        jobTitle || '',
+        req.params.id,
+      ],
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+
+    return res.status(200).json(sanitizeUser(rows[0]));
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao atualizar perfil.', details: error.message });
+  }
+});
+
+app.put('/api/users/:id/password', async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'currentPassword e newPassword são obrigatórios.' });
+  }
+
+  if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/.test(String(newPassword))) {
+    return res.status(400).json({
+      message: 'A nova senha deve ter ao menos 8 caracteres, incluindo maiúscula, minúscula, número e símbolo.',
+    });
+  }
+
+  try {
+    const { rows } = await pool.query('SELECT id, password_hash FROM users WHERE id = $1 LIMIT 1', [req.params.id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+
+    const valid = rows[0].password_hash
+      ? await verifyPassword(String(currentPassword), rows[0].password_hash)
+      : false;
+
+    if (!valid) {
+      return res.status(401).json({ message: 'Senha atual inválida.' });
+    }
+
+    const nextHash = await hashPassword(String(newPassword));
+    await pool.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [nextHash, req.params.id]);
+
+    return res.status(200).json({ ok: true });
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao atualizar senha.', details: error.message });
   }
 });
 
@@ -843,8 +1225,15 @@ app.get('/api/orders/open-by-plate/:plate', async (req, res) => {
 });
 
 const bootstrap = async () => {
+  const runBusinessBootstrap = typeof ensureBusinessTables === 'function'
+    ? ensureBusinessTables
+    : async () => {
+      console.warn('[arycar-api] ensureBusinessTables não encontrado, seguindo sem bootstrap de tabelas de negócio.');
+    };
+
   try {
     await ensureCoreAuthTables();
+    await runBusinessBootstrap();
     await ensureInventoryFeature();
     app.listen(port, '0.0.0.0', () => {
       console.log(`AryCar API on http://0.0.0.0:${port}`);
