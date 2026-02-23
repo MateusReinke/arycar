@@ -26,14 +26,14 @@ export interface SizePricing {
 export interface Service {
   id: string;
   name: string;
-  pricing: Record<VehicleType, SizePricing>;
+  pricing: Record<string, SizePricing>;
   hours: number;
   needsScheduling: boolean;
   products: string;
   observation: string;
   priceRule: string;
   perUnit: boolean;
-  vehicleTypes: VehicleType[];
+  vehicleTypes: string[];
   active?: boolean;
   averageTimeMinutes?: number;
   productConsumption?: ServiceProductConsumption[];

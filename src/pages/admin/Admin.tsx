@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, Users, PlusCircle, MessageCircle, Tags } from 'lucide-react';
+import { Table, Users, PlusCircle, MessageCircle, Tags, Boxes } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import PriceTable from '@/components/admin/PriceTable';
 import ServiceForm from '@/components/admin/ServiceForm';
 import EmployeeManager from '@/components/admin/EmployeeManager';
-import StockAlerts from '@/components/admin/StockAlerts';
+import StockManager from '@/components/admin/StockManager';
 import { storageService } from '@/services/storage';
 import { toast } from 'sonner';
 
@@ -140,14 +140,14 @@ const Admin = () => {
           <TabsTrigger value="services" className="gap-2"><PlusCircle className="h-4 w-4" />Cadastro de Serviços</TabsTrigger>
           <TabsTrigger value="employees" className="gap-2"><Users className="h-4 w-4" />Funcionários</TabsTrigger>
           <TabsTrigger value="status" className="gap-2"><Tags className="h-4 w-4" />Status</TabsTrigger>
-          <TabsTrigger value="stock" className="gap-2"><Tags className="h-4 w-4" />Estoque baixo</TabsTrigger>
+          <TabsTrigger value="stock" className="gap-2"><Boxes className="h-4 w-4" />Estoque</TabsTrigger>
           <TabsTrigger value="settings" className="gap-2"><MessageCircle className="h-4 w-4" />Configurações</TabsTrigger>
         </TabsList>
         <TabsContent value="prices"><PriceTable /></TabsContent>
         <TabsContent value="services"><ServiceForm /></TabsContent>
         <TabsContent value="employees"><EmployeeManager /></TabsContent>
         <TabsContent value="status"><StatusManager /></TabsContent>
-        <TabsContent value="stock"><StockAlerts /></TabsContent>
+        <TabsContent value="stock"><StockManager /></TabsContent>
         <TabsContent value="settings"><WhatsAppSettings /></TabsContent>
       </Tabs>
     </div>
