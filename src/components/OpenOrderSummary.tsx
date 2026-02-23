@@ -93,7 +93,7 @@ const OpenOrderSummary = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2">
-              <Button onClick={() => navigate('/queue')} className="flex-1">Ir para fila e editar OS</Button>
+              <Button onClick={() => navigate('/vendedores/fila')} className="flex-1">Ir para fila e editar OS</Button>
               <Button
                 variant="secondary"
                 className="flex-1"

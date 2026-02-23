@@ -1,7 +1,7 @@
-FROM node:20-alpine
+FROM node:20
 WORKDIR /app
 
-COPY backend/package.json ./package.json
+COPY backend/package*.json ./
 RUN npm install --omit=dev
 
 COPY backend/src ./src

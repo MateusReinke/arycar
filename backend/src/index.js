@@ -31,6 +31,19 @@ if (Number.isNaN(databaseConfig.port)) {
 
 const pool = new Pool(databaseConfig);
 
+const ensureServiceRequestsTable = async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS service_requests (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      description TEXT NOT NULL,
+      status VARCHAR(30) NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+};
+
+
 const configuredOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
   .map((origin) => origin.trim())
@@ -78,6 +91,58 @@ app.get('/api/admin/default-user', async (_req, res) => {
   }
 });
 
+
+
+app.post('/api/auth/register-customer', async (req, res) => {
+  const {
+    name,
+    email,
+    phone,
+    password,
+    serviceRequest,
+  } = req.body;
+
+  if (!name || !email || !phone || !password || !serviceRequest) {
+    return res.status(400).json({ message: 'name, email, phone, password e serviceRequest são obrigatórios.' });
+  }
+
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const normalizedPhone = String(phone).replace(/\D/g, '').slice(0, 20);
+
+  try {
+    await pool.query('BEGIN');
+
+    const existingUser = await pool.query(
+      `SELECT id FROM users WHERE email = $1 OR phone = $2 LIMIT 1`,
+      [normalizedEmail, normalizedPhone],
+    );
+
+    if (existingUser.rows.length > 0) {
+      await pool.query('ROLLBACK');
+      return res.status(409).json({ message: 'Já existe um usuário com esse e-mail ou telefone.' });
+    }
+
+    const createdUser = await pool.query(
+      `INSERT INTO users(name, email, phone, password_hash, role, active)
+       VALUES($1, $2, $3, $4, 'customer', TRUE)
+       RETURNING id, name, email, phone, role`,
+      [String(name).trim(), normalizedEmail, normalizedPhone, String(password)],
+    );
+
+    await pool.query(
+      `INSERT INTO service_requests(user_id, description)
+       VALUES($1, $2)`,
+      [createdUser.rows[0].id, String(serviceRequest).trim()],
+    );
+
+    await pool.query('COMMIT');
+
+    return res.status(201).json(createdUser.rows[0]);
+  } catch (error) {
+    await pool.query('ROLLBACK');
+    return res.status(500).json({ message: 'Erro ao cadastrar cliente.', details: error.message });
+  }
+});
 
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
@@ -359,6 +424,16 @@ app.get('/api/orders/open-by-plate/:plate', async (req, res) => {
   }
 });
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`AryCar API on http://0.0.0.0:${port}`);
-});
+const bootstrap = async () => {
+  try {
+    await ensureServiceRequestsTable();
+    app.listen(port, '0.0.0.0', () => {
+      console.log(`AryCar API on http://0.0.0.0:${port}`);
+    });
+  } catch (error) {
+    console.error('[arycar-api] failed to start', error);
+    process.exit(1);
+  }
+};
+
+bootstrap();
