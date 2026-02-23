@@ -31,7 +31,9 @@ DATABASE_NAME=postgres
 DATABASE_USER=arycar_admin
 DATABASE_PASSWORD=
 
-VITE_API_BASE_URL=http://localhost:3001/api
+CORS_ORIGIN=https://arycar.mrbautomacoes.site
+
+VITE_API_BASE_URL=https://arycar.mrbautomacoes.site/api
 VITE_PLATE_API_URL=https://placas.app.br/api/v1/placas
 VITE_PLATE_API_TOKEN=
 VITE_FIPE_API_URL=https://parallelum.com.br/fipe/api/v1
@@ -54,7 +56,9 @@ Esperado: JSON com `status: "ok"` e `db: "connected"`.
 
 ## Banco separado no Coolify
 
-No deploy, basta preencher `DATABASE_PASSWORD` (e manter os demais valores conforme seu banco criado).
+No deploy, preencha todas as variáveis obrigatórias (`DATABASE_*`, `CORS_ORIGIN` e `VITE_*`) no Coolify.
+
+> As `VITE_*` são usadas no build da imagem do frontend e, por isso, também precisam existir no Environment Variables do projeto.
 
 
 ## 4) Criar usuário ADMIN para login

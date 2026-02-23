@@ -1226,7 +1226,7 @@ app.get('/api/orders/open-by-plate/:plate', async (req, res) => {
 const bootstrap = async () => {
   try {
     await ensureCoreAuthTables();
-    await runBusinessBootstrap();
+    await ensureBusinessTables();
     await ensureInventoryFeature();
     app.listen(port, '0.0.0.0', () => {
       console.log(`AryCar API on http://0.0.0.0:${port}`);
