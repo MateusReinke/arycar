@@ -56,6 +56,16 @@ const Header = () => {
             </Button>
           ))}
 
+
+          {user && (
+            <Button variant="ghost" asChild>
+              <Link to="/minha-conta">
+                <UserCircle className="mr-2 h-4 w-4" />
+                Minha conta
+              </Link>
+            </Button>
+          )}
+
           {user && (
             <>
               <span className="hidden md:inline-flex text-xs text-muted-foreground items-center gap-1 px-2">

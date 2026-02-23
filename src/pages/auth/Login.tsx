@@ -87,7 +87,7 @@ const Login = () => {
                     type="email"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    placeholder="admin@arycar.com.br"
+                    placeholder="admin@arycar.com"
                     className="pl-10"
                   />
                 </div>

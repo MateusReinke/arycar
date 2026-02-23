@@ -2,6 +2,7 @@
 -- Este script roda automaticamente na primeira inicialização do container PostgreSQL.
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 DO $$
 BEGIN
@@ -89,6 +90,32 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS cpf VARCHAR(14);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS birth_date DATE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS emergency_contact VARCHAR(120);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS department VARCHAR(120);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS job_title VARCHAR(120);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+CREATE TABLE IF NOT EXISTS policy_rules (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  code VARCHAR(120) NOT NULL UNIQUE,
+  title VARCHAR(200) NOT NULL,
+  description TEXT,
+  enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO policy_rules (code, title, description)
+VALUES
+  ('password_min_length', 'Senha mínima de 8 caracteres', 'Regra base de proteção para credenciais.'),
+  ('password_complexity', 'Senha com letras maiúsculas, minúsculas, número e símbolo', 'Aumenta a segurança contra ataques de força bruta.'),
+  ('mandatory_password_rotation', 'Troca de senha para contas compartilhadas', 'Recomendado para usuários administrativos.')
+ON CONFLICT (code) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS order_statuses (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   code VARCHAR(50) UNIQUE NOT NULL,
@@ -129,7 +156,7 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 
 INSERT INTO users (name, email, password_hash, role)
-VALUES ('Administrador', 'admin@arycar.com.br', 'admin123', 'admin')
+VALUES ('Administrador', 'admin@arycar.com', crypt('Admin@123', gen_salt('bf')), 'admin')
 ON CONFLICT (email) DO NOTHING;
 
 INSERT INTO order_statuses (code, label, color_class)
@@ -165,7 +192,7 @@ CREATE TABLE IF NOT EXISTS order_statuses (
 );
 
 INSERT INTO users (name, email, password_hash, role)
-VALUES ('Administrador', 'admin@arycar.com.br', 'change-me', 'admin')
+VALUES ('Administrador', 'admin@arycar.com', crypt('Admin@123', gen_salt('bf')), 'admin')
 ON CONFLICT (email) DO NOTHING;
 
 INSERT INTO order_statuses (code, label, color_class)
