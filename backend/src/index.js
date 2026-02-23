@@ -34,6 +34,54 @@ const pool = new Pool(databaseConfig);
 const DEFAULT_ADMIN_EMAIL = 'admin@arycar.com';
 const DEFAULT_ADMIN_PASSWORD = 'Admin@123';
 
+const seedVehicleTypes = ['carro', 'moto', 'caminhao'];
+const motoFactor = 0.7;
+const truckFactor = 1.35;
+
+const buildPricingFromCar = (carPricing) => ({
+  carro: { ...carPricing },
+  moto: {
+    costP: Math.round(carPricing.costP * motoFactor),
+    costM: Math.round(carPricing.costM * motoFactor),
+    costG: Math.round(carPricing.costG * motoFactor),
+    priceP: Math.round(carPricing.priceP * motoFactor),
+    priceM: Math.round(carPricing.priceM * motoFactor),
+    priceG: Math.round(carPricing.priceG * motoFactor),
+  },
+  caminhao: {
+    costP: Math.round(carPricing.costP * truckFactor),
+    costM: Math.round(carPricing.costM * truckFactor),
+    costG: Math.round(carPricing.costG * truckFactor),
+    priceP: Math.round(carPricing.priceP * truckFactor),
+    priceM: Math.round(carPricing.priceM * truckFactor),
+    priceG: Math.round(carPricing.priceG * truckFactor),
+  },
+});
+
+const serviceSeeds = [
+  { name: 'Lavagem Simples', pricing: buildPricingFromCar({ costP: 20, costM: 25, costG: 30, priceP: 40, priceM: 50, priceG: 60 }), hours: 1, needsScheduling: false, products: 'Shampoo Neutro, Agua, Pretinho, eco-diesel, multi-uso, limpa-Bau', observation: '', priceRule: '' },
+  { name: 'Lavagem Detalhada', pricing: buildPricingFromCar({ costP: 30, costM: 50, costG: 70, priceP: 80, priceM: 100, priceG: 120 }), hours: 2, needsScheduling: false, products: 'Shampoo Neutro, Agua, Pretinho, eco-diesel, multi-uso, limpa-Bau, Cera', observation: '', priceRule: '' },
+  { name: 'Lavagem de motor - Parcial', pricing: buildPricingFromCar({ costP: 90, costM: 110, costG: 130, priceP: 180, priceM: 220, priceG: 260 }), hours: 2, needsScheduling: false, products: 'Shampoo Neutro, Agua, Pretinho, eco-diesel, multi-uso, limpa-Bau, desengraxante, verniz de motor', observation: '', priceRule: '' },
+  { name: 'Lavagem de motor - Completo', pricing: buildPricingFromCar({ costP: 180, costM: 220, costG: 260, priceP: 250, priceM: 300, priceG: 350 }), hours: 3, needsScheduling: false, products: 'Shampoo Neutro, Agua, Pretinho, eco-diesel, multi-uso, limpa-Bau, desengraxante, verniz de motor', observation: '', priceRule: '' },
+  { name: 'Lavagem de Chassi', pricing: buildPricingFromCar({ costP: 180, costM: 220, costG: 260, priceP: 250, priceM: 300, priceG: 350 }), hours: 3, needsScheduling: false, products: 'Shampoo Neutro, Agua, Pretinho, eco-diesel, multi-uso, limpa-Bau, desengraxante, verniz de Chassi', observation: '', priceRule: '' },
+  { name: 'Lavagem Caixa de Roda', pricing: buildPricingFromCar({ costP: 80, costM: 100, costG: 120, priceP: 160, priceM: 200, priceG: 240 }), hours: 2, needsScheduling: false, products: 'Shampoo Neutro, Agua, Pretinho, eco-diesel, multi-uso, limpa-Bau, Cera, desengraxante, verniz de Caixa de roda', observation: '', priceRule: '' },
+  { name: 'Remoção de Chuva Ácida', pricing: buildPricingFromCar({ costP: 110, costM: 130, costG: 150, priceP: 220, priceM: 260, priceG: 300 }), hours: 2, needsScheduling: false, products: 'Shampoo Neutro, Agua, Pretinho, eco-diesel, multi-uso, limpa-Bau, Prisma, Focus', observation: '', priceRule: '' },
+  { name: 'Cristalização de vidros', pricing: buildPricingFromCar({ costP: 0, costM: 0, costG: 0, priceP: 0, priceM: 0, priceG: 0 }), hours: 5, needsScheduling: true, products: 'Hydrox Fast - Vonixx', observation: '', priceRule: '+50% Remoção Chuva' },
+  { name: 'Polimento comercial', pricing: buildPricingFromCar({ costP: 125, costM: 175, costG: 225, priceP: 250, priceM: 350, priceG: 450 }), hours: 5, needsScheduling: true, products: 'Massa de polir, lustrador, cera', observation: '', priceRule: '' },
+  { name: 'Polimento Técnico', pricing: buildPricingFromCar({ costP: 225, costM: 310, costG: 405, priceP: 450, priceM: 620, priceG: 810 }), hours: 8, needsScheduling: true, products: 'Lixa, massa de polir, lustrador, cera', observation: '', priceRule: '' },
+  { name: 'Vitrificação de pintura', pricing: buildPricingFromCar({ costP: 35, costM: 35, costG: 35, priceP: 120, priceM: 150, priceG: 200 }), hours: 3, needsScheduling: true, products: 'V-paint - Vonixx', observation: 'Somar com o Polimento escolhido (exceto veículos já prontos para vitrificar).', priceRule: '' },
+  { name: 'Clareamento de Faróis', pricing: buildPricingFromCar({ costP: 25, costM: 25, costG: 25, priceP: 180, priceM: 200, priceG: 220 }), hours: 2, needsScheduling: true, products: 'Lixa, massa de polir, lustrador, cera', observation: '', priceRule: '' },
+  { name: 'Vitrificação de faróis', pricing: buildPricingFromCar({ costP: 17, costM: 17, costG: 17, priceP: 50, priceM: 75, priceG: 100 }), hours: 1, needsScheduling: true, products: 'V-light - Vonixx', observation: 'Somar com o Clareamento de Farol, se necessário.', priceRule: '' },
+  { name: 'Vitrificação de Plásticos', pricing: buildPricingFromCar({ costP: 60, costM: 60, costG: 60, priceP: 120, priceM: 180, priceG: 250 }), hours: 3, needsScheduling: true, products: 'V-PLASTIC PRO - Vonixx', observation: '', priceRule: '' },
+  { name: 'Vitrificação de Couro', pricing: buildPricingFromCar({ costP: 60, costM: 60, costG: 60, priceP: 120, priceM: 180, priceG: 250 }), hours: 3, needsScheduling: true, products: 'V-LEATHER PRO - Vonixx', observation: '', priceRule: '' },
+  { name: 'Higienização', pricing: buildPricingFromCar({ costP: 100, costM: 100, costG: 100, priceP: 200, priceM: 250, priceG: 300 }), hours: 3, needsScheduling: true, products: 'Multi-uso, Sintra, Higicouro, Hidracouro', observation: '', priceRule: '' },
+  { name: 'Oxi sanitização', pricing: buildPricingFromCar({ costP: 20, costM: 20, costG: 20, priceP: 50, priceM: 80, priceG: 100 }), hours: 1, needsScheduling: true, products: 'Ozônio', observation: '', priceRule: '' },
+  { name: 'Descontaminação de pintura', pricing: buildPricingFromCar({ costP: 60, costM: 60, costG: 60, priceP: 150, priceM: 200, priceG: 250 }), hours: 2, needsScheduling: true, products: 'Barra descontaminante (Clay Bar)', observation: '', priceRule: '' },
+  { name: 'Martelinho de ouro', pricing: buildPricingFromCar({ costP: 100, costM: 150, costG: 200, priceP: 150, priceM: 200, priceG: 250 }), hours: 4, needsScheduling: true, products: '-', observation: '', priceRule: '' },
+  { name: 'Envelopamento', pricing: buildPricingFromCar({ costP: 350, costM: 400, costG: 450, priceP: 400, priceM: 450, priceG: 500 }), hours: 5, needsScheduling: true, products: '-', observation: '', priceRule: '' },
+  { name: 'Pequenos reparos express', pricing: buildPricingFromCar({ costP: 105, costM: 135, costG: 155, priceP: 350, priceM: 450, priceG: 550 }), hours: 5, needsScheduling: true, products: 'Tinta, verniz, SpectraPrime, massa poliéster, lixa, massa de polir, lustrador, cera', observation: '', priceRule: '' },
+];
+
 
 const hashPassword = async (plainTextPassword) => {
   const salt = crypto.randomBytes(16).toString('hex');
@@ -322,15 +370,22 @@ const ensureInventoryFeature = async () => {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS products (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      product_type VARCHAR(80) NOT NULL DEFAULT 'Insumo',
+      brand VARCHAR(120) NOT NULL DEFAULT 'Genérica',
       name VARCHAR(200) NOT NULL UNIQUE,
       unit unit_enum NOT NULL,
       stock_current NUMERIC(14,3) NOT NULL DEFAULT 0,
       stock_min NUMERIC(14,3) NOT NULL DEFAULT 0,
+      price_per_liter NUMERIC(14,2) NOT NULL DEFAULT 0,
       active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS product_type VARCHAR(80) NOT NULL DEFAULT 'Insumo'`);
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS brand VARCHAR(120) NOT NULL DEFAULT 'Genérica'`);
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS price_per_liter NUMERIC(14,2) NOT NULL DEFAULT 0`);
 
   await pool.query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS active BOOLEAN NOT NULL DEFAULT TRUE`);
   await pool.query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS average_time_minutes INTEGER NOT NULL DEFAULT 60`);
@@ -481,13 +536,60 @@ const ensureInventoryFeature = async () => {
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_order_items_status_done ON order_items(status, done_at)`);
 
   await pool.query(`
-    INSERT INTO products (name, unit, stock_current, stock_min)
+    INSERT INTO products (product_type, brand, name, unit, stock_current, stock_min, price_per_liter)
     VALUES
-      ('Shampoo Neutro', 'l', 20, 5),
-      ('Cera Líquida', 'ml', 8000, 1500),
-      ('Pano Microfibra', 'un', 80, 20)
-    ON CONFLICT (name) DO NOTHING
+      ('Shampoo', 'Vonixx', 'V-Floc', 'l', 22, 6, 65),
+      ('Shampoo', 'Vonixx', 'V-Mol', 'l', 18, 5, 72),
+      ('Cera', 'Vonixx', 'Blend Spray Wax', 'l', 10, 3, 120),
+      ('Desengraxante', 'Vonixx', 'Sintra Fast', 'l', 15, 4, 85),
+      ('Multi-uso', 'Vonixx', 'APC', 'l', 14, 4, 58),
+      ('Verniz de Motor', 'Vonixx', 'Motor Shine', 'l', 8, 2, 95),
+      ('Limpa-baú', 'Start', 'Truck Cleaner', 'l', 12, 3, 44),
+      ('Pretinho', 'Vonixx', 'Restaurax', 'l', 9, 2, 110)
+    ON CONFLICT (name) DO UPDATE
+    SET product_type = EXCLUDED.product_type,
+        brand = EXCLUDED.brand,
+        unit = EXCLUDED.unit,
+        stock_current = EXCLUDED.stock_current,
+        stock_min = EXCLUDED.stock_min,
+        price_per_liter = EXCLUDED.price_per_liter,
+        updated_at = NOW()
   `);
+};
+
+const ensureServiceSeeds = async () => {
+  const { rows } = await pool.query('SELECT COUNT(*)::INTEGER AS total FROM services');
+  if ((rows[0]?.total || 0) > 0) return;
+
+  for (const service of serviceSeeds) {
+    const inserted = await pool.query(
+      `INSERT INTO services(name, hours, needs_scheduling, products, observation, price_rule, per_unit, active, average_time_minutes)
+       VALUES($1, $2, $3, $4, $5, $6, FALSE, TRUE, $7)
+       RETURNING id`,
+      [service.name, service.hours, service.needsScheduling, service.products, service.observation, service.priceRule, Math.max(30, Number(service.hours) * 60)],
+    );
+
+    const serviceId = inserted.rows[0].id;
+
+    for (const vehicleType of seedVehicleTypes) {
+      await pool.query(
+        `INSERT INTO service_vehicle_types(service_id, vehicle_type)
+         VALUES($1, $2)
+         ON CONFLICT (service_id, vehicle_type) DO NOTHING`,
+        [serviceId, vehicleType],
+      );
+
+      const pricing = service.pricing[vehicleType];
+      await pool.query(
+        `INSERT INTO service_pricing(service_id, vehicle_type, cost_p, cost_m, cost_g, price_p, price_m, price_g)
+         VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (service_id, vehicle_type)
+         DO UPDATE SET cost_p = EXCLUDED.cost_p, cost_m = EXCLUDED.cost_m, cost_g = EXCLUDED.cost_g,
+           price_p = EXCLUDED.price_p, price_m = EXCLUDED.price_m, price_g = EXCLUDED.price_g`,
+        [serviceId, vehicleType, pricing.costP, pricing.costM, pricing.costG, pricing.priceP, pricing.priceM, pricing.priceG],
+      );
+    }
+  }
 };
 
 
@@ -541,7 +643,7 @@ app.get('/api/admin/default-user', async (_req, res) => {
 app.get('/api/products', async (_req, res) => {
   try {
     const { rows } = await pool.query(`
-      SELECT id, name, unit, stock_current AS "stockCurrent", stock_min AS "stockMin", active
+      SELECT id, product_type AS "productType", brand, name, unit, stock_current AS "stockCurrent", stock_min AS "stockMin", price_per_liter AS "pricePerLiter", active
       FROM products
       ORDER BY name ASC
     `);
@@ -551,12 +653,120 @@ app.get('/api/products', async (_req, res) => {
   }
 });
 
+app.post('/api/products', async (req, res) => {
+  const {
+    productType = 'Insumo',
+    brand = 'Genérica',
+    name,
+    unit = 'l',
+    stockCurrent = 0,
+    stockMin = 0,
+    pricePerLiter = 0,
+    active = true,
+  } = req.body;
+
+  if (!name || !String(name).trim()) {
+    return res.status(400).json({ message: 'Nome do produto é obrigatório.' });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO products (product_type, brand, name, unit, stock_current, stock_min, price_per_liter, active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, product_type AS "productType", brand, name, unit,
+         stock_current AS "stockCurrent", stock_min AS "stockMin", price_per_liter AS "pricePerLiter", active`,
+      [
+        String(productType).trim(),
+        String(brand).trim(),
+        String(name).trim(),
+        unit,
+        Number(stockCurrent),
+        Number(stockMin),
+        Number(pricePerLiter),
+        Boolean(active),
+      ],
+    );
+    return res.status(201).json(rows[0]);
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao criar produto.', details: error.message });
+  }
+});
+
+app.put('/api/products/:id', async (req, res) => {
+  const { id } = req.params;
+  const {
+    productType = 'Insumo',
+    brand = 'Genérica',
+    name,
+    unit = 'l',
+    stockCurrent = 0,
+    stockMin = 0,
+    pricePerLiter = 0,
+    active = true,
+  } = req.body;
+
+  if (!name || !String(name).trim()) {
+    return res.status(400).json({ message: 'Nome do produto é obrigatório.' });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `UPDATE products
+       SET product_type = $1,
+           brand = $2,
+           name = $3,
+           unit = $4,
+           stock_current = $5,
+           stock_min = $6,
+           price_per_liter = $7,
+           active = $8,
+           updated_at = NOW()
+       WHERE id = $9
+       RETURNING id, product_type AS "productType", brand, name, unit,
+         stock_current AS "stockCurrent", stock_min AS "stockMin", price_per_liter AS "pricePerLiter", active`,
+      [
+        String(productType).trim(),
+        String(brand).trim(),
+        String(name).trim(),
+        unit,
+        Number(stockCurrent),
+        Number(stockMin),
+        Number(pricePerLiter),
+        Boolean(active),
+        id,
+      ],
+    );
+
+    if (!rows[0]) return res.status(404).json({ message: 'Produto não encontrado.' });
+    return res.status(200).json(rows[0]);
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao atualizar produto.', details: error.message });
+  }
+});
+
+app.delete('/api/products/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const inUse = await pool.query('SELECT 1 FROM service_products WHERE product_id = $1 LIMIT 1', [id]);
+    if (inUse.rows.length > 0) {
+      return res.status(409).json({ message: 'Produto em uso em serviços e não pode ser excluído.' });
+    }
+
+    const result = await pool.query('DELETE FROM products WHERE id = $1', [id]);
+    if (result.rowCount === 0) return res.status(404).json({ message: 'Produto não encontrado.' });
+    return res.status(204).send();
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao remover produto.', details: error.message });
+  }
+});
+
 app.get('/api/stock/alerts', async (_req, res) => {
   try {
     const { rows } = await pool.query(`
       SELECT
         id AS "productId",
-        name AS "productName",
+        CONCAT(product_type, ' - ', brand, ' - ', name) AS "productName",
         stock_current AS "stockCurrent",
         stock_min AS "stockMin",
         unit
@@ -1257,6 +1467,7 @@ const bootstrap = async () => {
     await ensureCoreAuthTables();
     await ensureBusinessTables();
     await ensureInventoryFeature();
+    await ensureServiceSeeds();
     app.listen(port, '0.0.0.0', () => {
       console.log(`AryCar API on http://0.0.0.0:${port}`);
     });
