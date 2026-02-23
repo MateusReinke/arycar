@@ -6,7 +6,10 @@ import {
   OrderStatus,
   RegisterCustomerPayload,
   Service,
+  ServiceProductConsumption,
   SizePricing,
+  StockAlert,
+  Product,
   Vehicle,
   VehicleType,
 } from '@/types';
@@ -89,6 +92,13 @@ const normalizeService = (raw: Record<string, unknown>): Service => {
     priceRule: String(raw.priceRule ?? raw.price_rule ?? ''),
     perUnit: Boolean(raw.perUnit ?? raw.per_unit ?? false),
     vehicleTypes: validVehicleTypes.length > 0 ? validVehicleTypes : [...vehicleTypes],
+    active: Boolean(raw.active ?? true),
+    averageTimeMinutes: toNumber(raw.averageTimeMinutes ?? raw.average_time_minutes ?? 0),
+    productConsumption: Array.isArray(raw.productConsumption)
+      ? (raw.productConsumption as ServiceProductConsumption[])
+      : Array.isArray(raw.product_consumption)
+        ? (raw.product_consumption as ServiceProductConsumption[])
+        : [],
     pricing: {
       carro: buildTypePricing('carro') || { ...emptyPricing },
       moto: buildTypePricing('moto') || { ...emptyPricing },
@@ -119,6 +129,14 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
 };
 
 export const backendApi = {
+  async listProducts(): Promise<Product[]> {
+    return requestJson<Product[]>('/api/products');
+  },
+
+  async listLowStockAlerts(): Promise<StockAlert[]> {
+    return requestJson<StockAlert[]>('/api/stock/alerts');
+  },
+
   async login(payload: LoginPayload): Promise<AuthUser> {
     return requestJson<AuthUser>('/api/auth/login', {
       method: 'POST',
@@ -174,5 +192,11 @@ export const backendApi = {
     } catch (_error) {
       return null;
     }
+  },
+
+  async completeWorkOrderItem(itemId: string): Promise<{ ok: boolean }> {
+    return requestJson<{ ok: boolean }>(`/api/work-order-items/${itemId}/complete`, {
+      method: 'POST',
+    });
   },
 };
