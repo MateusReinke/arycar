@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS customers (
   cpf VARCHAR(11) UNIQUE NOT NULL,
   phone VARCHAR(11),
   address TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS vehicles (
@@ -37,32 +37,33 @@ CREATE TABLE IF NOT EXISTS vehicles (
   year VARCHAR(4),
   km VARCHAR(10),
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS services (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name VARCHAR(200) NOT NULL,
-  hours DECIMAL(4,1) NOT NULL DEFAULT 1,
-  needs_scheduling BOOLEAN DEFAULT FALSE,
+  hours NUMERIC(4,1) NOT NULL DEFAULT 1,
+  needs_scheduling BOOLEAN NOT NULL DEFAULT FALSE,
   products TEXT,
   observation TEXT,
   price_rule TEXT,
-  per_unit BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  per_unit BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS service_pricing (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   service_id UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
   vehicle_type vehicle_type NOT NULL,
-  cost_p DECIMAL(10,2) DEFAULT 0,
-  cost_m DECIMAL(10,2) DEFAULT 0,
-  cost_g DECIMAL(10,2) DEFAULT 0,
-  price_p DECIMAL(10,2) DEFAULT 0,
-  price_m DECIMAL(10,2) DEFAULT 0,
-  price_g DECIMAL(10,2) DEFAULT 0,
+  cost_p NUMERIC(10,2) NOT NULL DEFAULT 0,
+  cost_m NUMERIC(10,2) NOT NULL DEFAULT 0,
+  cost_g NUMERIC(10,2) NOT NULL DEFAULT 0,
+  price_p NUMERIC(10,2) NOT NULL DEFAULT 0,
+  price_m NUMERIC(10,2) NOT NULL DEFAULT 0,
+  price_g NUMERIC(10,2) NOT NULL DEFAULT 0,
   UNIQUE(service_id, vehicle_type)
 );
 
@@ -76,7 +77,8 @@ CREATE TABLE IF NOT EXISTS employees (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name VARCHAR(200) NOT NULL,
   role VARCHAR(100),
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS users (
@@ -86,8 +88,33 @@ CREATE TABLE IF NOT EXISTS users (
   phone VARCHAR(20) UNIQUE,
   password_hash TEXT,
   role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'employee', 'customer')),
-  active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  cpf VARCHAR(14),
+  address TEXT,
+  birth_date DATE,
+  emergency_contact VARCHAR(120),
+  department VARCHAR(120),
+  job_title VARCHAR(120),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS policy_rules (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  code VARCHAR(120) NOT NULL UNIQUE,
+  title VARCHAR(200) NOT NULL,
+  description TEXT,
+  enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS service_requests (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  description TEXT NOT NULL,
+  status VARCHAR(30) NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 
@@ -121,7 +148,7 @@ CREATE TABLE IF NOT EXISTS order_statuses (
   code VARCHAR(50) UNIQUE NOT NULL,
   label VARCHAR(100) NOT NULL,
   color_class VARCHAR(100) NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS orders (
@@ -130,13 +157,14 @@ CREATE TABLE IF NOT EXISTS orders (
   vehicle_id UUID NOT NULL REFERENCES vehicles(id),
   vehicle_type vehicle_type NOT NULL,
   vehicle_size vehicle_size NOT NULL,
-  total DECIMAL(10,2) NOT NULL,
-  pickup_delivery BOOLEAN DEFAULT FALSE,
+  total NUMERIC(10,2) NOT NULL,
+  pickup_delivery BOOLEAN NOT NULL DEFAULT FALSE,
   description TEXT,
   technical_notes TEXT,
-  status VARCHAR(20) DEFAULT 'waiting',
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  finished_at TIMESTAMPTZ
+  status VARCHAR(20) NOT NULL DEFAULT 'waiting',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  finished_at TIMESTAMPTZ,
+  CONSTRAINT orders_total_non_negative CHECK (total >= 0)
 );
 
 CREATE TABLE IF NOT EXISTS order_items (
@@ -144,10 +172,10 @@ CREATE TABLE IF NOT EXISTS order_items (
   order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
   service_id UUID NOT NULL REFERENCES services(id),
   service_name VARCHAR(200) NOT NULL,
-  quantity INTEGER DEFAULT 1,
-  unit_price DECIMAL(10,2) NOT NULL,
-  unit_cost DECIMAL(10,2) NOT NULL,
-  subtotal DECIMAL(10,2) NOT NULL
+  quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+  unit_price NUMERIC(10,2) NOT NULL CHECK (unit_price >= 0),
+  unit_cost NUMERIC(10,2) NOT NULL CHECK (unit_cost >= 0),
+  subtotal NUMERIC(10,2) NOT NULL CHECK (subtotal >= 0)
 );
 
 CREATE TABLE IF NOT EXISTS settings (
@@ -158,6 +186,13 @@ CREATE TABLE IF NOT EXISTS settings (
 INSERT INTO users (name, email, password_hash, role)
 VALUES ('Administrador', 'admin@arycar.com', crypt('Admin@123', gen_salt('bf')), 'admin')
 ON CONFLICT (email) DO NOTHING;
+
+INSERT INTO policy_rules (code, title, description)
+VALUES
+  ('password_min_length', 'Senha mínima de 8 caracteres', 'Regra base de proteção para credenciais.'),
+  ('password_complexity', 'Senha com letras maiúsculas, minúsculas, número e símbolo', 'Aumenta a segurança contra ataques de força bruta.'),
+  ('mandatory_password_rotation', 'Troca de senha para contas compartilhadas', 'Recomendado para usuários administrativos.')
+ON CONFLICT (code) DO NOTHING;
 
 INSERT INTO order_statuses (code, label, color_class)
 VALUES
