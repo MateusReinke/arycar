@@ -14,6 +14,24 @@ import {
   VehicleType,
 } from '@/types';
 
+
+interface UserProfilePayload {
+  name: string;
+  email?: string;
+  phone?: string;
+  cpf?: string;
+  address?: string;
+  birthDate?: string;
+  emergencyContact?: string;
+  department?: string;
+  jobTitle?: string;
+}
+
+interface PasswordUpdatePayload {
+  currentPassword: string;
+  newPassword: string;
+}
+
 interface OpenOrderResponse {
   found: boolean;
   openOrder: boolean;
@@ -147,6 +165,31 @@ export const backendApi = {
   async registerCustomer(payload: RegisterCustomerPayload): Promise<AuthUser> {
     return requestJson<AuthUser>('/api/auth/register-customer', {
       method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async createUser(payload: UserProfilePayload & { role: 'admin' | 'employee' | 'customer'; password?: string }): Promise<AuthUser> {
+    return requestJson<AuthUser>('/api/users', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async getUserProfile(userId: string): Promise<AuthUser> {
+    return requestJson<AuthUser>(`/api/users/${userId}/profile`);
+  },
+
+  async updateUserProfile(userId: string, payload: UserProfilePayload): Promise<AuthUser> {
+    return requestJson<AuthUser>(`/api/users/${userId}/profile`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async updateUserPassword(userId: string, payload: PasswordUpdatePayload): Promise<{ ok: boolean }> {
+    return requestJson<{ ok: boolean }>(`/api/users/${userId}/password`, {
+      method: 'PUT',
       body: JSON.stringify(payload),
     });
   },
