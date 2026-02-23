@@ -241,45 +241,6 @@ const ensureBusinessTables = async () => {
     )
   `);
 
-
-  await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_code VARCHAR(20)`);
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS order_daily_counters (
-      ref_date DATE PRIMARY KEY,
-      last_value INTEGER NOT NULL DEFAULT 0
-    )
-  `);
-
-  await pool.query(`
-    CREATE OR REPLACE FUNCTION generate_order_code()
-    RETURNS TEXT
-    LANGUAGE plpgsql
-    AS $$
-    DECLARE
-      next_value INTEGER;
-      today DATE := CURRENT_DATE;
-    BEGIN
-      INSERT INTO order_daily_counters(ref_date, last_value)
-      VALUES (today, 1)
-      ON CONFLICT (ref_date)
-      DO UPDATE SET last_value = order_daily_counters.last_value + 1
-      RETURNING last_value INTO next_value;
-
-      RETURN TO_CHAR(today, 'DDMMYY') || '-' || LPAD(next_value::TEXT, 4, '0');
-    END;
-    $$
-  `);
-
-  await pool.query(`
-    UPDATE orders
-    SET order_code = generate_order_code()
-    WHERE order_code IS NULL
-  `);
-
-  await pool.query(`ALTER TABLE orders ALTER COLUMN order_code SET DEFAULT generate_order_code()`);
-  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uniq_orders_order_code ON orders(order_code)`);
-
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_items (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -321,22 +282,6 @@ const ensureBusinessTables = async () => {
   `);
 
   await pool.query(`INSERT INTO settings (key, value) VALUES ('whatsapp_number', '') ON CONFLICT (key) DO NOTHING`);
-
-  await pool.query(`
-    INSERT INTO services (name, hours, needs_scheduling, products, observation, price_rule, per_unit)
-    SELECT seed.name, seed.hours, seed.needs_scheduling, seed.products, seed.observation, seed.price_rule, seed.per_unit
-    FROM (
-      VALUES
-        ('Lavagem Simples', 1.0, FALSE, '', 'Lavagem externa padrão.', 'Tabela fixa', FALSE),
-        ('Lavagem Completa', 2.0, TRUE, '', 'Lavagem externa e interna detalhada.', 'Tabela fixa', FALSE),
-        ('Polimento Técnico', 4.0, TRUE, '', 'Correção leve de pintura com proteção.', 'Por avaliação', FALSE),
-        ('Higienização Interna', 3.0, TRUE, '', 'Higienização completa de bancos e carpetes.', 'Tabela fixa', FALSE),
-        ('Vitrificação', 6.0, TRUE, '', 'Proteção cerâmica com acabamento premium.', 'Por avaliação', FALSE)
-    ) AS seed(name, hours, needs_scheduling, products, observation, price_rule, per_unit)
-    WHERE NOT EXISTS (
-      SELECT 1 FROM services s WHERE LOWER(s.name) = LOWER(seed.name)
-    )
-  `);
 
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_customers_cpf ON customers(cpf)`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_vehicles_plate ON vehicles(plate)`);
@@ -1284,7 +1229,7 @@ app.get('/api/orders/open-by-plate/:plate', async (req, res) => {
 const bootstrap = async () => {
   try {
     await ensureCoreAuthTables();
-    await ensureBusinessTables();
+    await runBusinessBootstrap();
     await ensureInventoryFeature();
     app.listen(port, '0.0.0.0', () => {
       console.log(`AryCar API on http://0.0.0.0:${port}`);
