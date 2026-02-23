@@ -1,8 +1,8 @@
 FROM node:20
 WORKDIR /app
 
-COPY backend/package.json ./package.json
-RUN /usr/local/bin/npm ci --omit=dev
+COPY backend/package*.json ./
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi
 
 COPY backend/src ./src
 
