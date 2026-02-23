@@ -183,6 +183,11 @@ INSERT INTO settings (key, value) VALUES ('whatsapp_number', '');
 
 O frontend está preparado para consumir estes endpoints quando `API_BASE_URL` estiver configurado em `src/config/api.ts`:
 
+### Autenticação
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/api/auth/login` | Login por e-mail/senha para usuários administrativos |
+
 ### Clientes
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|

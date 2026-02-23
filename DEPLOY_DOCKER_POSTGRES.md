@@ -55,3 +55,21 @@ Esperado: JSON com `status: "ok"` e `db: "connected"`.
 ## Banco separado no Coolify
 
 No deploy, basta preencher `DATABASE_PASSWORD` (e manter os demais valores conforme seu banco criado).
+
+
+## 4) Criar usuário ADMIN para login
+
+Com o banco já criado e os scripts `001_schema.sql`/`002_roles_policies.sql` aplicados, rode:
+
+```bash
+psql "postgresql://USER:PASSWORD@HOST:5432/arycar_db" -c "INSERT INTO users (name, email, password_hash, role, active) VALUES ('Administrador', 'admin@arycar.com.br', 'admin123', 'admin', TRUE) ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name,     password_hash = EXCLUDED.password_hash,     role = EXCLUDED.role,     active = TRUE;"
+```
+
+Depois, faça login na tela com:
+
+- E-mail: `admin@arycar.com.br`
+- Senha: `admin123`
+- Perfil: `Admin`
+
+> Recomendado: trocar a senha após o primeiro acesso.
+

@@ -78,6 +78,49 @@ app.get('/api/admin/default-user', async (_req, res) => {
   }
 });
 
+
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: 'email e password são obrigatórios.' });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, name, email, phone, role, active, password_hash
+       FROM users
+       WHERE email = $1
+       LIMIT 1`,
+      [String(email).trim().toLowerCase()],
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).json({ message: 'Credenciais inválidas.' });
+    }
+
+    const user = rows[0];
+
+    if (!user.active) {
+      return res.status(403).json({ message: 'Usuário inativo.' });
+    }
+
+    if (!user.password_hash || user.password_hash !== password) {
+      return res.status(401).json({ message: 'Credenciais inválidas.' });
+    }
+
+    return res.status(200).json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao autenticar usuário.', details: error.message });
+  }
+});
+
 app.get('/api/users', async (_req, res) => {
   try {
     const { rows } = await pool.query('SELECT id, name, email, phone, role, active, created_at FROM users ORDER BY created_at DESC');
