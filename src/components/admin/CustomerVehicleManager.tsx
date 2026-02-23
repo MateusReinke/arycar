@@ -428,18 +428,27 @@ const CustomerVehicleManager = () => {
               </div>
             </div>
 
-            <div className="space-y-3 rounded-xl border bg-card/40 p-4">
-              <p className="text-sm font-semibold flex items-center gap-1"><MapPin className="h-4 w-4" />Endereço para Leva e Traz</p>
-              <div className="grid gap-3 md:grid-cols-4">
-                <div className="md:col-span-2"><Label>Rótulo</Label><Input value={customerForm.addressLabel} onChange={(e) => setCustomerForm({ ...customerForm, addressLabel: e.target.value })} /></div>
-                <div className="md:col-span-2"><Label>CEP</Label><Input value={customerForm.cep} onChange={(e) => setCustomerForm({ ...customerForm, cep: e.target.value.replace(/\D/g, '').slice(0, 8) })} placeholder={isLoadingCep ? 'Consultando CEP...' : 'Digite 8 dígitos'} /></div>
-                <div className="md:col-span-4"><Label>Rua</Label><Input value={customerForm.street} onChange={(e) => setCustomerForm({ ...customerForm, street: e.target.value })} /></div>
-                <div><Label>Número</Label><Input value={customerForm.number} onChange={(e) => setCustomerForm({ ...customerForm, number: e.target.value })} /></div>
-                <div><Label>Bairro</Label><Input value={customerForm.district} onChange={(e) => setCustomerForm({ ...customerForm, district: e.target.value })} /></div>
-                <div><Label>Cidade</Label><Input value={customerForm.city} onChange={(e) => setCustomerForm({ ...customerForm, city: e.target.value })} /></div>
-                <div><Label>UF</Label><Input value={customerForm.state} onChange={(e) => setCustomerForm({ ...customerForm, state: e.target.value.toUpperCase().slice(0, 2) })} /></div>
-                <div className="md:col-span-4"><Label>Complemento</Label><Input value={customerForm.complement} onChange={(e) => setCustomerForm({ ...customerForm, complement: e.target.value })} /></div>
+          <div className="space-y-3 rounded-lg border p-3">
+            <p className="text-sm font-semibold flex items-center gap-1"><MapPin className="h-4 w-4" />Endereço para Leva e Traz</p>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div><Label>Rótulo</Label><Input value={customerForm.addressLabel} onChange={(e) => setCustomerForm({ ...customerForm, addressLabel: e.target.value })} /></div>
+              <div>
+                <Label>CEP</Label>
+                <Input
+                  value={customerForm.cep}
+                  onChange={(e) => setCustomerForm({ ...customerForm, cep: e.target.value.replace(/\D/g, '').slice(0, 8) })}
+                  placeholder="Digite 8 dígitos"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {isLoadingCep ? 'Consultando CEP...' : 'Busca automática ao completar 8 dígitos.'}
+                </p>
               </div>
+              <div className="md:col-span-2"><Label>Rua</Label><Input value={customerForm.street} onChange={(e) => setCustomerForm({ ...customerForm, street: e.target.value })} /></div>
+              <div><Label>Número</Label><Input value={customerForm.number} onChange={(e) => setCustomerForm({ ...customerForm, number: e.target.value })} /></div>
+              <div><Label>Bairro</Label><Input value={customerForm.district} onChange={(e) => setCustomerForm({ ...customerForm, district: e.target.value })} /></div>
+              <div><Label>Cidade</Label><Input value={customerForm.city} onChange={(e) => setCustomerForm({ ...customerForm, city: e.target.value })} /></div>
+              <div><Label>UF</Label><Input value={customerForm.state} onChange={(e) => setCustomerForm({ ...customerForm, state: e.target.value.toUpperCase().slice(0, 2) })} /></div>
+              <div className="md:col-span-3"><Label>Complemento</Label><Input value={customerForm.complement} onChange={(e) => setCustomerForm({ ...customerForm, complement: e.target.value })} /></div>
             </div>
 
             <div className="flex items-center justify-between rounded-xl border bg-card/40 p-4">

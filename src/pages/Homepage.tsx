@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Car, Sparkles, Shield, Clock, MapPin, Phone, Mail, ChevronRight, MessageCircle, Droplets, Sun, ArrowRight, MousePointerClick, Wrench } from 'lucide-react';
+import { Car, Sparkles, Shield, Clock, MapPin, Phone, Mail, ChevronRight, MessageCircle, Droplets, Sun, ArrowRight, MousePointerClick } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,69 +24,60 @@ import before3 from '@/assets/before-3.jpg';
 import after3 from '@/assets/after-3.jpg';
 
 const services = [
-    {
-      id: 0,
-      icon: Sparkles,
-      title: 'Polimento',
-      subtitle: 'Brilho e Correção',
-      desc: 'Polimento comercial e técnico com correção de pintura e brilho espelhado.',
-      image: servicePolimento,
-      features: ['Remoção de marcas leves', 'Refino técnico em etapas', 'Acabamento brilhante'],
-    },
-    {
-      id: 1,
-      icon: Shield,
-      title: 'Vitrificação',
-      subtitle: 'Proteção Cerâmica',
-      desc: 'Proteção cerâmica duradoura para pintura com acabamento hidrofóbico.',
-      image: serviceVitrificacao,
-      features: ['Barreira contra intempéries', 'Toque hidrofóbico', 'Maior durabilidade da pintura'],
-    },
-    {
-      id: 3,
-      icon: Clock,
-      title: 'Higienização',
-      subtitle: 'Saúde e Conforto',
-      desc: 'Sanitização com ozônio, limpeza profunda de estofados e carpetes.',
-      image: serviceHigienizacao,
-      features: ['Extração de sujeira profunda', 'Neutralização de odores', 'Proteção para famílias e apps'],
-    },
-    {
-      id: 2,
-      icon: Droplets,
-      title: 'Lavagem Detalhada',
-      subtitle: 'Limpeza Premium',
-      desc: 'Limpeza completa interna e externa com produtos premium.',
-      image: serviceLavagem,
-      features: ['Pré-lavagem técnica', 'Aspiração + acabamento interno', 'Finalização com brilho'],
-    },
-    {
-      id: 4,
-      icon: Sun,
-      title: 'Tratamento de Couro',
-      subtitle: 'Interior Conservado',
-      desc: 'Hidratação e proteção de bancos e painéis em couro.',
-      image: serviceCouro,
-      features: ['Limpeza técnica de couro', 'Hidratação especializada', 'Proteção contra ressecamento'],
-    },
-    {
-      id: 5,
-      icon: Car,
-      title: 'Restauração de Faróis',
-      subtitle: 'Visibilidade e Segurança',
-      desc: 'Recuperação da transparência e aplicação de proteção UV.',
-      image: serviceFarois,
-      features: ['Remoção de opacidade', 'Polimento de lente', 'Proteção UV'],
-    },
-    {
-      id: 6,
-      icon: Wrench,
-      title: 'Reparos Express',
-      subtitle: 'Correções Rápidas',
-      desc: 'Pequenos reparos estéticos com execução rápida para o carro sair pronto no mesmo dia.',
-      image: servicePolimento,
-      features: ['Polimento localizado', 'Retoque estético rápido', 'Entrega ágil no mesmo dia'],
-    },
+  {
+    id: 0,
+    icon: Sparkles,
+    title: 'Polimento',
+    subtitle: 'Brilho e Correção',
+    desc: 'Polimento comercial e técnico com correção de pintura e brilho espelhado.',
+    image: servicePolimento,
+    features: ['Remoção de marcas leves', 'Refino técnico em etapas', 'Acabamento brilhante'],
+  },
+  {
+    id: 1,
+    icon: Shield,
+    title: 'Vitrificação',
+    subtitle: 'Proteção Cerâmica',
+    desc: 'Proteção cerâmica duradoura para pintura com acabamento hidrofóbico.',
+    image: serviceVitrificacao,
+    features: ['Barreira contra intempéries', 'Toque hidrofóbico', 'Maior durabilidade da pintura'],
+  },
+  {
+    id: 2,
+    icon: Droplets,
+    title: 'Lavagem Detalhada',
+    subtitle: 'Limpeza Premium',
+    desc: 'Limpeza completa interna e externa com produtos premium.',
+    image: serviceLavagem,
+    features: ['Pré-lavagem técnica', 'Aspiração + acabamento interno', 'Finalização com brilho'],
+  },
+  {
+    id: 3,
+    icon: Clock,
+    title: 'Higienização',
+    subtitle: 'Saúde e Conforto',
+    desc: 'Sanitização com ozônio, limpeza profunda de estofados e carpetes.',
+    image: serviceHigienizacao,
+    features: ['Extração de sujeira profunda', 'Neutralização de odores', 'Proteção para famílias e apps'],
+  },
+  {
+    id: 4,
+    icon: Sun,
+    title: 'Tratamento de Couro',
+    subtitle: 'Interior Conservado',
+    desc: 'Hidratação e proteção de bancos e painéis em couro.',
+    image: serviceCouro,
+    features: ['Limpeza técnica de couro', 'Hidratação especializada', 'Proteção contra ressecamento'],
+  },
+  {
+    id: 5,
+    icon: Car,
+    title: 'Restauração de Faróis',
+    subtitle: 'Visibilidade e Segurança',
+    desc: 'Recuperação da transparência e aplicação de proteção UV.',
+    image: serviceFarois,
+    features: ['Remoção de opacidade', 'Polimento de lente', 'Proteção UV'],
+  },
 ];
 
 const gallery = [
@@ -143,7 +134,7 @@ const Homepage = () => {
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
-  const [activeServiceId, setActiveServiceId] = useState(2);
+  const [activeServiceId, setActiveServiceId] = useState(0);
 
   useEffect(() => {
     const settings = storageService.getSettings();
@@ -260,36 +251,26 @@ const Homepage = () => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/70 to-background" />
 
-                  <div className="relative z-10 flex h-full flex-col p-6 text-center">
-                    <div className="flex items-center justify-center">
+                  <div className="relative z-10 flex h-full flex-col p-6">
+                    <div className="flex items-center gap-3">
                       <div className={`rounded-xl p-3 ${isActive ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'}`}>
                         <service.icon className="h-5 w-5" />
                       </div>
-                    </div>
-
-                    <div className={`mt-3 ${isActive ? 'opacity-100 max-w-full mx-auto' : 'opacity-100 lg:opacity-0 lg:max-w-0 overflow-hidden'} transition-all duration-300`}>
+                      <div>
                         <p className="text-xs uppercase tracking-widest text-muted-foreground">{service.subtitle}</p>
-                        <h3 className="text-2xl font-bold break-words">{service.title}</h3>
-                    </div>
-
-                    {!isActive && (
-                      <div className="hidden lg:flex flex-1 items-center justify-center overflow-hidden">
-                        <div className="-rotate-90 origin-center whitespace-nowrap text-center">
-                          <p className="text-[10px] uppercase tracking-widest text-primary/80">{service.subtitle}</p>
-                          <h3 className="mt-1 text-3xl font-bold text-foreground">{service.title}</h3>
-                        </div>
+                        <h3 className="text-2xl font-bold">{service.title}</h3>
                       </div>
-                    )}
+                    </div>
 
                     {isActive ? (
                       <>
-                        <p className="mx-auto mt-6 max-w-md text-sm text-muted-foreground leading-relaxed">{service.desc}</p>
-                        <ul className="mx-auto mt-6 w-full max-w-md space-y-2 text-sm">
+                        <p className="mt-6 text-sm text-muted-foreground leading-relaxed">{service.desc}</p>
+                        <ul className="mt-6 space-y-2 text-sm">
                           {service.features.map((feature) => (
                             <li key={feature} className="rounded-lg border bg-background/80 px-3 py-2">• {feature}</li>
                           ))}
                         </ul>
-                        <div className="mt-auto pt-6 flex justify-center">
+                        <div className="mt-auto pt-6">
                           <Button onClick={(e) => { e.stopPropagation(); document.getElementById('contato')?.scrollIntoView({ behavior: 'smooth' }); }}>
                             Solicitar orçamento
                             <ArrowRight className="ml-2 h-4 w-4" />
@@ -297,7 +278,7 @@ const Homepage = () => {
                         </div>
                       </>
                     ) : (
-                      <div className="mt-auto flex items-center justify-center gap-2 text-xs text-primary/90">
+                      <div className="mt-auto flex items-center gap-2 text-xs text-primary/90">
                         <MousePointerClick className="h-4 w-4" />
                         Clique para ver
                       </div>
