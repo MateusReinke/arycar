@@ -10,6 +10,7 @@ services:
         VITE_PLATE_API_URL: ${VITE_PLATE_API_URL}
         VITE_PLATE_API_TOKEN: ${VITE_PLATE_API_TOKEN}
         VITE_FIPE_API_URL: ${VITE_FIPE_API_URL}
+        VITE_N8N_WEBHOOK_URL: ${VITE_N8N_WEBHOOK_URL}
     ports:
       - "8089:80"
     depends_on:
@@ -33,4 +34,5 @@ services:
       VITE_PLATE_API_URL: ${VITE_PLATE_API_URL}
       VITE_PLATE_API_TOKEN: ${VITE_PLATE_API_TOKEN}
       VITE_FIPE_API_URL: ${VITE_FIPE_API_URL}
+      VITE_N8N_WEBHOOK_URL: ${VITE_N8N_WEBHOOK_URL}
     restart: unless-stopped

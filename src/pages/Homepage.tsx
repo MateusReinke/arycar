@@ -136,10 +136,12 @@ const beforeAfterShowcases = [
 
 const Homepage = () => {
   const [whatsappNumber, setWhatsappNumber] = useState('');
-  const [activeServiceId, setActiveServiceId] = useState(0);
+  const [activeServiceId, setActiveServiceId] = useState<number | null>(0);
   const [contactOpen, setContactOpen] = useState(false);
   const [leadName, setLeadName] = useState('');
   const [leadPhone, setLeadPhone] = useState('');
+  const [leadVehicle, setLeadVehicle] = useState('');
+  const [leadService, setLeadService] = useState('');
   const [leadMessage, setLeadMessage] = useState('');
   const [preferWhatsapp, setPreferWhatsapp] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -154,14 +156,15 @@ const Homepage = () => {
   }, []);
 
   const activeShowcase = beforeAfterShowcases.find((showcase) => showcase.id === activeShowcaseId) || beforeAfterShowcases[0];
+  const isAgentConfigured = Boolean(N8N_WEBHOOK_URL);
 
   const whatsappLink = whatsappNumber ? `https://wa.me/55${whatsappNumber.replace(/\D/g, '')}` : '#';
 
   const handleAgentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!leadName.trim() || !leadPhone.trim()) {
-      toast.error('Preencha nome e telefone para iniciar o atendimento.');
+    if (!leadName.trim() || !leadPhone.trim() || !leadVehicle.trim() || !leadService.trim()) {
+      toast.error('Preencha nome, telefone, veículo e serviço para iniciar o atendimento.');
       return;
     }
 
@@ -169,29 +172,36 @@ const Homepage = () => {
       source: 'homepage-agent',
       name: leadName,
       phone: leadPhone,
+      vehicle: leadVehicle,
+      requestedService: leadService,
       message: leadMessage,
       preferWhatsapp,
       timestamp: new Date().toISOString(),
     };
 
+    if (!isAgentConfigured) {
+      toast.error('Configure VITE_N8N_WEBHOOK_URL para ativar o Assistente Arycar no deploy.');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
-      if (N8N_WEBHOOK_URL) {
-        const response = await fetch(N8N_WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+      const response = await fetch(N8N_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-        if (!response.ok) {
-          throw new Error('Falha ao enviar para o agente.');
-        }
+      if (!response.ok) {
+        throw new Error('Falha ao enviar para o agente.');
       }
 
       toast.success('Atendimento iniciado! Nosso agente já recebeu sua solicitação.');
       setLeadName('');
       setLeadPhone('');
+      setLeadVehicle('');
+      setLeadService('');
       setLeadMessage('');
       setContactOpen(false);
     } catch {
@@ -270,6 +280,13 @@ const Homepage = () => {
                   Falar com especialista
                 </Button>
               </div>
+              <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-muted-foreground lg:justify-start">
+                {['Agendamento rápido', 'Leva e traz', 'Atendimento para frotas', 'Equipe certificada'].map((pill) => (
+                  <span key={pill} className="rounded-full border border-border/80 bg-card/60 px-3 py-1">
+                    {pill}
+                  </span>
+                ))}
+              </div>
               <div className="grid grid-cols-1 gap-3 text-left sm:grid-cols-3">
                 <div className="rounded-xl border border-border/80 bg-card/50 p-3">
                   <p className="text-xl font-bold text-primary">+4.500</p>
@@ -310,66 +327,60 @@ const Homepage = () => {
               <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Cards adaptados para desktop e mobile. Toque em qualquer card e veja a solução ideal para o seu veículo.</p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:col-span-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {services.map((service) => {
                   const isActive = activeServiceId === service.id;
 
                   return (
-                    <button
+                    <article
                       key={service.id}
-                      onClick={() => setActiveServiceId(service.id)}
                       className={`group relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 ${
                         isActive
                           ? 'border-primary/50 bg-card shadow-lg shadow-primary/20'
                           : 'border-border/80 bg-background/70 hover:border-primary/40'
                       }`}
                     >
-                      <img
-                        src={service.image}
-                        alt={service.title}
-                        className="absolute inset-0 h-full w-full object-cover opacity-10 transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                      <div className="relative z-10">
-                        <div className="mb-4 inline-flex rounded-xl bg-primary/10 p-2 text-primary">
-                          <service.icon className="h-5 w-5" />
-                        </div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{service.subtitle}</p>
-                        <h3 className="mt-1 text-lg font-bold">{service.title}</h3>
-                        {!isActive && (
+                      <button
+                        onClick={() => setActiveServiceId((prev) => (prev === service.id ? null : service.id))}
+                        className="relative z-10 w-full text-left"
+                        aria-expanded={isActive}
+                      >
+                        <img
+                          src={service.image}
+                          alt={service.title}
+                          className="absolute inset-0 h-full w-full object-cover opacity-10 transition-transform duration-500 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                        <div className="relative z-10">
+                          <div className="mb-4 inline-flex rounded-xl bg-primary/10 p-2 text-primary">
+                            <service.icon className="h-5 w-5" />
+                          </div>
+                          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{service.subtitle}</p>
+                          <h3 className="mt-1 text-lg font-bold">{service.title}</h3>
                           <div className="mt-4 flex items-center gap-2 text-xs text-primary">
                             <MousePointerClick className="h-4 w-4" />
-                            Toque para ver detalhes
+                            {isActive ? 'Toque para recolher' : 'Toque para expandir'}
                           </div>
-                        )}
-                      </div>
-                    </button>
+                        </div>
+                      </button>
+
+                      {isActive && (
+                        <div className="relative z-10 mt-5 space-y-4 border-t border-border/70 pt-4">
+                          <p className="text-sm leading-relaxed text-muted-foreground">{service.desc}</p>
+                          <ul className="space-y-2 text-sm">
+                            {service.features.map((feature) => (
+                              <li key={feature} className="rounded-lg border bg-background/80 px-3 py-2">• {feature}</li>
+                            ))}
+                          </ul>
+                          <Button className="w-full" onClick={() => setContactOpen(true)}>
+                            Solicitar orçamento
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </article>
                   );
                 })}
-              </div>
-
-              <article className="relative overflow-hidden rounded-2xl border border-primary/40 bg-card p-6 shadow-xl shadow-primary/10">
-                <img
-                  src={services[activeServiceId].image}
-                  alt={services[activeServiceId].title}
-                  className="absolute inset-0 h-full w-full object-cover opacity-15"
-                  loading="lazy"
-                />
-                <div className="relative z-10">
-                  <h3 className="text-2xl font-bold">{services[activeServiceId].title}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{services[activeServiceId].desc}</p>
-                  <ul className="mt-5 space-y-2 text-sm">
-                    {services[activeServiceId].features.map((feature) => (
-                      <li key={feature} className="rounded-lg border bg-background/80 px-3 py-2">• {feature}</li>
-                    ))}
-                  </ul>
-                  <Button className="mt-6 w-full" onClick={() => setContactOpen(true)}>
-                    Solicitar orçamento
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </article>
             </div>
           </div>
         </section>
@@ -542,7 +553,11 @@ const Homepage = () => {
                   <PhoneCall className="h-4 w-4 text-primary" />
                   Fale com nosso agente
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">Integração pronta para n8n via <code>VITE_N8N_WEBHOOK_URL</code>.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {isAgentConfigured
+                    ? 'Assistente online: as solicitações são enviadas direto para seu fluxo no n8n.'
+                    : 'Configure VITE_N8N_WEBHOOK_URL no deploy para ativar o envio automático no n8n.'}
+                </p>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setContactOpen(false)}>
                 Fechar
@@ -557,6 +572,14 @@ const Homepage = () => {
               <div>
                 <Label>Telefone *</Label>
                 <Input value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} placeholder="(11) 99999-9999" />
+              </div>
+              <div>
+                <Label>Veículo *</Label>
+                <Input value={leadVehicle} onChange={(e) => setLeadVehicle(e.target.value)} placeholder="Ex.: Onix 2022" />
+              </div>
+              <div>
+                <Label>Serviço desejado *</Label>
+                <Input value={leadService} onChange={(e) => setLeadService(e.target.value)} placeholder="Ex.: Polimento técnico" />
               </div>
               <div>
                 <Label>Mensagem</Label>
