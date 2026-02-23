@@ -79,6 +79,9 @@ export interface Customer {
   cpf: string;
   phone: string;
   address: string;
+  email?: string;
+  emergencyContact?: string;
+  notes?: string;
 }
 
 export interface Vehicle {
@@ -102,6 +105,12 @@ export interface AuthUser {
   email?: string;
   phone?: string;
   role: UserRole;
+  cpf?: string;
+  address?: string;
+  birthDate?: string;
+  emergencyContact?: string;
+  department?: string;
+  jobTitle?: string;
 }
 
 export interface LoginPayload {
@@ -149,6 +158,10 @@ export interface Employee {
   id: string;
   name: string;
   role: string;
+  email?: string;
+  phone?: string;
+  department?: string;
+  shift?: string;
 }
 
 export interface OrderSummary {

@@ -2,6 +2,7 @@
 -- Objetivo: manter o banco independente do app e com migração fácil depois.
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 DO $$
 BEGIN
@@ -88,10 +89,26 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT,
   role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'employee', 'customer')),
   active BOOLEAN NOT NULL DEFAULT TRUE,
+  cpf VARCHAR(14),
+  address TEXT,
+  birth_date DATE,
+  emergency_contact VARCHAR(120),
+  department VARCHAR(120),
+  job_title VARCHAR(120),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+
+CREATE TABLE IF NOT EXISTS policy_rules (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  code VARCHAR(120) NOT NULL UNIQUE,
+  title VARCHAR(200) NOT NULL,
+  description TEXT,
+  enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 CREATE TABLE IF NOT EXISTS service_requests (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -189,8 +206,15 @@ END
 $$;
 
 INSERT INTO users (name, email, password_hash, role)
-VALUES ('Administrador', 'admin@arycar.com.br', 'change-me', 'admin')
+VALUES ('Administrador', 'admin@arycar.com', crypt('Admin@123', gen_salt('bf')), 'admin')
 ON CONFLICT (email) DO NOTHING;
+
+INSERT INTO policy_rules (code, title, description)
+VALUES
+  ('password_min_length', 'Senha mínima de 8 caracteres', 'Regra base de proteção para credenciais.'),
+  ('password_complexity', 'Senha com letras maiúsculas, minúsculas, número e símbolo', 'Aumenta a segurança contra ataques de força bruta.'),
+  ('mandatory_password_rotation', 'Troca de senha para contas compartilhadas', 'Recomendado para usuários administrativos.')
+ON CONFLICT (code) DO NOTHING;
 
 INSERT INTO order_statuses (code, label, color_class)
 VALUES
