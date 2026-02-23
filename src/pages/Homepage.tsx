@@ -20,10 +20,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useMemo, useState, useEffect } from 'react';
 import { storageService } from '@/services/storage';
 import { toast } from 'sonner';
+import { Switch } from '@/components/ui/switch';
 
 import arycarLogo from '@/assets/arycar-logo.png';
 import servicePolimento from '@/assets/service-polimento.jpg';
@@ -114,6 +114,7 @@ const Homepage = () => {
   const [leadName, setLeadName] = useState('');
   const [leadPhone, setLeadPhone] = useState('');
   const [leadMessage, setLeadMessage] = useState('');
+  const [preferWhatsapp, setPreferWhatsapp] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -144,6 +145,7 @@ const Homepage = () => {
       name: leadName,
       phone: leadPhone,
       message: leadMessage,
+      preferWhatsapp,
       timestamp: new Date().toISOString(),
     };
 
@@ -443,60 +445,72 @@ const Homepage = () => {
         </div>
       </footer>
 
-      <Dialog open={contactOpen} onOpenChange={setContactOpen}>
-        <DialogTrigger asChild>
-          <button
-            className="fixed bottom-6 left-6 z-50 max-w-[280px] rounded-2xl border border-primary/30 bg-card/95 p-4 text-left shadow-2xl shadow-primary/20 backdrop-blur"
-            aria-label="Abrir atendimento inteligente"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                <Bot className="h-5 w-5" />
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+        {contactOpen && (
+          <div className="w-[min(92vw,360px)] rounded-2xl border border-primary/30 bg-card/95 p-4 text-left shadow-2xl shadow-primary/20 backdrop-blur">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="flex items-center gap-2 text-sm font-semibold">
+                  <PhoneCall className="h-4 w-4 text-primary" />
+                  Fale com nosso agente
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">Integração pronta para n8n via <code>VITE_N8N_WEBHOOK_URL</code>.</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setContactOpen(false)}>
+                Fechar
+              </Button>
+            </div>
+
+            <form onSubmit={handleAgentSubmit} className="space-y-3">
+              <div>
+                <Label>Nome *</Label>
+                <Input value={leadName} onChange={(e) => setLeadName(e.target.value)} placeholder="Seu nome" />
               </div>
               <div>
-                <p className="text-sm font-semibold">Assistente Arycar</p>
-                <p className="text-xs text-muted-foreground">Atendimento inteligente 24h</p>
+                <Label>Telefone *</Label>
+                <Input value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} placeholder="(11) 99999-9999" />
               </div>
-            </div>
-          </button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <PhoneCall className="h-4 w-4 text-primary" />
-              Fale com nosso agente
-            </DialogTitle>
-            <DialogDescription>
-              Caixa fixa preparada para integração com n8n. Configure <code>VITE_N8N_WEBHOOK_URL</code> para ativar o envio automático.
-            </DialogDescription>
-          </DialogHeader>
+              <div>
+                <Label>Mensagem</Label>
+                <Textarea value={leadMessage} onChange={(e) => setLeadMessage(e.target.value)} placeholder="Quero orçamento para..." rows={3} />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+                <div>
+                  <p className="text-sm font-medium">Receber contato pelo WhatsApp</p>
+                  <p className="text-xs text-muted-foreground">Nossa equipe prioriza esse canal quando ativado.</p>
+                </div>
+                <Switch checked={preferWhatsapp} onCheckedChange={setPreferWhatsapp} />
+              </div>
+              <Button disabled={isSubmitting} className="w-full" type="submit">
+                {isSubmitting ? 'Enviando...' : 'Iniciar atendimento'}
+              </Button>
+            </form>
+          </div>
+        )}
 
-          <form onSubmit={handleAgentSubmit} className="space-y-4">
-            <div>
-              <Label>Nome</Label>
-              <Input value={leadName} onChange={(e) => setLeadName(e.target.value)} placeholder="Seu nome" />
+        <button
+          className="max-w-[280px] rounded-2xl border border-primary/30 bg-card/95 p-4 text-left shadow-2xl shadow-primary/20 backdrop-blur"
+          aria-label="Abrir atendimento inteligente"
+          onClick={() => setContactOpen((prev) => !prev)}
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+              <Bot className="h-5 w-5" />
             </div>
             <div>
-              <Label>Telefone</Label>
-              <Input value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} placeholder="(11) 99999-9999" />
+              <p className="text-sm font-semibold">Assistente Arycar</p>
+              <p className="text-xs text-muted-foreground">Clique para {contactOpen ? 'recolher' : 'expandir'} o mini chat</p>
             </div>
-            <div>
-              <Label>Mensagem</Label>
-              <Textarea value={leadMessage} onChange={(e) => setLeadMessage(e.target.value)} placeholder="Quero orçamento para..." rows={4} />
-            </div>
-            <Button disabled={isSubmitting} className="w-full" type="submit">
-              {isSubmitting ? 'Enviando...' : 'Iniciar atendimento'}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </button>
+      </div>
 
       {whatsappNumber && (
         <a
           href={whatsappLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[hsl(142,71%,45%)] text-white shadow-xl transition-transform hover:scale-110 active:scale-95"
+          className="fixed bottom-28 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[hsl(142,71%,45%)] text-white shadow-xl transition-transform hover:scale-110 active:scale-95"
           aria-label="WhatsApp"
         >
           <MessageCircle className="h-7 w-7" />
