@@ -31,7 +31,7 @@ Use **Docker Compose** (recomendado para este projeto).
 
 ### Variáveis obrigatórias no Coolify
 
-Configure estas variáveis de ambiente no serviço:
+Configure estas variáveis de ambiente no projeto (Environment Variables):
 
 - `DATABASE_HOST`
 - `DATABASE_PORT`
@@ -39,8 +39,14 @@ Configure estas variáveis de ambiente no serviço:
 - `DATABASE_USER`
 - `DATABASE_PASSWORD`
 - `CORS_ORIGIN`
+- `VITE_API_BASE_URL`
+- `VITE_PLATE_API_URL`
+- `VITE_PLATE_API_TOKEN`
+- `VITE_FIPE_API_URL`
 
 > `CORS_ORIGIN` aceita múltiplas origens separadas por vírgula (exemplo: `https://app.exemplo.com,https://admin.exemplo.com`).
+
+> As variáveis `VITE_*` são de build do frontend. Elas foram adicionadas como `build.args` no `docker-compose.yml`, então passam a aparecer no painel do Coolify e entram corretamente no build da imagem web.
 
 ### Rede interna entre serviços
 

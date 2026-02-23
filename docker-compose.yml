@@ -5,6 +5,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_PLATE_API_URL: ${VITE_PLATE_API_URL}
+        VITE_PLATE_API_TOKEN: ${VITE_PLATE_API_TOKEN}
+        VITE_FIPE_API_URL: ${VITE_FIPE_API_URL}
     ports:
       - "8089:80"
     depends_on:
@@ -24,4 +29,8 @@ services:
       DATABASE_USER: ${DATABASE_USER}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       CORS_ORIGIN: ${CORS_ORIGIN}
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+      VITE_PLATE_API_URL: ${VITE_PLATE_API_URL}
+      VITE_PLATE_API_TOKEN: ${VITE_PLATE_API_TOKEN}
+      VITE_FIPE_API_URL: ${VITE_FIPE_API_URL}
     restart: unless-stopped
