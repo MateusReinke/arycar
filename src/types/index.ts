@@ -41,10 +41,13 @@ export interface Service {
 
 export interface Product {
   id: string;
+  productType: string;
+  brand: string;
   name: string;
   unit: UnitType;
   stockCurrent: number;
   stockMin: number;
+  pricePerLiter: number;
   active: boolean;
 }
 
