@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Building2, Car, Edit, MapPin, Plus, Trash2, UserCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -85,6 +85,9 @@ const CustomerVehicleManager = () => {
     year: '',
     km: '',
   });
+  const [isLoadingCep, setIsLoadingCep] = useState(false);
+  const [lastResolvedCep, setLastResolvedCep] = useState('');
+  const cepDebounceRef = useRef<number | null>(null);
 
   const refresh = () => {
     setCustomers(storageService.getCustomers());
@@ -118,35 +121,84 @@ const CustomerVehicleManager = () => {
     }, {});
   }, [vehicles]);
 
-  const fetchCep = async () => {
-    const cep = customerForm.cep.replace(/\D/g, '');
-    if (cep.length !== 8) {
-      toast.error('Informe um CEP válido com 8 dígitos.');
-      return;
-    }
+  const fillAddressByCep = async (cep: string) => {
+    if (cep.length !== 8 || isLoadingCep || lastResolvedCep === cep) return;
 
-    try {
-      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-      const data = await response.json() as Record<string, string | boolean>;
+    setIsLoadingCep(true);
 
-      if (data.erro) {
-        toast.error('CEP não encontrado.');
-        return;
-      }
-
+    const applyAddress = (payload: { street?: string; district?: string; city?: string; state?: string }) => {
       setCustomerForm((prev) => ({
         ...prev,
         cep,
-        street: String(data.logradouro || ''),
-        district: String(data.bairro || ''),
-        city: String(data.localidade || ''),
-        state: String(data.uf || ''),
+        street: payload.street || prev.street,
+        district: payload.district || prev.district,
+        city: payload.city || prev.city,
+        state: (payload.state || prev.state || '').toUpperCase().slice(0, 2),
       }));
+      setLastResolvedCep(cep);
       toast.success('Endereço preenchido automaticamente pelo CEP.');
+    };
+
+    try {
+      const viaCepResponse = await fetch(`https://viacep.com.br/ws/${cep}/json/`, { cache: 'no-store' });
+      if (!viaCepResponse.ok) throw new Error('viacep_http_error');
+      const viaCepData = await viaCepResponse.json() as Record<string, string | boolean>;
+
+      if (!viaCepData.erro) {
+        applyAddress({
+          street: String(viaCepData.logradouro || ''),
+          district: String(viaCepData.bairro || ''),
+          city: String(viaCepData.localidade || ''),
+          state: String(viaCepData.uf || ''),
+        });
+        return;
+      }
+
+      const brasilApiResponse = await fetch(`https://brasilapi.com.br/api/cep/v1/${cep}`, { cache: 'no-store' });
+      if (!brasilApiResponse.ok) throw new Error('brasilapi_http_error');
+      const brasilApiData = await brasilApiResponse.json() as Record<string, string>;
+
+      applyAddress({
+        street: String(brasilApiData.street || ''),
+        district: String(brasilApiData.neighborhood || ''),
+        city: String(brasilApiData.city || ''),
+        state: String(brasilApiData.state || ''),
+      });
     } catch (_error) {
-      toast.error('Não foi possível consultar o CEP agora.');
+      setLastResolvedCep('');
+      toast.error('Não foi possível consultar o CEP agora. Verifique a conexão no deploy.');
+    } finally {
+      setIsLoadingCep(false);
     }
   };
+
+  useEffect(() => {
+    const cep = customerForm.cep.replace(/\D/g, '');
+
+    if (cep.length !== 8) {
+      setLastResolvedCep('');
+      if (cepDebounceRef.current) {
+        window.clearTimeout(cepDebounceRef.current);
+        cepDebounceRef.current = null;
+      }
+      return;
+    }
+
+    if (cepDebounceRef.current) {
+      window.clearTimeout(cepDebounceRef.current);
+    }
+
+    cepDebounceRef.current = window.setTimeout(() => {
+      fillAddressByCep(cep);
+    }, 350);
+
+    return () => {
+      if (cepDebounceRef.current) {
+        window.clearTimeout(cepDebounceRef.current);
+        cepDebounceRef.current = null;
+      }
+    };
+  }, [customerForm.cep]);
 
   const upsertCustomer = async () => {
     if (!customerForm.name.trim()) {
@@ -371,10 +423,19 @@ const CustomerVehicleManager = () => {
 
           <div className="space-y-3 rounded-lg border p-3">
             <p className="text-sm font-semibold flex items-center gap-1"><MapPin className="h-4 w-4" />Endereço para Leva e Traz</p>
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-2">
               <div><Label>Rótulo</Label><Input value={customerForm.addressLabel} onChange={(e) => setCustomerForm({ ...customerForm, addressLabel: e.target.value })} /></div>
-              <div><Label>CEP</Label><Input value={customerForm.cep} onChange={(e) => setCustomerForm({ ...customerForm, cep: e.target.value.replace(/\D/g, '').slice(0, 8) })} /></div>
-              <div className="self-end"><Button type="button" variant="secondary" onClick={fetchCep}>Buscar CEP</Button></div>
+              <div>
+                <Label>CEP</Label>
+                <Input
+                  value={customerForm.cep}
+                  onChange={(e) => setCustomerForm({ ...customerForm, cep: e.target.value.replace(/\D/g, '').slice(0, 8) })}
+                  placeholder="Digite 8 dígitos"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {isLoadingCep ? 'Consultando CEP...' : 'Busca automática ao completar 8 dígitos.'}
+                </p>
+              </div>
               <div className="md:col-span-2"><Label>Rua</Label><Input value={customerForm.street} onChange={(e) => setCustomerForm({ ...customerForm, street: e.target.value })} /></div>
               <div><Label>Número</Label><Input value={customerForm.number} onChange={(e) => setCustomerForm({ ...customerForm, number: e.target.value })} /></div>
               <div><Label>Bairro</Label><Input value={customerForm.district} onChange={(e) => setCustomerForm({ ...customerForm, district: e.target.value })} /></div>
