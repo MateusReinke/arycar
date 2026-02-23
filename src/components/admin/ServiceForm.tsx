@@ -63,6 +63,12 @@ const ServiceForm = () => {
   const [newVehicleType, setNewVehicleType] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [vehicleFilter] = useState<string>('all');
+
+  const safeVehicleFilter = useMemo(
+    () => (vehicleFilter && vehicleFilter !== 'all' ? vehicleFilter : 'all'),
+    [vehicleFilter],
+  );
 
   const productMap = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
 
@@ -454,7 +460,7 @@ const ServiceForm = () => {
 
       <div className="space-y-2">
         <div className="space-y-1 max-h-[700px] overflow-y-auto rounded-lg border border-border/60 p-2">
-          {services.filter((s) => vehicleFilter === 'all' || s.vehicleTypes.includes(vehicleFilter)).map((s) => (
+          {filteredServices.map((s) => (
             <div key={s.id} className="flex items-center justify-between rounded-lg bg-card p-3">
               <div>
                 <p className="text-sm font-medium">{s.name}</p>
