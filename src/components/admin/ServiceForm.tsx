@@ -63,9 +63,6 @@ const ServiceForm = () => {
   const [newVehicleType, setNewVehicleType] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [vehicleFilter, setVehicleFilter] = useState<'all' | 'carro' | 'moto' | 'caminhao'>('all');
-
-  const safeVehicleFilter = vehicleFilter || 'all';
 
   const productMap = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
 
@@ -315,13 +312,7 @@ const ServiceForm = () => {
         </Button>
       </div>
 
-      <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>{editingId ? 'Editar Serviço' : 'Cadastro de Serviço'}</DialogTitle>
-          </DialogHeader>
-
-          <Card>
+      {showForm && <Card>
         <CardHeader>
           <CardTitle>Dados do serviço</CardTitle>
         </CardHeader>
@@ -459,19 +450,11 @@ const ServiceForm = () => {
             {editingId && (<Button variant="outline" onClick={() => { setForm({ ...emptyForm }); setEditingId(null); setPricingType('carro'); setShowForm(false); }}>Cancelar</Button>)}
           </div>
         </CardContent>
-          </Card>
-        </DialogContent>
-      </Dialog>
+      </Card>}
 
       <div className="space-y-2">
-        <div className="flex flex-wrap items-center justify-center gap-2 py-2">
-          <Button variant={safeVehicleFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setVehicleFilter('all')} className="rounded-full hover:scale-105 transition">Todos</Button>
-          <Button variant={safeVehicleFilter === 'carro' ? 'default' : 'outline'} size="sm" onClick={() => setVehicleFilter('carro')} className="rounded-full hover:scale-105 transition"><Car className="mr-1 h-4 w-4" />Carro</Button>
-          <Button variant={safeVehicleFilter === 'moto' ? 'default' : 'outline'} size="sm" onClick={() => setVehicleFilter('moto')} className="rounded-full hover:scale-105 transition"><Bike className="mr-1 h-4 w-4" />Moto</Button>
-          <Button variant={safeVehicleFilter === 'caminhao' ? 'default' : 'outline'} size="sm" onClick={() => setVehicleFilter('caminhao')} className="rounded-full hover:scale-105 transition"><Truck className="mr-1 h-4 w-4" />Caminhão</Button>
-        </div>
         <div className="space-y-1 max-h-[700px] overflow-y-auto rounded-lg border border-border/60 p-2">
-          {filteredServices.map((s) => (
+          {services.filter((s) => vehicleFilter === 'all' || s.vehicleTypes.includes(vehicleFilter)).map((s) => (
             <div key={s.id} className="flex items-center justify-between rounded-lg bg-card p-3">
               <div>
                 <p className="text-sm font-medium">{s.name}</p>
