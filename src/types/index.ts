@@ -1,5 +1,6 @@
 export type VehicleSize = 'P' | 'M' | 'G';
 export type VehicleType = 'carro' | 'moto' | 'caminhao';
+export type UnitType = 'ml' | 'l' | 'g' | 'kg' | 'un';
 
 export const vehicleTypeLabels: Record<VehicleType, string> = {
   carro: 'Carro',
@@ -33,6 +34,36 @@ export interface Service {
   priceRule: string;
   perUnit: boolean;
   vehicleTypes: VehicleType[];
+  active?: boolean;
+  averageTimeMinutes?: number;
+  productConsumption?: ServiceProductConsumption[];
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  unit: UnitType;
+  stockCurrent: number;
+  stockMin: number;
+  active: boolean;
+}
+
+export interface ServiceProductConsumption {
+  id?: string;
+  productId: string;
+  quantity: number;
+  unit: UnitType;
+  wasteFactor: number;
+  productName?: string;
+  productUnit?: UnitType;
+}
+
+export interface StockAlert {
+  productId: string;
+  productName: string;
+  stockCurrent: number;
+  stockMin: number;
+  unit: UnitType;
 }
 
 export interface CartItem {

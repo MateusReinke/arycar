@@ -59,6 +59,187 @@ const ensureCoreAuthTables = async () => {
   `);
 };
 
+const ensureInventoryFeature = async () => {
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'unit_enum') THEN
+        CREATE TYPE unit_enum AS ENUM ('ml', 'l', 'g', 'kg', 'un');
+      END IF;
+    END $$;
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS products (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      name VARCHAR(200) NOT NULL UNIQUE,
+      unit unit_enum NOT NULL,
+      stock_current NUMERIC(14,3) NOT NULL DEFAULT 0,
+      stock_min NUMERIC(14,3) NOT NULL DEFAULT 0,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS active BOOLEAN NOT NULL DEFAULT TRUE`);
+  await pool.query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS average_time_minutes INTEGER NOT NULL DEFAULT 60`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS service_products (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      service_id UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+      product_id UUID NOT NULL REFERENCES products(id),
+      qty NUMERIC(14,3) NOT NULL CHECK (qty > 0),
+      unit unit_enum NOT NULL,
+      waste_factor NUMERIC(6,4) NOT NULL DEFAULT 0 CHECK (waste_factor >= 0),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (service_id, product_id)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS stock_movements (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      product_id UUID NOT NULL REFERENCES products(id),
+      work_order_item_id UUID,
+      service_id UUID,
+      movement_type VARCHAR(20) NOT NULL,
+      qty NUMERIC(14,3) NOT NULL,
+      unit unit_enum NOT NULL,
+      stock_before NUMERIC(14,3) NOT NULL,
+      stock_after NUMERIC(14,3) NOT NULL,
+      details JSONB NOT NULL DEFAULT '{}'::JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'pending'`);
+  await pool.query(`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS done_at TIMESTAMPTZ`);
+
+  await pool.query(`
+    CREATE OR REPLACE FUNCTION convert_unit(qty NUMERIC, from_unit unit_enum, to_unit unit_enum)
+    RETURNS NUMERIC
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+      IF from_unit = to_unit THEN
+        RETURN qty;
+      END IF;
+
+      IF from_unit = 'ml' AND to_unit = 'l' THEN RETURN qty / 1000; END IF;
+      IF from_unit = 'l' AND to_unit = 'ml' THEN RETURN qty * 1000; END IF;
+      IF from_unit = 'g' AND to_unit = 'kg' THEN RETURN qty / 1000; END IF;
+      IF from_unit = 'kg' AND to_unit = 'g' THEN RETURN qty * 1000; END IF;
+
+      RAISE EXCEPTION 'Conversão de unidade não suportada: % -> %', from_unit, to_unit;
+    END;
+    $$
+  `);
+
+  await pool.query(`
+    CREATE OR REPLACE FUNCTION consume_stock_on_done(p_order_item_id UUID)
+    RETURNS VOID
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE
+      rec RECORD;
+      product_row RECORD;
+      needed_qty NUMERIC(14,3);
+      before_qty NUMERIC(14,3);
+      after_qty NUMERIC(14,3);
+    BEGIN
+      FOR rec IN
+        SELECT
+          oi.id AS order_item_id,
+          oi.quantity AS order_qty,
+          oi.service_id,
+          sp.product_id,
+          sp.qty AS recipe_qty,
+          sp.unit AS recipe_unit,
+          sp.waste_factor,
+          p.name AS product_name,
+          p.unit AS product_unit,
+          p.stock_current,
+          p.active
+        FROM order_items oi
+        INNER JOIN service_products sp ON sp.service_id = oi.service_id
+        INNER JOIN products p ON p.id = sp.product_id
+        WHERE oi.id = p_order_item_id
+      LOOP
+        IF rec.active IS NOT TRUE THEN
+          RAISE EXCEPTION 'Produto % está inativo e não pode ter baixa automática.', rec.product_name;
+        END IF;
+
+        needed_qty := convert_unit(rec.recipe_qty, rec.recipe_unit, rec.product_unit) * rec.order_qty * (1 + rec.waste_factor);
+
+        SELECT stock_current INTO before_qty
+        FROM products
+        WHERE id = rec.product_id
+        FOR UPDATE;
+
+        after_qty := before_qty - needed_qty;
+
+        IF after_qty < 0 THEN
+          RAISE EXCEPTION 'Estoque insuficiente para % (atual: %, necessário: %, déficit: %)',
+            rec.product_name,
+            before_qty,
+            needed_qty,
+            ABS(after_qty);
+        END IF;
+
+        UPDATE products
+        SET stock_current = after_qty,
+            updated_at = NOW()
+        WHERE id = rec.product_id;
+
+        INSERT INTO stock_movements (
+          product_id,
+          work_order_item_id,
+          service_id,
+          movement_type,
+          qty,
+          unit,
+          stock_before,
+          stock_after,
+          details
+        ) VALUES (
+          rec.product_id,
+          rec.order_item_id,
+          rec.service_id,
+          'service_consumption',
+          needed_qty,
+          rec.product_unit,
+          before_qty,
+          after_qty,
+          jsonb_build_object(
+            'recipe_qty', rec.recipe_qty,
+            'recipe_unit', rec.recipe_unit,
+            'waste_factor', rec.waste_factor,
+            'order_qty', rec.order_qty
+          )
+        );
+      END LOOP;
+    END;
+    $$
+  `);
+
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_service_products_service_id ON service_products(service_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_service_products_product_id ON service_products(product_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_products_stock_alert ON products(stock_current, stock_min)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_stock_movements_order_item ON stock_movements(work_order_item_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_order_items_status_done ON order_items(status, done_at)`);
+
+  await pool.query(`
+    INSERT INTO products (name, unit, stock_current, stock_min)
+    VALUES
+      ('Shampoo Neutro', 'l', 20, 5),
+      ('Cera Líquida', 'ml', 8000, 1500),
+      ('Pano Microfibra', 'un', 80, 20)
+    ON CONFLICT (name) DO NOTHING
+  `);
+};
+
 
 const configuredOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
@@ -107,7 +288,37 @@ app.get('/api/admin/default-user', async (_req, res) => {
   }
 });
 
+app.get('/api/products', async (_req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT id, name, unit, stock_current AS "stockCurrent", stock_min AS "stockMin", active
+      FROM products
+      ORDER BY name ASC
+    `);
+    return res.status(200).json(rows);
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao listar produtos.', details: error.message });
+  }
+});
 
+app.get('/api/stock/alerts', async (_req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT
+        id AS "productId",
+        name AS "productName",
+        stock_current AS "stockCurrent",
+        stock_min AS "stockMin",
+        unit
+      FROM products
+      WHERE stock_current <= stock_min
+      ORDER BY stock_current ASC
+    `);
+    return res.status(200).json(rows);
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao carregar alertas de estoque.', details: error.message });
+  }
+});
 
 app.post('/api/auth/register-customer', async (req, res) => {
   const {
@@ -232,7 +443,54 @@ app.post('/api/users', async (req, res) => {
 
 app.get('/api/services', async (_req, res) => {
   try {
-    const { rows } = await pool.query('SELECT id, name, hours, needs_scheduling, products, observation, price_rule, per_unit, created_at, updated_at FROM services ORDER BY created_at DESC');
+    const { rows } = await pool.query(`
+      SELECT
+        s.id,
+        s.name,
+        s.hours,
+        s.needs_scheduling,
+        s.products,
+        s.observation,
+        s.price_rule,
+        s.per_unit,
+        s.active,
+        s.average_time_minutes,
+        s.created_at,
+        s.updated_at,
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object(
+            'productId', sp.product_id,
+            'quantity', sp.qty,
+            'unit', sp.unit,
+            'wasteFactor', sp.waste_factor,
+            'productName', p.name,
+            'productUnit', p.unit
+          )) FILTER (WHERE sp.id IS NOT NULL),
+          '[]'::json
+        ) AS product_consumption,
+        COALESCE(
+          json_object_agg(pr.vehicle_type, json_build_object(
+            'costP', pr.cost_p,
+            'costM', pr.cost_m,
+            'costG', pr.cost_g,
+            'priceP', pr.price_p,
+            'priceM', pr.price_m,
+            'priceG', pr.price_g
+          )) FILTER (WHERE pr.id IS NOT NULL),
+          '{}'::json
+        ) AS pricing,
+        COALESCE(
+          array_remove(array_agg(DISTINCT svt.vehicle_type), NULL),
+          ARRAY['carro'::vehicle_type, 'moto'::vehicle_type, 'caminhao'::vehicle_type]
+        ) AS vehicle_types
+      FROM services s
+      LEFT JOIN service_products sp ON sp.service_id = s.id
+      LEFT JOIN products p ON p.id = sp.product_id
+      LEFT JOIN service_pricing pr ON pr.service_id = s.id
+      LEFT JOIN service_vehicle_types svt ON svt.service_id = s.id
+      GROUP BY s.id
+      ORDER BY s.created_at DESC
+    `);
     return res.status(200).json(rows);
   } catch (error) {
     return res.status(500).json({ message: 'Erro ao listar serviços.', details: error.message });
@@ -248,6 +506,11 @@ app.post('/api/services', async (req, res) => {
     observation = '',
     priceRule = '',
     perUnit = false,
+    active = true,
+    averageTimeMinutes = 60,
+    pricing = {},
+    vehicleTypes = ['carro', 'moto', 'caminhao'],
+    productConsumption = [],
   } = req.body;
 
   if (!name) {
@@ -255,14 +518,65 @@ app.post('/api/services', async (req, res) => {
   }
 
   try {
+    await pool.query('BEGIN');
+
     const { rows } = await pool.query(
-      `INSERT INTO services(name, hours, needs_scheduling, products, observation, price_rule, per_unit)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO services(name, hours, needs_scheduling, products, observation, price_rule, per_unit, active, average_time_minutes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [name, hours, needsScheduling, products, observation, priceRule, perUnit],
+      [name, hours, needsScheduling, products, observation, priceRule, perUnit, active, averageTimeMinutes],
     );
-    return res.status(201).json(rows[0]);
+
+    const service = rows[0];
+
+    for (const type of vehicleTypes) {
+      await pool.query(
+        `INSERT INTO service_vehicle_types(service_id, vehicle_type)
+         VALUES($1, $2)
+         ON CONFLICT (service_id, vehicle_type) DO NOTHING`,
+        [service.id, type],
+      );
+
+      const typePricing = pricing[type] || {};
+      await pool.query(
+        `INSERT INTO service_pricing(service_id, vehicle_type, cost_p, cost_m, cost_g, price_p, price_m, price_g)
+         VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (service_id, vehicle_type)
+         DO UPDATE SET cost_p = EXCLUDED.cost_p, cost_m = EXCLUDED.cost_m, cost_g = EXCLUDED.cost_g,
+           price_p = EXCLUDED.price_p, price_m = EXCLUDED.price_m, price_g = EXCLUDED.price_g`,
+        [
+          service.id,
+          type,
+          Number(typePricing.costP || 0),
+          Number(typePricing.costM || 0),
+          Number(typePricing.costG || 0),
+          Number(typePricing.priceP || 0),
+          Number(typePricing.priceM || 0),
+          Number(typePricing.priceG || 0),
+        ],
+      );
+    }
+
+    for (const consumption of productConsumption) {
+      await pool.query(
+        `INSERT INTO service_products(service_id, product_id, qty, unit, waste_factor)
+         VALUES($1, $2, $3, $4, $5)
+         ON CONFLICT(service_id, product_id)
+         DO UPDATE SET qty = EXCLUDED.qty, unit = EXCLUDED.unit, waste_factor = EXCLUDED.waste_factor`,
+        [
+          service.id,
+          consumption.productId,
+          Number(consumption.quantity),
+          consumption.unit,
+          Number(consumption.wasteFactor || 0),
+        ],
+      );
+    }
+
+    await pool.query('COMMIT');
+    return res.status(201).json(service);
   } catch (error) {
+    await pool.query('ROLLBACK');
     return res.status(500).json({ message: 'Erro ao criar serviço.', details: error.message });
   }
 });
@@ -277,6 +591,11 @@ app.put('/api/services/:id', async (req, res) => {
     observation = '',
     priceRule = '',
     perUnit = false,
+    active = true,
+    averageTimeMinutes = 60,
+    pricing = {},
+    vehicleTypes = ['carro', 'moto', 'caminhao'],
+    productConsumption = [],
   } = req.body;
 
   if (!name) {
@@ -284,6 +603,8 @@ app.put('/api/services/:id', async (req, res) => {
   }
 
   try {
+    await pool.query('BEGIN');
+
     const { rows } = await pool.query(
       `UPDATE services
        SET name = $1,
@@ -293,19 +614,100 @@ app.put('/api/services/:id', async (req, res) => {
            observation = $5,
            price_rule = $6,
            per_unit = $7,
+           active = $8,
+           average_time_minutes = $9,
            updated_at = NOW()
-       WHERE id = $8
+       WHERE id = $10
        RETURNING *`,
-      [name, hours, needsScheduling, products, observation, priceRule, perUnit, id],
+      [name, hours, needsScheduling, products, observation, priceRule, perUnit, active, averageTimeMinutes, id],
     );
 
     if (rows.length === 0) {
+      await pool.query('ROLLBACK');
       return res.status(404).json({ message: 'Serviço não encontrado.' });
     }
 
+    await pool.query('DELETE FROM service_vehicle_types WHERE service_id = $1', [id]);
+    await pool.query('DELETE FROM service_products WHERE service_id = $1', [id]);
+
+    for (const type of vehicleTypes) {
+      await pool.query(
+        `INSERT INTO service_vehicle_types(service_id, vehicle_type)
+         VALUES($1, $2)
+         ON CONFLICT (service_id, vehicle_type) DO NOTHING`,
+        [id, type],
+      );
+
+      const typePricing = pricing[type] || {};
+      await pool.query(
+        `INSERT INTO service_pricing(service_id, vehicle_type, cost_p, cost_m, cost_g, price_p, price_m, price_g)
+         VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (service_id, vehicle_type)
+         DO UPDATE SET cost_p = EXCLUDED.cost_p, cost_m = EXCLUDED.cost_m, cost_g = EXCLUDED.cost_g,
+           price_p = EXCLUDED.price_p, price_m = EXCLUDED.price_m, price_g = EXCLUDED.price_g`,
+        [
+          id,
+          type,
+          Number(typePricing.costP || 0),
+          Number(typePricing.costM || 0),
+          Number(typePricing.costG || 0),
+          Number(typePricing.priceP || 0),
+          Number(typePricing.priceM || 0),
+          Number(typePricing.priceG || 0),
+        ],
+      );
+    }
+
+    for (const consumption of productConsumption) {
+      await pool.query(
+        `INSERT INTO service_products(service_id, product_id, qty, unit, waste_factor)
+         VALUES($1, $2, $3, $4, $5)
+         ON CONFLICT(service_id, product_id)
+         DO UPDATE SET qty = EXCLUDED.qty, unit = EXCLUDED.unit, waste_factor = EXCLUDED.waste_factor`,
+        [id, consumption.productId, Number(consumption.quantity), consumption.unit, Number(consumption.wasteFactor || 0)],
+      );
+    }
+
+    await pool.query('COMMIT');
+
     return res.status(200).json(rows[0]);
   } catch (error) {
+    await pool.query('ROLLBACK');
     return res.status(500).json({ message: 'Erro ao atualizar serviço.', details: error.message });
+  }
+});
+
+app.post('/api/work-order-items/:id/complete', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await pool.query('BEGIN');
+
+    const { rows } = await pool.query('SELECT id, status FROM order_items WHERE id = $1 FOR UPDATE', [id]);
+    if (rows.length === 0) {
+      await pool.query('ROLLBACK');
+      return res.status(404).json({ message: 'Item de OS não encontrado.' });
+    }
+
+    if (rows[0].status === 'done') {
+      await pool.query('ROLLBACK');
+      return res.status(200).json({ ok: true });
+    }
+
+    await pool.query('SELECT consume_stock_on_done($1)', [id]);
+
+    await pool.query(
+      `UPDATE order_items
+       SET status = 'done', done_at = NOW()
+       WHERE id = $1`,
+      [id],
+    );
+
+    await pool.query('COMMIT');
+    return res.status(200).json({ ok: true });
+  } catch (error) {
+    await pool.query('ROLLBACK');
+    return res.status(422).json({ message: 'Falha ao concluir item de OS.', details: error.message });
   }
 });
 
@@ -443,6 +845,7 @@ app.get('/api/orders/open-by-plate/:plate', async (req, res) => {
 const bootstrap = async () => {
   try {
     await ensureCoreAuthTables();
+    await ensureInventoryFeature();
     app.listen(port, '0.0.0.0', () => {
       console.log(`AryCar API on http://0.0.0.0:${port}`);
     });
