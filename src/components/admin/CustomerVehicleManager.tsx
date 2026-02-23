@@ -461,6 +461,7 @@ const CustomerVehicleManager = () => {
 
             <Button className="h-11 text-base" onClick={upsertCustomer}>{customerEditingId ? 'Salvar alterações' : 'Cadastrar cliente'}</Button>
           </div>
+          </div>
         </DialogContent>
       </Dialog>
 
