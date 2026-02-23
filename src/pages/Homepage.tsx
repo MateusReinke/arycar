@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { storageService } from '@/services/storage';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
@@ -40,7 +40,6 @@ import after2 from '@/assets/after-2.jpg';
 import before3 from '@/assets/before-3.jpg';
 import after3 from '@/assets/after-3.jpg';
 
-const MAX_GALLERY_IMAGES = 12;
 const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL;
 
 const services = [
@@ -100,12 +99,40 @@ const services = [
   },
 ];
 
-const fallbackGallery = [before1, after1, before2, after2, before3, after3];
-
-const galleryImagesModules = import.meta.glob('/src/assets/gallery/*.{png,jpg,jpeg,webp,avif}', {
-  eager: true,
-  import: 'default',
-}) as Record<string, string>;
+const beforeAfterShowcases = [
+  {
+    id: 'polimento',
+    serviceId: 0,
+    title: 'Polimento Técnico',
+    description: 'Redução de marcas leves e realce de brilho com acabamento espelhado.',
+    beforeImage: before1,
+    afterImage: after1,
+  },
+  {
+    id: 'vitrificacao',
+    serviceId: 1,
+    title: 'Vitrificação Cerâmica',
+    description: 'Pintura com proteção duradoura e toque hidrofóbico visível no acabamento.',
+    beforeImage: before2,
+    afterImage: after2,
+  },
+  {
+    id: 'higienizacao',
+    serviceId: 3,
+    title: 'Higienização Interna',
+    description: 'Remoção de sujeiras profundas e aspecto renovado em bancos e carpetes.',
+    beforeImage: before3,
+    afterImage: after3,
+  },
+  {
+    id: 'couro',
+    serviceId: 4,
+    title: 'Tratamento de Couro',
+    description: 'Revitalização de textura e uniformidade de cor para interior premium.',
+    beforeImage: before2,
+    afterImage: after2,
+  },
+];
 
 const Homepage = () => {
   const [whatsappNumber, setWhatsappNumber] = useState('');
@@ -116,19 +143,17 @@ const Homepage = () => {
   const [leadMessage, setLeadMessage] = useState('');
   const [preferWhatsapp, setPreferWhatsapp] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeShowcaseId, setActiveShowcaseId] = useState(beforeAfterShowcases[0].id);
+  const [comparisonPositions, setComparisonPositions] = useState<Record<string, number>>(() =>
+    beforeAfterShowcases.reduce((acc, showcase) => ({ ...acc, [showcase.id]: 50 }), {}),
+  );
 
   useEffect(() => {
     const settings = storageService.getSettings();
     setWhatsappNumber(settings.whatsappNumber || '');
   }, []);
 
-  const galleryImages = useMemo(() => {
-    const dynamicImages = Object.entries(galleryImagesModules)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([, value]) => value);
-
-    return (dynamicImages.length ? dynamicImages : fallbackGallery).slice(0, MAX_GALLERY_IMAGES);
-  }, []);
+  const activeShowcase = beforeAfterShowcases.find((showcase) => showcase.id === activeShowcaseId) || beforeAfterShowcases[0];
 
   const whatsappLink = whatsappNumber ? `https://wa.me/55${whatsappNumber.replace(/\D/g, '')}` : '#';
 
@@ -352,24 +377,87 @@ const Homepage = () => {
         <section id="galeria" className="py-20">
           <div className="container">
             <div className="mb-12 text-center">
-              <span className="text-sm font-semibold uppercase tracking-widest text-primary">Galeria dinâmica</span>
-              <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Resultados reais em cada detalhe</h2>
+              <span className="text-sm font-semibold uppercase tracking-widest text-primary">Galeria de resultados reais</span>
+              <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Compare o antes e depois deslizando</h2>
               <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-                Esta seção usa as imagens da pasta <strong>/src/assets/gallery</strong> automaticamente. Limite atual: {MAX_GALLERY_IMAGES} fotos exibidas para manter performance no desktop e mobile.
+                Escolha um dos 4 serviços abaixo e arraste para os lados para visualizar o efeito do serviço no veículo.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {galleryImages.map((image, index) => (
-                <figure key={image} className="group overflow-hidden rounded-2xl border border-border/80 bg-card">
-                  <img
-                    src={image}
-                    alt={`Resultado de estética automotiva Arycar ${index + 1}`}
-                    className="h-36 w-full object-cover transition-transform duration-500 group-hover:scale-110 sm:h-48"
-                    loading="lazy"
-                  />
-                </figure>
-              ))}
+
+            <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+              {beforeAfterShowcases.map((showcase) => {
+                const service = services[showcase.serviceId];
+                const isActive = activeShowcaseId === showcase.id;
+
+                return (
+                  <button
+                    key={showcase.id}
+                    onClick={() => setActiveShowcaseId(showcase.id)}
+                    className={`rounded-xl border px-3 py-3 text-left transition ${
+                      isActive
+                        ? 'border-primary bg-primary/10 shadow-sm shadow-primary/20'
+                        : 'border-border bg-card hover:border-primary/40'
+                    }`}
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Serviço</p>
+                    <p className="mt-1 text-sm font-semibold">{service.title}</p>
+                  </button>
+                );
+              })}
             </div>
+
+            <article className="rounded-2xl border border-primary/30 bg-card p-4 shadow-lg shadow-primary/10 sm:p-6">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-xl font-bold">{activeShowcase.title}</h3>
+                  <p className="text-sm text-muted-foreground">{activeShowcase.description}</p>
+                </div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Arraste para comparar</p>
+              </div>
+
+              <div className="relative overflow-hidden rounded-xl border border-border/80">
+                <img
+                  src={activeShowcase.afterImage}
+                  alt={`${activeShowcase.title} - Depois`}
+                  className="h-64 w-full object-cover sm:h-[420px]"
+                  loading="lazy"
+                />
+                <img
+                  src={activeShowcase.beforeImage}
+                  alt={`${activeShowcase.title} - Antes`}
+                  className="absolute inset-0 h-64 w-full object-cover sm:h-[420px]"
+                  style={{ clipPath: `inset(0 ${100 - (comparisonPositions[activeShowcase.id] ?? 50)}% 0 0)` }}
+                  loading="lazy"
+                />
+
+                <div
+                  className="pointer-events-none absolute inset-y-0 w-0.5 bg-white/90 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]"
+                  style={{ left: `${comparisonPositions[activeShowcase.id] ?? 50}%` }}
+                >
+                  <div className="absolute left-1/2 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-black/50 text-[10px] font-bold text-white">
+                    ↔
+                  </div>
+                </div>
+
+                <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white">Antes</div>
+                <div className="pointer-events-none absolute right-3 top-3 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white">Depois</div>
+
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={comparisonPositions[activeShowcase.id] ?? 50}
+                  onChange={(event) =>
+                    setComparisonPositions((prev) => ({
+                      ...prev,
+                      [activeShowcase.id]: Number(event.target.value),
+                    }))
+                  }
+                  className="absolute inset-0 h-full w-full cursor-ew-resize opacity-0"
+                  aria-label={`Comparar antes e depois de ${activeShowcase.title}`}
+                />
+              </div>
+            </article>
           </div>
         </section>
 
