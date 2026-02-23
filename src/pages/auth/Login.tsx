@@ -7,18 +7,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import arycarLogo from '@/assets/arycar-logo.png';
 import { useAuth } from '@/context/AuthContext';
-import { UserRole } from '@/types';
 import { backendApi } from '@/services/backendApi';
+
+const destinationByRole = {
+  admin: '/admin',
+  employee: '/vendedores',
+  customer: '/client',
+} as const;
 
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('employee');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -32,31 +35,14 @@ const Login = () => {
     setLoading(true);
 
     try {
-      if (role === 'customer') {
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        login({
-          name: 'Cliente',
-          phone: phone.replace(/\D/g, ''),
-          role,
-        });
-        toast.success('Login realizado com sucesso!');
-        navigate('/customer');
-        return;
-      }
-
       const authUser = await backendApi.login({
         email,
         password,
       });
 
-      if (authUser.role !== role) {
-        toast.error(`Este usuário é do perfil ${authUser.role}. Selecione o perfil correto.`);
-        return;
-      }
-
       login(authUser);
       toast.success('Login realizado com sucesso!');
-      navigate('/app');
+      navigate(destinationByRole[authUser.role] ?? '/');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha no login.');
     } finally {
@@ -81,31 +67,17 @@ const Login = () => {
           </div>
 
           <h1 className="text-2xl font-bold">ARYCAR</h1>
-          <p className="text-sm text-muted-foreground">Acesso por perfil</p>
+          <p className="text-sm text-muted-foreground">Acesso com identificação automática de perfil</p>
         </div>
 
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">Entrar</CardTitle>
-            <CardDescription>Admin: gestão | Funcionário: criar/ver OS | Cliente: status e solicitação</CardDescription>
+            <CardDescription>Use suas credenciais. O sistema identifica seu perfil automaticamente.</CardDescription>
           </CardHeader>
 
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-xs">Perfil</Label>
-                <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="employee">Funcionário</SelectItem>
-                    <SelectItem value="customer">Cliente</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-xs">E-mail</Label>
                 <div className="relative">
@@ -139,6 +111,13 @@ const Login = () => {
                 {loading ? 'Entrando...' : 'Entrar'}
               </Button>
             </form>
+
+            <p className="mt-4 text-center text-sm text-muted-foreground">
+              Ainda não tem acesso?{' '}
+              <Link to="/cadastro" className="font-medium text-primary hover:underline">
+                Cadastre-se e solicite um serviço
+              </Link>
+            </p>
           </CardContent>
         </Card>
       </div>

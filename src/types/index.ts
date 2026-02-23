@@ -66,10 +66,24 @@ export interface Vehicle {
 export type UserRole = 'admin' | 'employee' | 'customer';
 
 export interface AuthUser {
+  id?: string;
   name: string;
   email?: string;
   phone?: string;
   role: UserRole;
+}
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface RegisterCustomerPayload {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  serviceRequest: string;
 }
 
 export type BaseOrderStatus = 'waiting' | 'in_progress' | 'done' | 'delivered';
