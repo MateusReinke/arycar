@@ -17,16 +17,18 @@ Este repositório está pronto para deploy via **Docker Compose** no Coolify.
 
 - Aplicação principal (nginx/web) exposta no host em **`8089`**.
   - Acesso: `http://<ip-do-servidor>:8089`
-- **Postgres não é publicado no host** (sem `5432:5432`).
+- **Postgres não é publicado no host** (banco separado, já provisionado no Coolify).
 - **API não é publicada no host** (acesso apenas interno na rede do compose).
 
 ### Variáveis obrigatórias no Coolify
 
 Configure estas variáveis de ambiente no serviço:
 
-- `POSTGRES_USER`
-- `POSTGRES_PASSWORD`
-- `POSTGRES_DB`
+- `DATABASE_HOST`
+- `DATABASE_PORT`
+- `DATABASE_NAME`
+- `DATABASE_USER`
+- `DATABASE_PASSWORD`
 - `CORS_ORIGIN`
 
 > `CORS_ORIGIN` aceita múltiplas origens separadas por vírgula (exemplo: `https://app.exemplo.com,https://admin.exemplo.com`).
@@ -34,7 +36,7 @@ Configure estas variáveis de ambiente no serviço:
 ### Rede interna entre serviços
 
 - O nginx do serviço web encaminha chamadas `/api` para o serviço interno da API.
-- A API conecta no banco usando host interno `db:5432`.
+- A API conecta no PostgreSQL externo usando `DATABASE_HOST:DATABASE_PORT`.
 
 ## Referência
 

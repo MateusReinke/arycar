@@ -74,17 +74,21 @@ Esse script cria:
 
 ## 4) Conectar o projeto sem acoplar no compose
 
-No app/API, use variável única de conexão, por exemplo:
+No app/API, configure as variáveis de conexão:
 
 ```env
-DATABASE_URL=postgresql://arycar_runtime:SENHA@HOST:5432/arycar_db
+DATABASE_HOST=HOST
+DATABASE_PORT=5432
+DATABASE_NAME=postgres
+DATABASE_USER=arycar_admin
+DATABASE_PASSWORD=SENHA
 ```
 
 Assim você mantém:
 
 - aplicação escalável separadamente;
 - banco com ciclo de vida independente;
-- migração para outro servidor gerenciando só `DATABASE_URL`.
+- migração para outro servidor gerenciando apenas variáveis de ambiente.
 
 ---
 
