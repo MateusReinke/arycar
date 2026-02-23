@@ -1,11 +1,9 @@
 import { Link } from 'react-router-dom';
-import { Car, Sparkles, Shield, Clock, MapPin, Phone, Mail, ChevronRight, MessageCircle, Droplets, Sun, ArrowRight } from 'lucide-react';
+import { Car, Sparkles, Shield, Clock, MapPin, Phone, Mail, ChevronRight, MessageCircle, Droplets, Sun, ArrowRight, MousePointerClick } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { useState, useEffect } from 'react';
 import { storageService } from '@/services/storage';
 import { toast } from 'sonner';
@@ -26,32 +24,59 @@ import before3 from '@/assets/before-3.jpg';
 import after3 from '@/assets/after-3.jpg';
 
 const services = [
-  { icon: Sparkles, title: 'Polimento', desc: 'Polimento comercial e técnico com correção de pintura e brilho espelhado.', image: servicePolimento },
-  { icon: Shield, title: 'Vitrificação', desc: 'Proteção cerâmica duradoura para pintura com acabamento hidrofóbico.', image: serviceVitrificacao },
-  { icon: Droplets, title: 'Lavagem Detalhada', desc: 'Limpeza completa interna e externa com produtos premium.', image: serviceLavagem },
-  { icon: Clock, title: 'Higienização', desc: 'Sanitização com ozônio, limpeza profunda de estofados e carpetes.', image: serviceHigienizacao },
-  { icon: Sun, title: 'Tratamento de Couro', desc: 'Hidratação e proteção de bancos e painéis em couro.', image: serviceCouro },
-  { icon: Car, title: 'Restauração de Faróis', desc: 'Recuperação da transparência e aplicação de proteção UV.', image: serviceFarois },
-];
-
-const serviceDetails = [
   {
-    name: 'Lavagem Detalhada Premium',
-    summary: 'Ideal para manutenção semanal com foco no acabamento e proteção inicial.',
-    includes: ['Pré-lavagem técnica', 'Limpeza de caixa de roda e pneus', 'Aspiração interna + finalização de painel'],
-    idealFor: 'Clientes que querem veículo sempre limpo com ótimo custo-benefício.',
+    id: 0,
+    icon: Sparkles,
+    title: 'Polimento',
+    subtitle: 'Brilho e Correção',
+    desc: 'Polimento comercial e técnico com correção de pintura e brilho espelhado.',
+    image: servicePolimento,
+    features: ['Remoção de marcas leves', 'Refino técnico em etapas', 'Acabamento brilhante'],
   },
   {
-    name: 'Polimento + Vitrificação',
-    summary: 'Combo completo para correção visual e proteção prolongada da pintura.',
-    includes: ['Descontaminação da pintura', 'Polimento técnico em etapas', 'Aplicação de vitrificador com toque hidrofóbico'],
-    idealFor: 'Quem deseja brilho intenso e maior resistência contra intempéries.',
+    id: 1,
+    icon: Shield,
+    title: 'Vitrificação',
+    subtitle: 'Proteção Cerâmica',
+    desc: 'Proteção cerâmica duradoura para pintura com acabamento hidrofóbico.',
+    image: serviceVitrificacao,
+    features: ['Barreira contra intempéries', 'Toque hidrofóbico', 'Maior durabilidade da pintura'],
   },
   {
-    name: 'Higienização Interna Sanitizante',
-    summary: 'Tratamento profundo para interior, com foco em saúde e conforto.',
-    includes: ['Extração de sujeira em bancos/carpete', 'Higienização de teto e portas', 'Sanitização com neutralização de odores'],
-    idealFor: 'Famílias, carros de aplicativo e veículos com uso intenso.',
+    id: 2,
+    icon: Droplets,
+    title: 'Lavagem Detalhada',
+    subtitle: 'Limpeza Premium',
+    desc: 'Limpeza completa interna e externa com produtos premium.',
+    image: serviceLavagem,
+    features: ['Pré-lavagem técnica', 'Aspiração + acabamento interno', 'Finalização com brilho'],
+  },
+  {
+    id: 3,
+    icon: Clock,
+    title: 'Higienização',
+    subtitle: 'Saúde e Conforto',
+    desc: 'Sanitização com ozônio, limpeza profunda de estofados e carpetes.',
+    image: serviceHigienizacao,
+    features: ['Extração de sujeira profunda', 'Neutralização de odores', 'Proteção para famílias e apps'],
+  },
+  {
+    id: 4,
+    icon: Sun,
+    title: 'Tratamento de Couro',
+    subtitle: 'Interior Conservado',
+    desc: 'Hidratação e proteção de bancos e painéis em couro.',
+    image: serviceCouro,
+    features: ['Limpeza técnica de couro', 'Hidratação especializada', 'Proteção contra ressecamento'],
+  },
+  {
+    id: 5,
+    icon: Car,
+    title: 'Restauração de Faróis',
+    subtitle: 'Visibilidade e Segurança',
+    desc: 'Recuperação da transparência e aplicação de proteção UV.',
+    image: serviceFarois,
+    features: ['Remoção de opacidade', 'Polimento de lente', 'Proteção UV'],
   },
 ];
 
@@ -109,6 +134,7 @@ const Homepage = () => {
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [activeServiceId, setActiveServiceId] = useState(0);
 
   useEffect(() => {
     const settings = storageService.getSettings();
@@ -193,68 +219,74 @@ const Homepage = () => {
         </div>
       </section>
 
-      {/* Services Grid */}
+      {/* Services Interactive */}
       <section id="servicos" className="py-20 bg-card/50">
         <div className="container">
           <div className="text-center mb-14">
             <span className="text-sm font-semibold text-primary uppercase tracking-widest">O que fazemos</span>
             <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Nossos Serviços</h2>
             <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
-              Cada serviço é executado com atenção aos detalhes e produtos de alta performance.
+              Layout interativo: clique em um card para expandir os detalhes do serviço.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map((s, i) => (
-              <div
-                key={i}
-                className="group relative overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
-              >
-                <div className="relative h-48 overflow-hidden">
+
+          <div className="flex flex-col lg:flex-row gap-4 min-h-[560px]">
+            {services.map((service) => {
+              const isActive = activeServiceId === service.id;
+
+              return (
+                <div
+                  key={service.id}
+                  onClick={() => setActiveServiceId(service.id)}
+                  className={`relative overflow-hidden rounded-3xl border transition-all duration-500 cursor-pointer ${
+                    isActive
+                      ? 'lg:flex-[3] bg-card border-primary/40 shadow-xl shadow-primary/10'
+                      : 'lg:flex-1 bg-background/70 hover:border-primary/40'
+                  }`}
+                >
                   <img
-                    src={s.image}
-                    alt={s.title}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    loading="lazy"
+                    src={service.image}
+                    alt={service.title}
+                    className={`absolute inset-0 h-full w-full object-cover transition-all duration-500 ${isActive ? 'opacity-20 scale-105' : 'opacity-10'}`}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
-                  <div className="absolute bottom-3 left-4 flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 backdrop-blur-sm border border-primary/30">
-                    <s.icon className="h-5 w-5 text-primary" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/70 to-background" />
+
+                  <div className="relative z-10 flex h-full flex-col p-6">
+                    <div className="flex items-center gap-3">
+                      <div className={`rounded-xl p-3 ${isActive ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'}`}>
+                        <service.icon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-widest text-muted-foreground">{service.subtitle}</p>
+                        <h3 className="text-2xl font-bold">{service.title}</h3>
+                      </div>
+                    </div>
+
+                    {isActive ? (
+                      <>
+                        <p className="mt-6 text-sm text-muted-foreground leading-relaxed">{service.desc}</p>
+                        <ul className="mt-6 space-y-2 text-sm">
+                          {service.features.map((feature) => (
+                            <li key={feature} className="rounded-lg border bg-background/80 px-3 py-2">• {feature}</li>
+                          ))}
+                        </ul>
+                        <div className="mt-auto pt-6">
+                          <Button onClick={(e) => { e.stopPropagation(); document.getElementById('contato')?.scrollIntoView({ behavior: 'smooth' }); }}>
+                            Solicitar orçamento
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="mt-auto flex items-center gap-2 text-xs text-primary/90">
+                        <MousePointerClick className="h-4 w-4" />
+                        Clique para ver
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="p-5">
-                  <h3 className="text-lg font-semibold mb-1">{s.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mx-auto mt-12 max-w-5xl px-12">
-            <h3 className="mb-4 text-center text-xl font-semibold">Principais serviços em detalhes</h3>
-            <p className="mb-8 text-center text-sm text-muted-foreground">Card central em destaque. Arraste para os lados para navegar entre os serviços.</p>
-            <Carousel opts={{ align: 'center', loop: true }}>
-              <CarouselContent>
-                {serviceDetails.map((item) => (
-                  <CarouselItem key={item.name} className="md:basis-2/3">
-                    <Card className="h-full border-primary/20 shadow-lg shadow-primary/10">
-                      <CardContent className="space-y-4 p-6">
-                        <h4 className="text-xl font-bold">{item.name}</h4>
-                        <p className="text-muted-foreground">{item.summary}</p>
-                        <div>
-                          <p className="mb-2 text-sm font-semibold">O que inclui</p>
-                          <ul className="space-y-1 text-sm text-muted-foreground">
-                            {item.includes.map((line) => <li key={line}>• {line}</li>)}
-                          </ul>
-                        </div>
-                        <p className="rounded-md bg-primary/5 p-3 text-sm"><span className="font-medium">Indicado para: </span>{item.idealFor}</p>
-                      </CardContent>
-                    </Card>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious className="left-1" />
-              <CarouselNext className="right-1" />
-            </Carousel>
+              );
+            })}
           </div>
         </div>
       </section>
