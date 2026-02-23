@@ -73,22 +73,3 @@ Depois, faça login na tela com:
 
 > Recomendado: trocar a senha após o primeiro acesso.
 
-
-
-## Environment Variables (Coolify)
-
-Preencha no serviço da aplicação (Compose) estes valores em **Environment Variables**:
-
-- `DATABASE_HOST`
-- `DATABASE_PORT`
-- `DATABASE_NAME`
-- `DATABASE_USER`
-- `DATABASE_PASSWORD`
-- `CORS_ORIGIN` (ex.: `https://seu-dominio.com`)
-
-Opcional para build do frontend:
-
-- `VITE_API_BASE_URL` (ex.: `https://seu-dominio.com/api`)
-- `VITE_PLATE_API_URL`
-- `VITE_PLATE_API_TOKEN`
-- `VITE_FIPE_API_URL`
