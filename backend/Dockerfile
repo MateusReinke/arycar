@@ -1,8 +1,8 @@
-FROM node:20-alpine
+FROM node:20
 WORKDIR /app
 
-COPY backend/package.json ./package.json
-RUN npm install --omit=dev
+COPY backend/package.json backend/package-lock.json ./
+RUN npm ci --omit=dev
 
 COPY backend/src ./src
 
