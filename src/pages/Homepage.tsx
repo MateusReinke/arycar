@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { Car, Sparkles, Shield, Clock, MapPin, Phone, Mail, ChevronRight, MessageCircle, Droplets, Sun, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { useState, useEffect } from 'react';
 import { storageService } from '@/services/storage';
 import { toast } from 'sonner';
@@ -30,6 +32,27 @@ const services = [
   { icon: Clock, title: 'Higienização', desc: 'Sanitização com ozônio, limpeza profunda de estofados e carpetes.', image: serviceHigienizacao },
   { icon: Sun, title: 'Tratamento de Couro', desc: 'Hidratação e proteção de bancos e painéis em couro.', image: serviceCouro },
   { icon: Car, title: 'Restauração de Faróis', desc: 'Recuperação da transparência e aplicação de proteção UV.', image: serviceFarois },
+];
+
+const serviceDetails = [
+  {
+    name: 'Lavagem Detalhada Premium',
+    summary: 'Ideal para manutenção semanal com foco no acabamento e proteção inicial.',
+    includes: ['Pré-lavagem técnica', 'Limpeza de caixa de roda e pneus', 'Aspiração interna + finalização de painel'],
+    idealFor: 'Clientes que querem veículo sempre limpo com ótimo custo-benefício.',
+  },
+  {
+    name: 'Polimento + Vitrificação',
+    summary: 'Combo completo para correção visual e proteção prolongada da pintura.',
+    includes: ['Descontaminação da pintura', 'Polimento técnico em etapas', 'Aplicação de vitrificador com toque hidrofóbico'],
+    idealFor: 'Quem deseja brilho intenso e maior resistência contra intempéries.',
+  },
+  {
+    name: 'Higienização Interna Sanitizante',
+    summary: 'Tratamento profundo para interior, com foco em saúde e conforto.',
+    includes: ['Extração de sujeira em bancos/carpete', 'Higienização de teto e portas', 'Sanitização com neutralização de odores'],
+    idealFor: 'Famílias, carros de aplicativo e veículos com uso intenso.',
+  },
 ];
 
 const gallery = [
@@ -204,6 +227,34 @@ const Homepage = () => {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="mx-auto mt-12 max-w-5xl px-12">
+            <h3 className="mb-4 text-center text-xl font-semibold">Principais serviços em detalhes</h3>
+            <p className="mb-8 text-center text-sm text-muted-foreground">Card central em destaque. Arraste para os lados para navegar entre os serviços.</p>
+            <Carousel opts={{ align: 'center', loop: true }}>
+              <CarouselContent>
+                {serviceDetails.map((item) => (
+                  <CarouselItem key={item.name} className="md:basis-2/3">
+                    <Card className="h-full border-primary/20 shadow-lg shadow-primary/10">
+                      <CardContent className="space-y-4 p-6">
+                        <h4 className="text-xl font-bold">{item.name}</h4>
+                        <p className="text-muted-foreground">{item.summary}</p>
+                        <div>
+                          <p className="mb-2 text-sm font-semibold">O que inclui</p>
+                          <ul className="space-y-1 text-sm text-muted-foreground">
+                            {item.includes.map((line) => <li key={line}>• {line}</li>)}
+                          </ul>
+                        </div>
+                        <p className="rounded-md bg-primary/5 p-3 text-sm"><span className="font-medium">Indicado para: </span>{item.idealFor}</p>
+                      </CardContent>
+                    </Card>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="left-1" />
+              <CarouselNext className="right-1" />
+            </Carousel>
           </div>
         </div>
       </section>

@@ -85,6 +85,22 @@ export interface Customer {
   email?: string;
   emergencyContact?: string;
   notes?: string;
+  userType?: 'cliente' | 'empresa';
+  username?: string;
+  role?: UserRole;
+  forcePasswordChange?: boolean;
+  whatsappNotifications?: boolean;
+  addresses?: Array<{
+    id: string;
+    label: string;
+    cep: string;
+    street: string;
+    number: string;
+    district: string;
+    city: string;
+    state: string;
+    complement?: string;
+  }>;
 }
 
 export interface Vehicle {

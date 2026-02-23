@@ -216,6 +216,9 @@ const CustomerForm = () => {
         email: email.trim(),
         emergencyContact: emergencyContact.trim(),
         notes: notes.trim(),
+        role: 'customer',
+        username: name.trim().toLowerCase().split(/\s+/).filter(Boolean).slice(0, 2).join('.'),
+        forcePasswordChange: true,
       };
       storageService.addCustomer(customer);
     }
