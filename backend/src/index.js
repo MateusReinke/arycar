@@ -78,6 +78,54 @@ app.get('/api/admin/default-user', async (_req, res) => {
   }
 });
 
+
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password, role } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: 'email e password são obrigatórios.' });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, name, email, phone, role, active, password_hash
+       FROM users
+       WHERE email = $1
+       LIMIT 1`,
+      [String(email).trim().toLowerCase()],
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).json({ message: 'Credenciais inválidas.' });
+    }
+
+    const user = rows[0];
+
+    if (!user.active) {
+      return res.status(403).json({ message: 'Usuário inativo.' });
+    }
+
+    if (!user.password_hash || user.password_hash !== password) {
+      return res.status(401).json({ message: 'Credenciais inválidas.' });
+    }
+
+
+    if (role && user.role !== role) {
+      return res.status(403).json({ message: 'Perfil inválido para este usuário.' });
+    }
+
+    return res.status(200).json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao autenticar usuário.', details: error.message });
+  }
+});
+
 app.get('/api/users', async (_req, res) => {
   try {
     const { rows } = await pool.query('SELECT id, name, email, phone, role, active, created_at FROM users ORDER BY created_at DESC');
@@ -140,6 +188,64 @@ app.post('/api/services', async (req, res) => {
     return res.status(201).json(rows[0]);
   } catch (error) {
     return res.status(500).json({ message: 'Erro ao criar serviço.', details: error.message });
+  }
+});
+
+app.put('/api/services/:id', async (req, res) => {
+  const { id } = req.params;
+  const {
+    name,
+    hours = 1,
+    needsScheduling = false,
+    products = '',
+    observation = '',
+    priceRule = '',
+    perUnit = false,
+  } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ message: 'name é obrigatório.' });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `UPDATE services
+       SET name = $1,
+           hours = $2,
+           needs_scheduling = $3,
+           products = $4,
+           observation = $5,
+           price_rule = $6,
+           per_unit = $7,
+           updated_at = NOW()
+       WHERE id = $8
+       RETURNING *`,
+      [name, hours, needsScheduling, products, observation, priceRule, perUnit, id],
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Serviço não encontrado.' });
+    }
+
+    return res.status(200).json(rows[0]);
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao atualizar serviço.', details: error.message });
+  }
+});
+
+app.delete('/api/services/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const { rowCount } = await pool.query('DELETE FROM services WHERE id = $1', [id]);
+
+    if (rowCount === 0) {
+      return res.status(404).json({ message: 'Serviço não encontrado.' });
+    }
+
+    return res.status(204).send();
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao remover serviço.', details: error.message });
   }
 });
 

@@ -20,6 +20,15 @@ Este repositório está pronto para deploy via **Docker Compose** no Coolify.
 - **Postgres não é publicado no host** (banco separado, já provisionado no Coolify).
 - **API não é publicada no host** (acesso apenas interno na rede do compose).
 
+
+### Qual formato usar no Coolify
+
+Use **Docker Compose** (recomendado para este projeto).
+
+- O repositório já está preparado com `docker-compose.yml` para subir `web` + `api` juntos.
+- Não use deploy por Dockerfile único para este cenário, porque você precisa dos 2 serviços e das variáveis de ambiente do backend.
+- No Coolify, selecione o tipo **Docker Compose** e preencha as variáveis em **Environment Variables**.
+
 ### Variáveis obrigatórias no Coolify
 
 Configure estas variáveis de ambiente no serviço:
