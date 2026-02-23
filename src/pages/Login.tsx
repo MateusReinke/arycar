@@ -32,15 +32,31 @@ const Login = () => {
     setLoading(true);
 
     try {
+      if (role === 'customer') {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        login({
+          name: 'Cliente',
+          phone: phone.replace(/\D/g, ''),
+          role,
+        });
+        toast.success('Login realizado com sucesso!');
+        navigate('/customer');
+        return;
+      }
+
       const authUser = await backendApi.login({
         email,
         password,
-        role,
       });
+
+      if (authUser.role !== role) {
+        toast.error(`Este usuário é do perfil ${authUser.role}. Selecione o perfil correto.`);
+        return;
+      }
 
       login(authUser);
       toast.success('Login realizado com sucesso!');
-      navigate(role === 'customer' ? '/customer' : '/app');
+      navigate('/app');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha no login.');
     } finally {

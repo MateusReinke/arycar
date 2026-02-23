@@ -73,34 +73,3 @@ Depois, faça login na tela com:
 
 > Recomendado: trocar a senha após o primeiro acesso.
 
-
-
-## Environment Variables (Coolify)
-
-Preencha no serviço da aplicação (Compose) estes valores em **Environment Variables**:
-
-- `DATABASE_HOST`
-- `DATABASE_PORT`
-- `DATABASE_NAME`
-- `DATABASE_USER`
-- `DATABASE_PASSWORD`
-- `CORS_ORIGIN` (ex.: `https://seu-dominio.com`)
-
-Opcional para build do frontend:
-
-- `VITE_API_BASE_URL` (ex.: `https://seu-dominio.com/api`)
-- `VITE_PLATE_API_URL`
-- `VITE_PLATE_API_TOKEN`
-- `VITE_FIPE_API_URL`
-
-
-## 5) Observação sobre login
-
-Agora os perfis `admin`, `employee` e `customer` autenticam via banco (`POST /api/auth/login`).
-Ou seja, o usuário precisa existir na tabela `users` com `email`, `password_hash`, `role` e `active = true`.
-
-Exemplo para funcionário:
-
-```bash
-psql "postgresql://USER:PASSWORD@HOST:5432/arycar_db" -c "INSERT INTO users (name, email, password_hash, role, active) VALUES ('Funcionário 1', 'func1@arycar.com.br', 'senha123', 'employee', TRUE) ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name,     password_hash = EXCLUDED.password_hash,     role = EXCLUDED.role,     active = TRUE;"
-```

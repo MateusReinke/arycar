@@ -80,7 +80,7 @@ app.get('/api/admin/default-user', async (_req, res) => {
 
 
 app.post('/api/auth/login', async (req, res) => {
-  const { email, password, role } = req.body;
+  const { email, password } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ message: 'email e password são obrigatórios.' });
@@ -107,11 +107,6 @@ app.post('/api/auth/login', async (req, res) => {
 
     if (!user.password_hash || user.password_hash !== password) {
       return res.status(401).json({ message: 'Credenciais inválidas.' });
-    }
-
-
-    if (role && user.role !== role) {
-      return res.status(403).json({ message: 'Perfil inválido para este usuário.' });
     }
 
     return res.status(200).json({
