@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Car, Sparkles, Shield, Clock, MapPin, Phone, Mail, ChevronRight, MessageCircle, Droplets, Sun, ArrowRight, MousePointerClick, Wrench } from 'lucide-react';
+import { Car, Sparkles, Shield, Clock, MapPin, Phone, Mail, ChevronRight, MessageCircle, Droplets, Sun, ArrowRight, MousePointerClick } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -77,16 +77,6 @@ const services = [
     desc: 'Recuperação da transparência e aplicação de proteção UV.',
     image: serviceFarois,
     features: ['Remoção de opacidade', 'Polimento de lente', 'Proteção UV'],
-  },
-
-  {
-    id: 6,
-    icon: Wrench,
-    title: 'Reparos Express',
-    subtitle: 'Correções Rápidas',
-    desc: 'Pequenos reparos estéticos com execução rápida para o carro sair pronto no mesmo dia.',
-    image: servicePolimento,
-    features: ['Polimento localizado', 'Retoque estético rápido', 'Entrega ágil no mesmo dia'],
   },
 ];
 
@@ -262,24 +252,15 @@ const Homepage = () => {
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/70 to-background" />
 
                   <div className="relative z-10 flex h-full flex-col p-6">
-                    <div className={`flex items-center gap-3 ${!isActive ? 'lg:justify-center' : ''}`}>
+                    <div className="flex items-center gap-3">
                       <div className={`rounded-xl p-3 ${isActive ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'}`}>
                         <service.icon className="h-5 w-5" />
                       </div>
-                      <div className={`${isActive ? 'opacity-100 max-w-full' : 'opacity-100 lg:opacity-0 lg:max-w-0 overflow-hidden'} transition-all duration-300`}>
+                      <div>
                         <p className="text-xs uppercase tracking-widest text-muted-foreground">{service.subtitle}</p>
-                        <h3 className="text-2xl font-bold break-words">{service.title}</h3>
+                        <h3 className="text-2xl font-bold">{service.title}</h3>
                       </div>
                     </div>
-
-                    {!isActive && (
-                      <div className="hidden lg:flex flex-1 items-center justify-center overflow-hidden">
-                        <div className="-rotate-90 origin-center whitespace-nowrap text-center">
-                          <p className="text-[10px] uppercase tracking-widest text-primary/80">{service.subtitle}</p>
-                          <h3 className="mt-1 text-3xl font-bold text-foreground">{service.title}</h3>
-                        </div>
-                      </div>
-                    )}
 
                     {isActive ? (
                       <>
