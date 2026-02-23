@@ -1,5 +1,5 @@
 import { apiConfig } from '@/config/api';
-import { Customer, Vehicle, OrderStatus } from '@/types';
+import { Customer, OrderStatus, Service, SizePricing, Vehicle, VehicleType } from '@/types';
 
 interface OpenOrderResponse {
   found: boolean;
@@ -14,12 +14,131 @@ interface OpenOrderResponse {
   } | null;
 }
 
+const emptyPricing: SizePricing = {
+  costP: 0,
+  costM: 0,
+  costG: 0,
+  priceP: 0,
+  priceM: 0,
+  priceG: 0,
+};
+
+const vehicleTypes: VehicleType[] = ['carro', 'moto', 'caminhao'];
+
 const buildApiUrl = (path: string) => {
-  const base = apiConfig.API_BASE_URL || '';
-  return `${base}${path}`;
+  const base = (apiConfig.API_BASE_URL || '').replace(/\/$/, '');
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+
+  if (!base) {
+    return normalizedPath;
+  }
+
+  if (base.endsWith('/api') && normalizedPath.startsWith('/api/')) {
+    return `${base}${normalizedPath.slice(4)}`;
+  }
+
+  return `${base}${normalizedPath}`;
+};
+
+const toNumber = (value: unknown) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+};
+
+const normalizeService = (raw: Record<string, unknown>): Service => {
+  const pricingFromApi = raw.pricing && typeof raw.pricing === 'object'
+    ? (raw.pricing as Partial<Record<VehicleType, Partial<SizePricing>>>)
+    : {};
+
+  const rawVehicleTypes = Array.isArray(raw.vehicleTypes)
+    ? raw.vehicleTypes
+    : Array.isArray(raw.vehicle_types)
+      ? raw.vehicle_types
+      : vehicleTypes;
+
+  const validVehicleTypes = rawVehicleTypes.filter((type): type is VehicleType =>
+    vehicleTypes.includes(type as VehicleType),
+  );
+
+  const buildTypePricing = (type: VehicleType): SizePricing => ({
+    costP: toNumber(pricingFromApi[type]?.costP),
+    costM: toNumber(pricingFromApi[type]?.costM),
+    costG: toNumber(pricingFromApi[type]?.costG),
+    priceP: toNumber(pricingFromApi[type]?.priceP),
+    priceM: toNumber(pricingFromApi[type]?.priceM),
+    priceG: toNumber(pricingFromApi[type]?.priceG),
+  });
+
+  return {
+    id: String(raw.id ?? crypto.randomUUID()),
+    name: String(raw.name ?? ''),
+    hours: toNumber(raw.hours ?? 1),
+    needsScheduling: Boolean(raw.needsScheduling ?? raw.needs_scheduling ?? false),
+    products: String(raw.products ?? ''),
+    observation: String(raw.observation ?? ''),
+    priceRule: String(raw.priceRule ?? raw.price_rule ?? ''),
+    perUnit: Boolean(raw.perUnit ?? raw.per_unit ?? false),
+    vehicleTypes: validVehicleTypes.length > 0 ? validVehicleTypes : [...vehicleTypes],
+    pricing: {
+      carro: buildTypePricing('carro') || { ...emptyPricing },
+      moto: buildTypePricing('moto') || { ...emptyPricing },
+      caminhao: buildTypePricing('caminhao') || { ...emptyPricing },
+    },
+  };
+};
+
+const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
+  const response = await fetch(buildApiUrl(path), {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(init?.headers || {}),
+    },
+    ...init,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(errorBody || `Falha na requisição (${response.status})`);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return response.json() as Promise<T>;
 };
 
 export const backendApi = {
+  async listServices(): Promise<Service[]> {
+    const rows = await requestJson<unknown[]>('/api/services');
+    if (!Array.isArray(rows)) return [];
+    return rows
+      .filter((row): row is Record<string, unknown> => !!row && typeof row === 'object')
+      .map((row) => normalizeService(row));
+  },
+
+  async createService(service: Omit<Service, 'id'> & { id?: string }): Promise<Service> {
+    const created = await requestJson<Record<string, unknown>>('/api/services', {
+      method: 'POST',
+      body: JSON.stringify(service),
+    });
+    return normalizeService(created);
+  },
+
+  async updateService(service: Service): Promise<Service> {
+    const updated = await requestJson<Record<string, unknown>>(`/api/services/${service.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(service),
+    });
+    return normalizeService(updated);
+  },
+
+  async deleteService(id: string): Promise<void> {
+    await requestJson<unknown>(`/api/services/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
   async findOpenOrderByPlate(plate: string): Promise<OpenOrderResponse | null> {
     try {
       const response = await fetch(buildApiUrl(`/api/orders/open-by-plate/${plate}`));

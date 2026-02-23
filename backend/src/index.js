@@ -143,6 +143,64 @@ app.post('/api/services', async (req, res) => {
   }
 });
 
+app.put('/api/services/:id', async (req, res) => {
+  const { id } = req.params;
+  const {
+    name,
+    hours = 1,
+    needsScheduling = false,
+    products = '',
+    observation = '',
+    priceRule = '',
+    perUnit = false,
+  } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ message: 'name é obrigatório.' });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `UPDATE services
+       SET name = $1,
+           hours = $2,
+           needs_scheduling = $3,
+           products = $4,
+           observation = $5,
+           price_rule = $6,
+           per_unit = $7,
+           updated_at = NOW()
+       WHERE id = $8
+       RETURNING *`,
+      [name, hours, needsScheduling, products, observation, priceRule, perUnit, id],
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Serviço não encontrado.' });
+    }
+
+    return res.status(200).json(rows[0]);
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao atualizar serviço.', details: error.message });
+  }
+});
+
+app.delete('/api/services/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const { rowCount } = await pool.query('DELETE FROM services WHERE id = $1', [id]);
+
+    if (rowCount === 0) {
+      return res.status(404).json({ message: 'Serviço não encontrado.' });
+    }
+
+    return res.status(204).send();
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao remover serviço.', details: error.message });
+  }
+});
+
 app.get('/api/order-statuses', async (_req, res) => {
   try {
     const { rows } = await pool.query('SELECT id, code, label, color_class, created_at FROM order_statuses ORDER BY created_at ASC');
