@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Settings, LayoutDashboard, RotateCcw, ListOrdered, LogOut, UserCircle } from 'lucide-react';
+import { Settings, LayoutDashboard, RotateCcw, ListOrdered, LogOut, UserCircle, Users, CarFront } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
@@ -36,6 +36,24 @@ const Header = () => {
               <Link to="/vendedores/fila">
                 <ListOrdered className="mr-2 h-4 w-4" />
                 Fila
+              </Link>
+            </Button>
+          )}
+
+          {canUseOps && (
+            <Button variant="ghost" asChild>
+              <Link to="/vendedores/clientes">
+                <Users className="mr-2 h-4 w-4" />
+                Clientes
+              </Link>
+            </Button>
+          )}
+
+          {canUseOps && (
+            <Button variant="ghost" asChild>
+              <Link to="/vendedores/veiculos">
+                <CarFront className="mr-2 h-4 w-4" />
+                Veículos
               </Link>
             </Button>
           )}
