@@ -11,6 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Pencil, Trash2, Car, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { backendApi } from '@/services/backendApi';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Bike, Truck } from 'lucide-react';
 
 const emptyPricing: SizePricing = { costP: 0, costM: 0, costG: 0, priceP: 0, priceM: 0, priceG: 0 };
 const baseVehicleTypes = ['carro', 'moto', 'caminhao'];
@@ -307,7 +309,7 @@ const ServiceForm = () => {
 
       {showForm && <Card>
         <CardHeader>
-          <CardTitle>{editingId ? 'Editar Serviço' : 'Cadastro de Serviço'}</CardTitle>
+          <CardTitle>Dados do serviço</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -447,7 +449,7 @@ const ServiceForm = () => {
 
       <div className="space-y-2">
         <div className="space-y-1 max-h-[700px] overflow-y-auto rounded-lg border border-border/60 p-2">
-          {services.map((s) => (
+          {services.filter((s) => vehicleFilter === 'all' || s.vehicleTypes.includes(vehicleFilter)).map((s) => (
             <div key={s.id} className="flex items-center justify-between rounded-lg bg-card p-3">
               <div>
                 <p className="text-sm font-medium">{s.name}</p>

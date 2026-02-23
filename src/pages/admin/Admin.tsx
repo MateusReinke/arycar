@@ -54,6 +54,7 @@ const StatusManager = () => {
   const [settings, setSettings] = useState(() => storageService.getSettings());
   const [name, setName] = useState('');
   const [colorClass, setColorClass] = useState(STATUS_COLORS[0]);
+  const [open, setOpen] = useState(false);
 
   const save = (next: typeof settings) => {
     setSettings(next);
@@ -79,6 +80,7 @@ const StatusManager = () => {
 
     setName('');
     setColorClass(STATUS_COLORS[0]);
+    setOpen(false);
     toast.success('Status cadastrado com sucesso');
   };
 
@@ -92,26 +94,8 @@ const StatusManager = () => {
 
   return (
     <Card>
-      <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Tags className="h-5 w-5" />Status personalizados</CardTitle></CardHeader>
+      <CardHeader className="flex-row items-center justify-between"><CardTitle className="text-lg flex items-center gap-2"><Tags className="h-5 w-5" />Status personalizados</CardTitle><Button size="sm" onClick={() => setOpen(true)}>Novo status</Button></CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-3 md:grid-cols-3">
-          <div className="md:col-span-2">
-            <Label className="text-xs">Nome do status</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Aguardando peça" />
-          </div>
-          <div>
-            <Label className="text-xs">Cor do card</Label>
-            <select
-              value={colorClass}
-              onChange={(e) => setColorClass(e.target.value)}
-              className="h-10 w-full rounded-md border bg-background px-3"
-            >
-              {STATUS_COLORS.map((color) => <option key={color} value={color}>{color}</option>)}
-            </select>
-          </div>
-        </div>
-        <Button onClick={addStatus}>Adicionar status</Button>
-
         <div className="space-y-2">
           {settings.customStatuses.length === 0 && (
             <p className="text-sm text-muted-foreground">Nenhum status personalizado cadastrado.</p>
@@ -123,6 +107,29 @@ const StatusManager = () => {
             </div>
           ))}
         </div>
+
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Novo status</DialogTitle></DialogHeader>
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="md:col-span-2">
+                <Label className="text-xs">Nome do status</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Aguardando peça" />
+              </div>
+              <div>
+                <Label className="text-xs">Cor do card</Label>
+                <select
+                  value={colorClass}
+                  onChange={(e) => setColorClass(e.target.value)}
+                  className="h-10 w-full rounded-md border bg-background px-3"
+                >
+                  {STATUS_COLORS.map((color) => <option key={color} value={color}>{color}</option>)}
+                </select>
+              </div>
+            </div>
+            <Button onClick={addStatus}>Adicionar status</Button>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

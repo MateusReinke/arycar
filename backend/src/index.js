@@ -653,6 +653,114 @@ app.get('/api/products', async (_req, res) => {
   }
 });
 
+app.post('/api/products', async (req, res) => {
+  const {
+    productType = 'Insumo',
+    brand = 'Genérica',
+    name,
+    unit = 'l',
+    stockCurrent = 0,
+    stockMin = 0,
+    pricePerLiter = 0,
+    active = true,
+  } = req.body;
+
+  if (!name || !String(name).trim()) {
+    return res.status(400).json({ message: 'Nome do produto é obrigatório.' });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO products (product_type, brand, name, unit, stock_current, stock_min, price_per_liter, active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, product_type AS "productType", brand, name, unit,
+         stock_current AS "stockCurrent", stock_min AS "stockMin", price_per_liter AS "pricePerLiter", active`,
+      [
+        String(productType).trim(),
+        String(brand).trim(),
+        String(name).trim(),
+        unit,
+        Number(stockCurrent),
+        Number(stockMin),
+        Number(pricePerLiter),
+        Boolean(active),
+      ],
+    );
+    return res.status(201).json(rows[0]);
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao criar produto.', details: error.message });
+  }
+});
+
+app.put('/api/products/:id', async (req, res) => {
+  const { id } = req.params;
+  const {
+    productType = 'Insumo',
+    brand = 'Genérica',
+    name,
+    unit = 'l',
+    stockCurrent = 0,
+    stockMin = 0,
+    pricePerLiter = 0,
+    active = true,
+  } = req.body;
+
+  if (!name || !String(name).trim()) {
+    return res.status(400).json({ message: 'Nome do produto é obrigatório.' });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `UPDATE products
+       SET product_type = $1,
+           brand = $2,
+           name = $3,
+           unit = $4,
+           stock_current = $5,
+           stock_min = $6,
+           price_per_liter = $7,
+           active = $8,
+           updated_at = NOW()
+       WHERE id = $9
+       RETURNING id, product_type AS "productType", brand, name, unit,
+         stock_current AS "stockCurrent", stock_min AS "stockMin", price_per_liter AS "pricePerLiter", active`,
+      [
+        String(productType).trim(),
+        String(brand).trim(),
+        String(name).trim(),
+        unit,
+        Number(stockCurrent),
+        Number(stockMin),
+        Number(pricePerLiter),
+        Boolean(active),
+        id,
+      ],
+    );
+
+    if (!rows[0]) return res.status(404).json({ message: 'Produto não encontrado.' });
+    return res.status(200).json(rows[0]);
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao atualizar produto.', details: error.message });
+  }
+});
+
+app.delete('/api/products/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const inUse = await pool.query('SELECT 1 FROM service_products WHERE product_id = $1 LIMIT 1', [id]);
+    if (inUse.rows.length > 0) {
+      return res.status(409).json({ message: 'Produto em uso em serviços e não pode ser excluído.' });
+    }
+
+    const result = await pool.query('DELETE FROM products WHERE id = $1', [id]);
+    if (result.rowCount === 0) return res.status(404).json({ message: 'Produto não encontrado.' });
+    return res.status(204).send();
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao remover produto.', details: error.message });
+  }
+});
+
 app.get('/api/stock/alerts', async (_req, res) => {
   try {
     const { rows } = await pool.query(`
