@@ -1077,7 +1077,7 @@ const bootstrap = async () => {
 
   try {
     await ensureCoreAuthTables();
-    await ensureBusinessTables();
+    await runBusinessBootstrap();
     await ensureInventoryFeature();
     app.listen(port, '0.0.0.0', () => {
       console.log(`AryCar API on http://0.0.0.0:${port}`);
