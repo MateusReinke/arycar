@@ -1069,6 +1069,12 @@ app.get('/api/orders/open-by-plate/:plate', async (req, res) => {
 });
 
 const bootstrap = async () => {
+  const runBusinessBootstrap = typeof ensureBusinessTables === 'function'
+    ? ensureBusinessTables
+    : async () => {
+      console.warn('[arycar-api] ensureBusinessTables não encontrado, seguindo sem bootstrap de tabelas de negócio.');
+    };
+
   try {
     await ensureCoreAuthTables();
     await ensureBusinessTables();
