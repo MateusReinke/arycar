@@ -25,17 +25,6 @@ export const apiConfig = {
   // API FIPE (gratuita)
   // ============================
   FIPE_API_URL: env.VITE_FIPE_API_URL || 'https://parallelum.com.br/fipe/api/v1',
-
-  // ============================
-  // CONFIGURAÇÕES DO BANCO (referência para backend)
-  // ============================
-  dbConfig: {
-    user: env.POSTGRES_USER || 'arycar_user',
-    host: env.POSTGRES_HOST || 'postgres',
-    database: env.POSTGRES_DB || 'arycar_db',
-    password: env.POSTGRES_PASSWORD || 'arycar_pass_123',
-    port: Number(env.POSTGRES_PORT || 5432),
-  },
 };
 
 /**
