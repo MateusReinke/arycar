@@ -76,6 +76,18 @@ const toNumber = (value: unknown) => {
   return Number.isFinite(num) ? num : 0;
 };
 
+const normalizeProduct = (raw: Record<string, unknown>): Product => ({
+  id: String(raw.id ?? crypto.randomUUID()),
+  productType: String(raw.productType ?? raw.product_type ?? 'Insumo'),
+  brand: String(raw.brand ?? 'Genérica'),
+  name: String(raw.name ?? ''),
+  unit: String(raw.unit ?? 'l') as Product['unit'],
+  stockCurrent: toNumber(raw.stockCurrent ?? raw.stock_current),
+  stockMin: toNumber(raw.stockMin ?? raw.stock_min),
+  pricePerLiter: toNumber(raw.pricePerLiter ?? raw.price_per_liter),
+  active: Boolean(raw.active ?? true),
+});
+
 const parseVehicleTypes = (value: unknown): string[] => {
   if (Array.isArray(value)) {
     return value.map((item) => String(item).trim().toLowerCase()).filter(Boolean);
@@ -169,7 +181,33 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
 
 export const backendApi = {
   async listProducts(): Promise<Product[]> {
-    return requestJson<Product[]>('/api/products');
+    const rows = await requestJson<unknown[]>('/api/products');
+    if (!Array.isArray(rows)) return [];
+    return rows
+      .filter((row): row is Record<string, unknown> => !!row && typeof row === 'object')
+      .map((row) => normalizeProduct(row));
+  },
+
+  async createProduct(payload: Omit<Product, 'id'> & { id?: string }): Promise<Product> {
+    const created = await requestJson<Record<string, unknown>>('/api/products', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeProduct(created);
+  },
+
+  async updateProduct(product: Product): Promise<Product> {
+    const updated = await requestJson<Record<string, unknown>>(`/api/products/${product.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(product),
+    });
+    return normalizeProduct(updated);
+  },
+
+  async deleteProduct(id: string): Promise<void> {
+    await requestJson<unknown>(`/api/products/${id}`, {
+      method: 'DELETE',
+    });
   },
 
   async listLowStockAlerts(): Promise<StockAlert[]> {

@@ -8,9 +8,11 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Pencil, Trash2, Car } from 'lucide-react';
+import { Plus, Pencil, Trash2, Car, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { backendApi } from '@/services/backendApi';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Bike, Truck } from 'lucide-react';
 
 const emptyPricing: SizePricing = { costP: 0, costM: 0, costG: 0, priceP: 0, priceM: 0, priceG: 0 };
 const baseVehicleTypes = ['carro', 'moto', 'caminhao'];
@@ -60,6 +62,8 @@ const ServiceForm = () => {
   const [pricingType, setPricingType] = useState<string>('carro');
   const [newVehicleType, setNewVehicleType] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [activeVehicleFilter, setActiveVehicleFilter] = useState<'all' | 'carro' | 'moto' | 'caminhao'>('all');
 
   const productMap = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
 
@@ -151,6 +155,7 @@ const ServiceForm = () => {
       setEditingId(null);
       setPricingType('carro');
       setNewVehicleType('');
+      setShowForm(false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao salvar serviço.');
     }
@@ -177,13 +182,30 @@ const ServiceForm = () => {
     setPricingType(nextTypes[0]);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (service: Service) => {
+    const typedName = window.prompt(`Para excluir, digite exatamente o nome do serviço:\n${service.name}`);
+    if (typedName !== service.name) {
+      toast.error('Nome não confere. Serviço não removido.');
+      return;
+    }
+
     try {
-      await backendApi.deleteService(id);
+      await backendApi.deleteService(service.id);
       await loadServices();
       toast.success('Serviço removido');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao remover serviço.');
+    }
+  };
+
+  const handleDuplicate = async (service: Service) => {
+    try {
+      const { id: _id, ...payload } = service;
+      await backendApi.createService({ ...payload, name: `${service.name} (Cópia)` });
+      await loadServices();
+      toast.success('Serviço duplicado');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao duplicar serviço.');
     }
   };
 
@@ -272,16 +294,34 @@ const ServiceForm = () => {
 
   const currentPricing = form.pricing[pricingType] || emptyPricing;
 
+  const filteredServices = useMemo(
+    () => services.filter((service) => activeVehicleFilter === 'all' || service.vehicleTypes.includes(activeVehicleFilter)),
+    [services, activeVehicleFilter],
+  );
+
   useEffect(() => {
     void loadServices();
     void loadProducts();
   }, [loadProducts, loadServices]);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-      <Card>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Serviços ({services.length})</h3>
+        <Button variant="outline" size="sm" onClick={() => setShowForm((prev) => !prev)}>
+          <Plus className="mr-1 h-4 w-4" /> {showForm ? 'Fechar formulário' : 'Novo serviço'}
+        </Button>
+      </div>
+
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{editingId ? 'Editar Serviço' : 'Cadastro de Serviço'}</DialogTitle>
+          </DialogHeader>
+
+          <Card>
         <CardHeader>
-          <CardTitle>{editingId ? 'Editar Serviço' : 'Cadastro de Serviço'}</CardTitle>
+          <CardTitle>Dados do serviço</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -414,23 +454,34 @@ const ServiceForm = () => {
           </div>
           <div className="flex gap-2">
             <Button onClick={handleSave} className="flex-1">{editingId ? <Pencil className="mr-1 h-4 w-4" /> : <Plus className="mr-1 h-4 w-4" />}{editingId ? 'Salvar' : 'Adicionar'}</Button>
-            {editingId && (<Button variant="outline" onClick={() => { setForm({ ...emptyForm }); setEditingId(null); setPricingType('carro'); }}>Cancelar</Button>)}
+            {editingId && (<Button variant="outline" onClick={() => { setForm({ ...emptyForm }); setEditingId(null); setPricingType('carro'); setShowForm(false); }}>Cancelar</Button>)}
           </div>
         </CardContent>
-      </Card>
+          </Card>
+        </DialogContent>
+      </Dialog>
 
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold mb-2">Serviços cadastrados ({services.length})</h3>
+        <div className="flex flex-wrap items-center justify-center gap-2 py-2">
+          <Button variant={activeVehicleFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setActiveVehicleFilter('all')} className="rounded-full hover:scale-105 transition">Todos</Button>
+          <Button variant={activeVehicleFilter === 'carro' ? 'default' : 'outline'} size="sm" onClick={() => setActiveVehicleFilter('carro')} className="rounded-full hover:scale-105 transition"><Car className="mr-1 h-4 w-4" />Carro</Button>
+          <Button variant={activeVehicleFilter === 'moto' ? 'default' : 'outline'} size="sm" onClick={() => setActiveVehicleFilter('moto')} className="rounded-full hover:scale-105 transition"><Bike className="mr-1 h-4 w-4" />Moto</Button>
+          <Button variant={activeVehicleFilter === 'caminhao' ? 'default' : 'outline'} size="sm" onClick={() => setActiveVehicleFilter('caminhao')} className="rounded-full hover:scale-105 transition"><Truck className="mr-1 h-4 w-4" />Caminhão</Button>
+        </div>
         <div className="space-y-1 max-h-[700px] overflow-y-auto rounded-lg border border-border/60 p-2">
-          {services.map((s) => (
+          {filteredServices.map((s) => (
             <div key={s.id} className="flex items-center justify-between rounded-lg bg-card p-3">
               <div>
                 <p className="text-sm font-medium">{s.name}</p>
-                <p className="text-xs text-muted-foreground">{(s.vehicleTypes || []).map(labelForType).join(', ')} • {(s.productConsumption || []).length} produtos</p>
+                <p className="text-xs text-muted-foreground">{(s.vehicleTypes || []).map(labelForType).join(', ')} • {(s.productConsumption || []).length} produtos • {s.hours}h</p>
+                <p className="text-xs text-muted-foreground">
+                  Carro P/M/G: R$ {s.pricing.carro?.priceP ?? 0} / {s.pricing.carro?.priceM ?? 0} / {s.pricing.carro?.priceG ?? 0}
+                </p>
               </div>
               <div className="flex gap-1">
-                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleEdit(s)}><Pencil className="h-3 w-3" /></Button>
-                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleDelete(s.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { handleEdit(s); setShowForm(true); }}><Pencil className="h-3 w-3" /></Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleDuplicate(s)}><Copy className="h-3 w-3" /></Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleDelete(s)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
               </div>
             </div>
           ))}
