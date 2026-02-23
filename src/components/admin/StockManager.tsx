@@ -84,8 +84,8 @@ const StockManager = () => {
             return (
               <div key={product.id} className={`rounded-lg border p-3 ${levelStyles[level]}`}>
                 <div className="flex items-center justify-between gap-2">
-                  <p className="font-medium">{product.name}</p>
-                  <p className="text-xs">Atual: {product.stockCurrent} {product.unit} • Mínimo: {product.stockMin} {product.unit}</p>
+                  <p className="font-medium">{product.productType} • {product.brand} • {product.name}</p>
+                  <p className="text-xs">Qtd: {product.stockCurrent} {product.unit} • Mínimo: {product.stockMin} {product.unit} • Preço/litro: R$ {product.pricePerLiter.toFixed(2)}</p>
                 </div>
                 <div className="mt-2 h-2 rounded-full bg-background/70">
                   <div

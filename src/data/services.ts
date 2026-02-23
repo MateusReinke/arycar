@@ -2,18 +2,31 @@ import { Service, VehicleType, SizePricing } from '@/types';
 
 const allTypes: VehicleType[] = ['carro', 'moto', 'caminhao'];
 
-// Helper: create pricing with same values for all vehicle types initially
-const samePricing = (p: SizePricing): Record<VehicleType, SizePricing> => ({
+const pricingByCar = (p: SizePricing): Record<VehicleType, SizePricing> => ({
   carro: { ...p },
-  moto: { ...p },
-  caminhao: { ...p },
+  moto: {
+    costP: Math.round(p.costP * 0.7),
+    costM: Math.round(p.costM * 0.7),
+    costG: Math.round(p.costG * 0.7),
+    priceP: Math.round(p.priceP * 0.7),
+    priceM: Math.round(p.priceM * 0.7),
+    priceG: Math.round(p.priceG * 0.7),
+  },
+  caminhao: {
+    costP: Math.round(p.costP * 1.35),
+    costM: Math.round(p.costM * 1.35),
+    costG: Math.round(p.costG * 1.35),
+    priceP: Math.round(p.priceP * 1.35),
+    priceM: Math.round(p.priceM * 1.35),
+    priceG: Math.round(p.priceG * 1.35),
+  },
 });
 
 export const initialServices: Service[] = [
   {
     id: '1',
     name: 'Lavagem Simples',
-    pricing: samePricing({ costP: 20, costM: 25, costG: 30, priceP: 40, priceM: 50, priceG: 60 }),
+    pricing: pricingByCar({ costP: 20, costM: 25, costG: 30, priceP: 40, priceM: 50, priceG: 60 }),
     hours: 1, needsScheduling: false,
     products: 'Shampoo Neutro, Água, Pretinho, Eco-diesel, Multi-uso, Limpa-baú',
     observation: '', priceRule: '', perUnit: false, vehicleTypes: allTypes,
@@ -21,7 +34,7 @@ export const initialServices: Service[] = [
   {
     id: '2',
     name: 'Lavagem Detalhada',
-    pricing: samePricing({ costP: 30, costM: 50, costG: 70, priceP: 80, priceM: 100, priceG: 120 }),
+    pricing: pricingByCar({ costP: 30, costM: 50, costG: 70, priceP: 80, priceM: 100, priceG: 120 }),
     hours: 2, needsScheduling: false,
     products: 'Shampoo Neutro, Água, Pretinho, Eco-diesel, Multi-uso, Limpa-baú, Cera',
     observation: '', priceRule: '', perUnit: false, vehicleTypes: allTypes,
@@ -29,7 +42,7 @@ export const initialServices: Service[] = [
   {
     id: '3',
     name: 'Lavagem de Motor - Parcial',
-    pricing: samePricing({ costP: 90, costM: 110, costG: 130, priceP: 180, priceM: 220, priceG: 260 }),
+    pricing: pricingByCar({ costP: 90, costM: 110, costG: 130, priceP: 180, priceM: 220, priceG: 260 }),
     hours: 2, needsScheduling: false,
     products: 'Shampoo Neutro, Água, Pretinho, Eco-diesel, Multi-uso, Limpa-baú, Desengraxante, Verniz de motor',
     observation: '', priceRule: '', perUnit: false, vehicleTypes: allTypes,
@@ -37,7 +50,7 @@ export const initialServices: Service[] = [
   {
     id: '4',
     name: 'Lavagem de Motor - Completo',
-    pricing: samePricing({ costP: 180, costM: 220, costG: 260, priceP: 250, priceM: 300, priceG: 350 }),
+    pricing: pricingByCar({ costP: 180, costM: 220, costG: 260, priceP: 250, priceM: 300, priceG: 350 }),
     hours: 3, needsScheduling: false,
     products: 'Shampoo Neutro, Água, Pretinho, Eco-diesel, Multi-uso, Limpa-baú, Desengraxante, Verniz de motor',
     observation: '', priceRule: '', perUnit: false, vehicleTypes: allTypes,
@@ -45,7 +58,7 @@ export const initialServices: Service[] = [
   {
     id: '5',
     name: 'Lavagem de Chassi',
-    pricing: samePricing({ costP: 180, costM: 220, costG: 260, priceP: 250, priceM: 300, priceG: 350 }),
+    pricing: pricingByCar({ costP: 180, costM: 220, costG: 260, priceP: 250, priceM: 300, priceG: 350 }),
     hours: 3, needsScheduling: false,
     products: 'Shampoo Neutro, Água, Pretinho, Eco-diesel, Multi-uso, Limpa-baú, Desengraxante, Verniz de chassi',
     observation: '', priceRule: '', perUnit: false, vehicleTypes: allTypes,
@@ -53,7 +66,7 @@ export const initialServices: Service[] = [
   {
     id: '6',
     name: 'Lavagem Caixa de Roda',
-    pricing: samePricing({ costP: 80, costM: 100, costG: 120, priceP: 160, priceM: 200, priceG: 240 }),
+    pricing: pricingByCar({ costP: 80, costM: 100, costG: 120, priceP: 160, priceM: 200, priceG: 240 }),
     hours: 2, needsScheduling: false,
     products: 'Shampoo Neutro, Água, Pretinho, Eco-diesel, Multi-uso, Limpa-baú, Cera, Desengraxante, Verniz de caixa de roda',
     observation: '', priceRule: '', perUnit: false, vehicleTypes: ['carro', 'caminhao'],
@@ -61,7 +74,7 @@ export const initialServices: Service[] = [
   {
     id: '7',
     name: 'Remoção de Chuva Ácida',
-    pricing: samePricing({ costP: 110, costM: 130, costG: 150, priceP: 220, priceM: 260, priceG: 300 }),
+    pricing: pricingByCar({ costP: 110, costM: 130, costG: 150, priceP: 220, priceM: 260, priceG: 300 }),
     hours: 2, needsScheduling: false,
     products: 'Shampoo Neutro, Água, Pretinho, Eco-diesel, Multi-uso, Limpa-baú, Prisma, Focus',
     observation: '', priceRule: '', perUnit: false, vehicleTypes: allTypes,
@@ -69,7 +82,7 @@ export const initialServices: Service[] = [
   {
     id: '8',
     name: 'Cristalização de Vidros',
-    pricing: samePricing({ costP: 0, costM: 0, costG: 0, priceP: 0, priceM: 0, priceG: 0 }),
+    pricing: pricingByCar({ costP: 0, costM: 0, costG: 0, priceP: 0, priceM: 0, priceG: 0 }),
     hours: 5, needsScheduling: true,
     products: 'Hydrox Fast - Vonixx',
     observation: '+50% Remoção Chuva Ácida',
@@ -78,7 +91,7 @@ export const initialServices: Service[] = [
   {
     id: '9',
     name: 'Polimento Comercial',
-    pricing: samePricing({ costP: 125, costM: 175, costG: 225, priceP: 250, priceM: 350, priceG: 450 }),
+    pricing: pricingByCar({ costP: 125, costM: 175, costG: 225, priceP: 250, priceM: 350, priceG: 450 }),
     hours: 5, needsScheduling: true,
     products: 'Massa de polir, Lustrador, Cera',
     observation: '', priceRule: '', perUnit: false, vehicleTypes: allTypes,
@@ -86,7 +99,7 @@ export const initialServices: Service[] = [
   {
     id: '10',
     name: 'Polimento Técnico',
-    pricing: samePricing({ costP: 225, costM: 310, costG: 405, priceP: 450, priceM: 620, priceG: 810 }),
+    pricing: pricingByCar({ costP: 225, costM: 310, costG: 405, priceP: 450, priceM: 620, priceG: 810 }),
     hours: 8, needsScheduling: true,
     products: 'Lixa, Massa de polir, Lustrador, Cera',
     observation: '', priceRule: '', perUnit: false, vehicleTypes: allTypes,
@@ -94,7 +107,7 @@ export const initialServices: Service[] = [
   {
     id: '11',
     name: 'Vitrificação de Pintura',
-    pricing: samePricing({ costP: 35, costM: 35, costG: 35, priceP: 120, priceM: 150, priceG: 200 }),
+    pricing: pricingByCar({ costP: 35, costM: 35, costG: 35, priceP: 120, priceM: 150, priceG: 200 }),
     hours: 3, needsScheduling: true,
     products: 'V-paint - Vonixx',
     observation: 'Somar com o Polimento escolhido (exceto veículos já prontos para vitrificar)',
@@ -103,7 +116,7 @@ export const initialServices: Service[] = [
   {
     id: '12',
     name: 'Clareamento de Faróis',
-    pricing: samePricing({ costP: 25, costM: 25, costG: 25, priceP: 180, priceM: 200, priceG: 220 }),
+    pricing: pricingByCar({ costP: 25, costM: 25, costG: 25, priceP: 180, priceM: 200, priceG: 220 }),
     hours: 2, needsScheduling: true,
     products: 'Lixa, Massa de polir, Lustrador, Cera',
     observation: '', priceRule: '', perUnit: false, vehicleTypes: allTypes,
@@ -111,7 +124,7 @@ export const initialServices: Service[] = [
   {
     id: '13',
     name: 'Vitrificação de Faróis',
-    pricing: samePricing({ costP: 17, costM: 17, costG: 17, priceP: 50, priceM: 75, priceG: 100 }),
+    pricing: pricingByCar({ costP: 17, costM: 17, costG: 17, priceP: 50, priceM: 75, priceG: 100 }),
     hours: 1, needsScheduling: true,
     products: 'V-light - Vonixx',
     observation: 'Somar com o Clareamento de Farol, se necessário',
@@ -120,7 +133,7 @@ export const initialServices: Service[] = [
   {
     id: '14',
     name: 'Vitrificação de Plásticos',
-    pricing: samePricing({ costP: 60, costM: 60, costG: 60, priceP: 120, priceM: 180, priceG: 250 }),
+    pricing: pricingByCar({ costP: 60, costM: 60, costG: 60, priceP: 120, priceM: 180, priceG: 250 }),
     hours: 3, needsScheduling: true,
     products: 'V-PLASTIC PRO - Vonixx',
     observation: '', priceRule: '', perUnit: false, vehicleTypes: allTypes,
@@ -128,7 +141,7 @@ export const initialServices: Service[] = [
   {
     id: '15',
     name: 'Vitrificação de Couro',
-    pricing: samePricing({ costP: 60, costM: 60, costG: 60, priceP: 120, priceM: 180, priceG: 250 }),
+    pricing: pricingByCar({ costP: 60, costM: 60, costG: 60, priceP: 120, priceM: 180, priceG: 250 }),
     hours: 3, needsScheduling: true,
     products: 'V-LEATHER PRO - Vonixx',
     observation: '', priceRule: '', perUnit: false, vehicleTypes: allTypes,
@@ -136,7 +149,7 @@ export const initialServices: Service[] = [
   {
     id: '16',
     name: 'Higienização',
-    pricing: samePricing({ costP: 100, costM: 100, costG: 100, priceP: 200, priceM: 250, priceG: 300 }),
+    pricing: pricingByCar({ costP: 100, costM: 100, costG: 100, priceP: 200, priceM: 250, priceG: 300 }),
     hours: 3, needsScheduling: true,
     products: 'Multi-uso, Sintra, Higicouro, Hidracouro',
     observation: '', priceRule: '', perUnit: false, vehicleTypes: allTypes,
@@ -144,7 +157,7 @@ export const initialServices: Service[] = [
   {
     id: '17',
     name: 'Oxi Sanitização',
-    pricing: samePricing({ costP: 20, costM: 20, costG: 20, priceP: 50, priceM: 80, priceG: 100 }),
+    pricing: pricingByCar({ costP: 20, costM: 20, costG: 20, priceP: 50, priceM: 80, priceG: 100 }),
     hours: 1, needsScheduling: true,
     products: 'Ozônio',
     observation: '', priceRule: '', perUnit: false, vehicleTypes: allTypes,
@@ -152,7 +165,7 @@ export const initialServices: Service[] = [
   {
     id: '18',
     name: 'Descontaminação de Pintura',
-    pricing: samePricing({ costP: 60, costM: 60, costG: 60, priceP: 150, priceM: 200, priceG: 250 }),
+    pricing: pricingByCar({ costP: 60, costM: 60, costG: 60, priceP: 150, priceM: 200, priceG: 250 }),
     hours: 2, needsScheduling: true,
     products: 'Barra descontaminante (Clay Bar)',
     observation: '', priceRule: '', perUnit: false, vehicleTypes: allTypes,
@@ -160,7 +173,7 @@ export const initialServices: Service[] = [
   {
     id: '19',
     name: 'Martelinho de Ouro',
-    pricing: samePricing({ costP: 100, costM: 150, costG: 200, priceP: 150, priceM: 200, priceG: 250 }),
+    pricing: pricingByCar({ costP: 100, costM: 150, costG: 200, priceP: 150, priceM: 200, priceG: 250 }),
     hours: 4, needsScheduling: true,
     products: '-',
     observation: '', priceRule: '', perUnit: true, vehicleTypes: ['carro', 'caminhao'],
@@ -168,7 +181,7 @@ export const initialServices: Service[] = [
   {
     id: '20',
     name: 'Envelopamento',
-    pricing: samePricing({ costP: 350, costM: 400, costG: 450, priceP: 400, priceM: 450, priceG: 500 }),
+    pricing: pricingByCar({ costP: 350, costM: 400, costG: 450, priceP: 400, priceM: 450, priceG: 500 }),
     hours: 5, needsScheduling: true,
     products: '-',
     observation: '', priceRule: '', perUnit: true, vehicleTypes: allTypes,
@@ -176,7 +189,7 @@ export const initialServices: Service[] = [
   {
     id: '21',
     name: 'Pequenos Reparos Express',
-    pricing: samePricing({ costP: 105, costM: 135, costG: 155, priceP: 350, priceM: 450, priceG: 550 }),
+    pricing: pricingByCar({ costP: 105, costM: 135, costG: 155, priceP: 350, priceM: 450, priceG: 550 }),
     hours: 5, needsScheduling: true,
     products: 'Tinta, Verniz, SpectraPrime, Massa poliéster, Lixa, Massa de polir, Lustrador, Cera',
     observation: '', priceRule: '', perUnit: true, vehicleTypes: allTypes,
