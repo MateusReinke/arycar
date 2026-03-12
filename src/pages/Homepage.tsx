@@ -10,7 +10,6 @@ import {
   Droplets,
   Sun,
   ArrowRight,
-  MousePointerClick,
   Star,
   BadgeCheck,
   Bot,
@@ -169,6 +168,7 @@ const Homepage = () => {
   }, []);
 
   const activeShowcase = beforeAfterShowcases.find((showcase) => showcase.id === activeShowcaseId) || beforeAfterShowcases[0];
+  const activeService = services.find((service) => service.id === activeServiceId) || services[0];
   const isAgentConfigured = Boolean(N8N_WEBHOOK_URL);
 
   const whatsappLink = whatsappNumber ? `https://wa.me/55${whatsappNumber.replace(/\D/g, '')}` : '#';
@@ -370,68 +370,87 @@ const Homepage = () => {
           </div>
         </section>
 
-        <section id="servicos" className="bg-card/40 py-20">
-          <div className="container">
-            <div className="mb-12 text-center">
-              <span className="text-sm font-semibold uppercase tracking-widest text-primary">O que fazemos</span>
-              <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Serviços projetados para cada detalhe</h2>
-              <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Cards adaptados para desktop e mobile. Toque em qualquer card e veja a solução ideal para o seu veículo.</p>
+        <section id="servicos" className="relative overflow-hidden bg-[#030816] py-20">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_25%,rgba(24,131,255,0.2),transparent_42%)]" />
+          <div className="container relative">
+            <div className="mb-10 text-center lg:text-left">
+              <span className="text-sm font-semibold uppercase tracking-widest text-primary">Cobertura técnica</span>
+              <h2 className="mt-2 text-3xl font-black leading-tight text-white sm:text-4xl lg:max-w-xl">
+                Segurança detalhada ponto a ponto para o seu carro.
+              </h2>
+              <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-300 lg:mx-0">
+                Layout mais estável para zoom 100%: selecione um serviço na coluna lateral e veja os detalhes completos no painel principal.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1.55fr)] lg:items-stretch">
+              <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 lg:mx-0 lg:grid lg:max-h-[560px] lg:grid-cols-1 lg:gap-3 lg:overflow-visible lg:px-0 lg:pb-0">
                 {services.map((service) => {
                   const isActive = activeServiceId === service.id;
 
                   return (
-                    <article
+                    <button
                       key={service.id}
-                      className={`group relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 ${
+                      onClick={() => setActiveServiceId(service.id)}
+                      className={`group relative min-w-[240px] overflow-hidden rounded-2xl border px-4 py-4 text-left transition-all duration-300 lg:min-w-0 lg:px-4 lg:py-5 ${
                         isActive
-                          ? 'border-primary/50 bg-card shadow-lg shadow-primary/20'
-                          : 'border-border/80 bg-background/70 hover:border-primary/40'
+                          ? 'border-primary/70 bg-[#060d20] shadow-[0_10px_35px_rgba(30,136,255,0.25)]'
+                          : 'border-slate-700/60 bg-[#0a1328]/90 hover:border-primary/40'
                       }`}
+                      aria-pressed={isActive}
                     >
-                      <button
-                        onClick={() => setActiveServiceId((prev) => (prev === service.id ? null : service.id))}
-                        className="relative z-10 w-full text-left"
-                        aria-expanded={isActive}
-                      >
-                        <img
-                          src={service.image}
-                          alt={service.title}
-                          className="absolute inset-0 h-full w-full object-cover opacity-10 transition-transform duration-500 group-hover:scale-105"
-                          loading="lazy"
-                        />
-                        <div className="relative z-10">
-                          <div className="mb-4 inline-flex rounded-xl bg-primary/10 p-2 text-primary">
-                            <service.icon className="h-5 w-5" />
-                          </div>
-                          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{service.subtitle}</p>
-                          <h3 className="mt-1 text-lg font-bold">{service.title}</h3>
-                          <div className="mt-4 flex items-center gap-2 text-xs text-primary">
-                            <MousePointerClick className="h-4 w-4" />
-                            {isActive ? 'Toque para recolher' : 'Toque para expandir'}
-                          </div>
+                      {isActive && <span className="absolute inset-y-0 left-0 w-1 rounded-full bg-primary" />}
+                      <div className="flex items-center gap-3">
+                        <div className={`rounded-xl p-2 ${isActive ? 'bg-primary/20 text-primary' : 'bg-slate-800/80 text-slate-300'}`}>
+                          <service.icon className="h-4 w-4" />
                         </div>
-                      </button>
-
-                      {isActive && (
-                        <div className="relative z-10 mt-5 space-y-4 border-t border-border/70 pt-4">
-                          <p className="text-sm leading-relaxed text-muted-foreground">{service.desc}</p>
-                          <ul className="space-y-2 text-sm">
-                            {service.features.map((feature) => (
-                              <li key={feature} className="rounded-lg border bg-background/80 px-3 py-2">• {feature}</li>
-                            ))}
-                          </ul>
-                          <Button className="w-full" onClick={() => setContactOpen(true)}>
-                            Solicitar orçamento
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                          </Button>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="truncate text-base font-semibold text-white">{service.title}</h3>
+                          <p className="truncate text-[11px] uppercase tracking-[0.18em] text-slate-400">{service.subtitle}</p>
                         </div>
-                      )}
-                    </article>
+                        <ChevronRight className={`h-4 w-4 transition ${isActive ? 'text-primary' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                      </div>
+                    </button>
                   );
                 })}
+              </div>
+
+              <article className="relative overflow-hidden rounded-3xl border border-primary/40 bg-[#040b1b] p-5 shadow-[0_22px_60px_rgba(4,10,24,0.9)] sm:p-7 lg:min-h-[560px]">
+                <img
+                  src={activeService.image}
+                  alt={activeService.title}
+                  className="pointer-events-none absolute right-0 top-0 hidden h-full w-[48%] object-cover opacity-10 md:block"
+                  loading="lazy"
+                />
+                <div className="relative z-10 flex h-full flex-col">
+                  <span className="inline-flex w-fit rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+                    Serviço selecionado
+                  </span>
+
+                  <h3 className="mt-4 text-2xl font-black leading-tight text-white sm:text-3xl lg:text-4xl">{activeService.title}</h3>
+                  <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300 sm:text-base">{activeService.desc}</p>
+
+                  <ul className="mt-6 grid gap-3 text-sm sm:grid-cols-2">
+                    {activeService.features.map((feature) => (
+                      <li key={feature} className="rounded-xl border border-slate-700/70 bg-slate-900/70 px-4 py-3 text-slate-100">
+                        • {feature}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="mt-6 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-slate-300 lg:hidden">
+                    Dica: deslize os cards de serviço para os lados e toque para trocar os detalhes.
+                  </div>
+
+                  <div className="mt-8 flex flex-col gap-4 border-t border-slate-700/60 pt-5 sm:flex-row sm:items-center sm:justify-between lg:mt-auto">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Atendimento premium em todos os pacotes</p>
+                    <Button className="w-full sm:w-auto" onClick={() => setContactOpen(true)}>
+                      Solicitar orçamento
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </article>
             </div>
           </div>
         </section>
