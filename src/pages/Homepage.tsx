@@ -273,12 +273,13 @@ const Homepage = () => {
           </div>
         </header>
 
-        <section className="relative overflow-hidden py-14 sm:py-16 lg:py-28">
+        <section className="relative overflow-hidden py-10 sm:py-14 lg:py-28">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/5" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.2),transparent_40%)]" />
           <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(6,15,32,0.95)_0%,rgba(7,17,38,0.82)_45%,rgba(10,32,78,0.65)_100%)]" />
-          <div className="container relative grid items-start gap-8 sm:gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-            <div className="space-y-5 text-center lg:space-y-6 lg:text-left">
+          <div className="container relative grid items-start gap-6 sm:gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+            <div className="space-y-4 text-center lg:space-y-6 lg:text-left">
+              <img src={arycarLogo} alt="Logo Arycar" className="mx-auto h-16 w-auto drop-shadow-xl sm:h-20 lg:hidden" />
               <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
                 Qualidade, cuidado e detalhes em cada serviço
               </span>
@@ -298,12 +299,12 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-muted-foreground lg:justify-start">
                 {['Agendamento rápido', 'Leva e traz', 'Atendimento para frotas', 'Equipe certificada'].map((pill, index) => (
-                  <span key={pill} className={`rounded-full border border-border/80 bg-card/60 px-3 py-1 ${index > 1 ? 'hidden sm:inline-flex' : ''}`}>
+                  <span key={pill} className={`rounded-full border border-border/80 bg-card/60 px-3 py-1 ${index > 0 ? 'hidden sm:inline-flex' : ''}`}>
                     {pill}
                   </span>
                 ))}
               </div>
-              <div className="grid grid-cols-2 gap-3 text-left sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2 text-left sm:grid-cols-3 sm:gap-3">
                 <div className="rounded-xl border border-border/80 bg-card/50 p-3">
                   <p className="text-xl font-bold text-primary">+4.500</p>
                   <p className="text-xs text-muted-foreground">veículos atendidos</p>
@@ -312,14 +313,14 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                   <p className="text-xl font-bold text-primary">4.9/5</p>
                   <p className="text-xs text-muted-foreground">avaliação média dos clientes</p>
                 </div>
-                <div className="col-span-2 rounded-xl border border-border/80 bg-card/50 p-3 sm:col-span-1">
+                <div className="rounded-xl border border-border/80 bg-card/50 p-3">
                   <p className="text-xl font-bold text-primary">Até 12x</p>
                   <p className="text-xs text-muted-foreground">condições facilitadas</p>
                 </div>
               </div>
             </div>
 
-            <div className="relative mx-auto w-full max-w-md rounded-3xl border border-primary/20 bg-card/70 p-6 shadow-2xl shadow-primary/20 backdrop-blur">
+            <div className="relative mx-auto hidden w-full max-w-md rounded-3xl border border-primary/20 bg-card/70 p-6 shadow-2xl shadow-primary/20 backdrop-blur lg:block">
               <img src={arycarLogo} alt="Logo Arycar" className="mx-auto h-40 w-auto drop-shadow-2xl" />
               <div className="mt-6 space-y-4">
                 <div className="flex items-start gap-3 rounded-xl bg-background/80 p-3">
@@ -397,7 +398,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                   <p className="mt-2 text-sm text-slate-300">Toque no serviço para atualizar o painel com descrição e escopo principal.</p>
                 </div>
 
-                <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 lg:mx-0 lg:grid lg:max-h-[500px] lg:grid-cols-1 lg:gap-3 lg:overflow-visible lg:px-0 lg:pb-0">
+                <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 lg:mx-0 lg:grid lg:max-h-[500px] lg:grid-cols-1 lg:gap-3 lg:overflow-visible lg:px-0 lg:pb-0">
                 {services.map((service) => {
                   const isActive = activeServiceId === service.id;
 
@@ -405,7 +406,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                     <button
                       key={service.id}
                       onClick={() => setActiveServiceId(service.id)}
-                      className={`group relative overflow-hidden rounded-2xl border px-4 py-4 text-left transition-all duration-300 lg:px-4 lg:py-5 ${
+                      className={`group relative min-w-[220px] snap-start overflow-hidden rounded-2xl border px-4 py-4 text-left transition-all duration-300 sm:min-w-[260px] lg:min-w-0 lg:px-4 lg:py-5 ${
                         isActive
                           ? 'border-primary/70 bg-[#060d20] shadow-[0_10px_35px_rgba(30,136,255,0.25)]'
                           : 'border-slate-700/60 bg-[#0a1328]/90 hover:border-primary/40'
@@ -479,7 +480,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
               </p>
             </div>
 
-            <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
               {beforeAfterShowcases.map((showcase) => {
                 const service = services[showcase.serviceId];
                 const isActive = activeShowcaseId === showcase.id;
@@ -557,7 +558,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
         </section>
 
         <section className="bg-card/50 py-20">
-          <div className="container grid grid-cols-1 gap-10 md:grid-cols-3">
+          <div className="container grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-10">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
                 <MapPin className="h-6 w-6 text-primary" />
