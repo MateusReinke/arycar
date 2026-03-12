@@ -133,17 +133,19 @@ const beforeAfterShowcases = [
   },
 ];
 
-const spotlightServices = [
-  'Sistema leva e traz gratuito até 3km',
-  'Lavagem convencional interna e externa',
-  'Polimento comercial',
-  'Polimento com lixamento',
-  'Higienização comercial',
-  'Higienização profunda com desmontagem',
-  'Remoção de chuva ácida',
-  'Aplicações de cera, selantes, vitrificadores e cera cristalizadora',
-  'Lavagem de caixa de rodas com remoção das rodas',
-  'Lavagem molhada e limpeza seca do motor',
+const serviceWorkflow = [
+  {
+    step: '1. Diagnóstico rápido',
+    description: 'Checklist técnico para definir prioridade, acabamento e tempo de entrega.',
+  },
+  {
+    step: '2. Execução especializada',
+    description: 'Processo por etapa com foco em proteção, brilho e segurança dos materiais.',
+  },
+  {
+    step: '3. Entrega + manutenção',
+    description: 'Orientação de cuidados pós-serviço e acompanhamento para manter o resultado.',
+  },
 ];
 
 const Homepage = () => {
@@ -246,7 +248,7 @@ const Homepage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <main itemScope itemType="https://schema.org/AutoRepair">
+      <main itemScope itemType="https://schema.org/AutoRepair" className="pb-40 md:pb-24">
 
         <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
           <div className="container flex h-16 items-center justify-between">
@@ -271,12 +273,12 @@ const Homepage = () => {
           </div>
         </header>
 
-        <section className="relative overflow-hidden py-20 lg:py-28">
+        <section className="relative overflow-hidden py-14 sm:py-16 lg:py-28">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/5" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.2),transparent_40%)]" />
           <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(6,15,32,0.95)_0%,rgba(7,17,38,0.82)_45%,rgba(10,32,78,0.65)_100%)]" />
-          <div className="container relative grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="space-y-6 text-center lg:text-left">
+          <div className="container relative grid items-start gap-8 sm:gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+            <div className="space-y-5 text-center lg:space-y-6 lg:text-left">
               <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
                 Qualidade, cuidado e detalhes em cada serviço
               </span>
@@ -284,24 +286,24 @@ const Homepage = () => {
                 ARYCAR: estética automotiva com <span className="text-primary">acabamento de vitrine</span>
               </h1>
               <p className="max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-                Inspirada no visual da campanha oficial, nossa homepage destaca os serviços mais procurados: lavagem, polimento, higienização, vitrificação e pacotes técnicos para pintura, rodas e motor.
+Lavagem, polimento, higienização e vitrificação com execução técnica, atendimento rápido e foco em resultado visível desde a primeira entrega.
               </p>
-              <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
-                <Button size="lg" className="h-12 px-8 text-base" asChild>
+              <div className="flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap sm:gap-4 lg:justify-start">
+                <Button size="lg" className="h-12 w-full px-8 text-base sm:w-auto" asChild>
                   <a href="#servicos">Conhecer serviços</a>
                 </Button>
-                <Button size="lg" variant="outline" className="h-12 px-8 text-base" onClick={() => setContactOpen(true)}>
+                <Button size="lg" variant="outline" className="h-12 w-full px-8 text-base sm:w-auto" onClick={() => setContactOpen(true)}>
                   Falar com especialista
                 </Button>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-muted-foreground lg:justify-start">
-                {['Agendamento rápido', 'Leva e traz', 'Atendimento para frotas', 'Equipe certificada'].map((pill) => (
-                  <span key={pill} className="rounded-full border border-border/80 bg-card/60 px-3 py-1">
+                {['Agendamento rápido', 'Leva e traz', 'Atendimento para frotas', 'Equipe certificada'].map((pill, index) => (
+                  <span key={pill} className={`rounded-full border border-border/80 bg-card/60 px-3 py-1 ${index > 1 ? 'hidden sm:inline-flex' : ''}`}>
                     {pill}
                   </span>
                 ))}
               </div>
-              <div className="grid grid-cols-1 gap-3 text-left sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-3 text-left sm:grid-cols-3">
                 <div className="rounded-xl border border-border/80 bg-card/50 p-3">
                   <p className="text-xl font-bold text-primary">+4.500</p>
                   <p className="text-xs text-muted-foreground">veículos atendidos</p>
@@ -310,7 +312,7 @@ const Homepage = () => {
                   <p className="text-xl font-bold text-primary">4.9/5</p>
                   <p className="text-xs text-muted-foreground">avaliação média dos clientes</p>
                 </div>
-                <div className="rounded-xl border border-border/80 bg-card/50 p-3">
+                <div className="col-span-2 rounded-xl border border-border/80 bg-card/50 p-3 sm:col-span-1">
                   <p className="text-xl font-bold text-primary">Até 12x</p>
                   <p className="text-xs text-muted-foreground">condições facilitadas</p>
                 </div>
@@ -336,16 +338,21 @@ const Homepage = () => {
         <section className="relative overflow-hidden bg-[#050a16] py-20" id="servicos-campanha">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_40%,rgba(24,131,255,0.25),transparent_45%)]" />
           <div className="container relative">
-            <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+            <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
               <div className="rounded-3xl border border-primary/30 bg-[#070d1e]/90 p-6 shadow-2xl shadow-blue-950/60 sm:p-8">
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Serviços que executamos</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Como funciona</p>
                 <h2 className="mt-2 text-3xl font-black leading-tight text-white sm:text-4xl">
-                  Soluções completas para estética e proteção automotiva
+                  Menos promessa, mais processo com padrão Arycar
                 </h2>
-                <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                  {spotlightServices.map((service) => (
-                    <div key={service} className="rounded-xl border border-blue-300/15 bg-black/30 px-4 py-3">
-                      <p className="text-sm font-semibold leading-snug text-slate-100">{service}</p>
+                <p className="mt-4 max-w-2xl text-sm text-slate-300">
+                  Consolidamos as informações em um fluxo simples para evitar repetição: diagnóstico, execução e entrega orientada.
+                </p>
+
+                <div className="mt-8 space-y-3">
+                  {serviceWorkflow.map((item) => (
+                    <div key={item.step} className="rounded-xl border border-blue-300/15 bg-black/30 px-4 py-4">
+                      <p className="text-sm font-semibold text-slate-100">{item.step}</p>
+                      <p className="mt-1 text-sm text-slate-300">{item.description}</p>
                     </div>
                   ))}
                 </div>
@@ -355,9 +362,9 @@ const Homepage = () => {
                 <img src={serviceLavagem} alt="Carro azul recebendo detalhamento" className="h-60 w-full rounded-2xl object-cover" />
                 <div className="mt-5 space-y-3">
                   {[
-                    'Sistema leva e traz disponível para agilizar sua rotina.',
-                    'Pacotes com foco em brilho, descontaminação e proteção duradoura.',
-                    'Equipe especializada em acabamento interno e externo premium.',
+                    'Leva e traz para otimizar sua rotina de trabalho.',
+                    'Equipe treinada para acabamento interno e externo.',
+                    'Transparência no escopo e no prazo antes de iniciar.',
                   ].map((text) => (
                     <div key={text} className="flex items-start gap-2">
                       <BadgeCheck className="mt-0.5 h-4 w-4 text-primary" />
@@ -379,12 +386,18 @@ const Homepage = () => {
                 Segurança detalhada ponto a ponto para o seu carro.
               </h2>
               <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-300 lg:mx-0">
-                Layout mais estável para zoom 100%: selecione um serviço na coluna lateral e veja os detalhes completos no painel principal.
+                Sidebar de serviços reorganizada: selecione uma categoria à esquerda e veja os detalhes completos no painel principal, sem blocos repetidos.
               </p>
             </div>
 
-            <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1.55fr)] lg:items-stretch">
-              <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 lg:mx-0 lg:grid lg:max-h-[560px] lg:grid-cols-1 lg:gap-3 lg:overflow-visible lg:px-0 lg:pb-0">
+            <div className="grid gap-5 lg:grid-cols-[320px_minmax(0,1.55fr)] lg:items-stretch">
+              <aside className="space-y-3 lg:sticky lg:top-24 lg:h-fit">
+                <div className="rounded-2xl border border-slate-700/60 bg-[#0a1328]/80 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Sidebar de serviços</p>
+                  <p className="mt-2 text-sm text-slate-300">Toque no serviço para atualizar o painel com descrição e escopo principal.</p>
+                </div>
+
+                <div className="grid gap-3 lg:max-h-[500px] lg:overflow-visible">
                 {services.map((service) => {
                   const isActive = activeServiceId === service.id;
 
@@ -392,7 +405,7 @@ const Homepage = () => {
                     <button
                       key={service.id}
                       onClick={() => setActiveServiceId(service.id)}
-                      className={`group relative min-w-[240px] overflow-hidden rounded-2xl border px-4 py-4 text-left transition-all duration-300 lg:min-w-0 lg:px-4 lg:py-5 ${
+                      className={`group relative overflow-hidden rounded-2xl border px-4 py-4 text-left transition-all duration-300 lg:px-4 lg:py-5 ${
                         isActive
                           ? 'border-primary/70 bg-[#060d20] shadow-[0_10px_35px_rgba(30,136,255,0.25)]'
                           : 'border-slate-700/60 bg-[#0a1328]/90 hover:border-primary/40'
@@ -405,15 +418,16 @@ const Homepage = () => {
                           <service.icon className="h-4 w-4" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h3 className="truncate text-base font-semibold text-white">{service.title}</h3>
-                          <p className="truncate text-[11px] uppercase tracking-[0.18em] text-slate-400">{service.subtitle}</p>
+                          <h3 className="text-base font-semibold text-white">{service.title}</h3>
+                          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{service.subtitle}</p>
                         </div>
                         <ChevronRight className={`h-4 w-4 transition ${isActive ? 'text-primary' : 'text-slate-500 group-hover:text-slate-300'}`} />
                       </div>
                     </button>
                   );
                 })}
-              </div>
+                </div>
+              </aside>
 
               <article className="relative overflow-hidden rounded-3xl border border-primary/40 bg-[#040b1b] p-5 shadow-[0_22px_60px_rgba(4,10,24,0.9)] sm:p-7 lg:min-h-[560px]">
                 <img
@@ -439,7 +453,7 @@ const Homepage = () => {
                   </ul>
 
                   <div className="mt-6 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-slate-300 lg:hidden">
-                    Dica: deslize os cards de serviço para os lados e toque para trocar os detalhes.
+                    Dica: toque em um serviço para trocar os detalhes sem informações cortadas no mobile.
                   </div>
 
                   <div className="mt-8 flex flex-col gap-4 border-t border-slate-700/60 pt-5 sm:flex-row sm:items-center sm:justify-between lg:mt-auto">
@@ -614,9 +628,9 @@ const Homepage = () => {
         </div>
       </footer>
 
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+      <div className="fixed bottom-4 left-3 right-3 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:left-auto sm:right-6">
         {contactOpen && (
-          <div className="w-[min(92vw,360px)] rounded-2xl border border-primary/30 bg-card/95 p-4 text-left shadow-2xl shadow-primary/20 backdrop-blur">
+          <div className="w-full max-w-[360px] rounded-2xl border border-primary/30 bg-card/95 p-4 text-left shadow-2xl shadow-primary/20 backdrop-blur">
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <p className="flex items-center gap-2 text-sm font-semibold">
@@ -670,7 +684,7 @@ const Homepage = () => {
         )}
 
         <button
-          className="max-w-[280px] rounded-2xl border border-primary/30 bg-card/95 p-4 text-left shadow-2xl shadow-primary/20 backdrop-blur"
+          className="w-full max-w-[320px] rounded-2xl border border-primary/30 bg-card/95 p-4 text-left shadow-2xl shadow-primary/20 backdrop-blur sm:max-w-[280px]"
           aria-label="Abrir atendimento inteligente"
           onClick={() => setContactOpen((prev) => !prev)}
         >
@@ -691,7 +705,7 @@ const Homepage = () => {
           href={whatsappLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed bottom-28 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[hsl(142,71%,45%)] text-white shadow-xl transition-transform hover:scale-110 active:scale-95"
+          className="fixed bottom-32 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(142,71%,45%)] text-white shadow-xl transition-transform hover:scale-110 active:scale-95 sm:bottom-28 sm:right-6 sm:h-14 sm:w-14"
           aria-label="WhatsApp"
         >
           <MessageCircle className="h-7 w-7" />
