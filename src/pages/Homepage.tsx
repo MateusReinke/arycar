@@ -134,6 +134,19 @@ const beforeAfterShowcases = [
   },
 ];
 
+const spotlightServices = [
+  'Sistema leva e traz gratuito até 3km',
+  'Lavagem convencional interna e externa',
+  'Polimento comercial',
+  'Polimento com lixamento',
+  'Higienização comercial',
+  'Higienização profunda com desmontagem',
+  'Remoção de chuva ácida',
+  'Aplicações de cera, selantes, vitrificadores e cera cristalizadora',
+  'Lavagem de caixa de rodas com remoção das rodas',
+  'Lavagem molhada e limpeza seca do motor',
+];
+
 const Homepage = () => {
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [activeServiceId, setActiveServiceId] = useState<number | null>(0);
@@ -261,16 +274,17 @@ const Homepage = () => {
         <section className="relative overflow-hidden py-20 lg:py-28">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/5" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.2),transparent_40%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(6,15,32,0.95)_0%,rgba(7,17,38,0.82)_45%,rgba(10,32,78,0.65)_100%)]" />
           <div className="container relative grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="space-y-6 text-center lg:text-left">
               <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
-                Centro premium de estética automotiva
+                Qualidade, cuidado e detalhes em cada serviço
               </span>
               <h1 className="text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
-                Cuidado técnico, visual impecável e <span className="text-primary">resultado que impressiona</span>
+                ARYCAR: estética automotiva com <span className="text-primary">acabamento de vitrine</span>
               </h1>
               <p className="max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-                Atendemos carros, motos e utilitários com protocolos profissionais de limpeza, proteção e restauração. Tudo com agendamento rápido, suporte humanizado e opção de leva e traz.
+                Inspirada no visual da campanha oficial, nossa homepage destaca os serviços mais procurados: lavagem, polimento, higienização, vitrificação e pacotes técnicos para pintura, rodas e motor.
               </p>
               <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
                 <Button size="lg" className="h-12 px-8 text-base" asChild>
@@ -313,6 +327,43 @@ const Homepage = () => {
                 <div className="flex items-start gap-3 rounded-xl bg-background/80 p-3">
                   <Star className="mt-0.5 h-5 w-5 text-primary" />
                   <p className="text-sm text-muted-foreground">Produtos de alto desempenho para brilho intenso e proteção duradoura.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="relative overflow-hidden bg-[#050a16] py-20" id="servicos-campanha">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_40%,rgba(24,131,255,0.25),transparent_45%)]" />
+          <div className="container relative">
+            <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+              <div className="rounded-3xl border border-primary/30 bg-[#070d1e]/90 p-6 shadow-2xl shadow-blue-950/60 sm:p-8">
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Serviços que executamos</p>
+                <h2 className="mt-2 text-3xl font-black leading-tight text-white sm:text-4xl">
+                  Soluções completas para estética e proteção automotiva
+                </h2>
+                <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                  {spotlightServices.map((service) => (
+                    <div key={service} className="rounded-xl border border-blue-300/15 bg-black/30 px-4 py-3">
+                      <p className="text-sm font-semibold leading-snug text-slate-100">{service}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/25 via-primary/10 to-transparent p-6 shadow-xl shadow-primary/20">
+                <img src={serviceLavagem} alt="Carro azul recebendo detalhamento" className="h-60 w-full rounded-2xl object-cover" />
+                <div className="mt-5 space-y-3">
+                  {[
+                    'Sistema leva e traz disponível para agilizar sua rotina.',
+                    'Pacotes com foco em brilho, descontaminação e proteção duradoura.',
+                    'Equipe especializada em acabamento interno e externo premium.',
+                  ].map((text) => (
+                    <div key={text} className="flex items-start gap-2">
+                      <BadgeCheck className="mt-0.5 h-4 w-4 text-primary" />
+                      <p className="text-sm text-slate-200">{text}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
