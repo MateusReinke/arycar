@@ -133,17 +133,19 @@ const beforeAfterShowcases = [
   },
 ];
 
-const spotlightServices = [
-  'Sistema leva e traz gratuito até 3km',
-  'Lavagem convencional interna e externa',
-  'Polimento comercial',
-  'Polimento com lixamento',
-  'Higienização comercial',
-  'Higienização profunda com desmontagem',
-  'Remoção de chuva ácida',
-  'Aplicações de cera, selantes, vitrificadores e cera cristalizadora',
-  'Lavagem de caixa de rodas com remoção das rodas',
-  'Lavagem molhada e limpeza seca do motor',
+const serviceWorkflow = [
+  {
+    step: '1. Diagnóstico rápido',
+    description: 'Checklist técnico para definir prioridade, acabamento e tempo de entrega.',
+  },
+  {
+    step: '2. Execução especializada',
+    description: 'Processo por etapa com foco em proteção, brilho e segurança dos materiais.',
+  },
+  {
+    step: '3. Entrega + manutenção',
+    description: 'Orientação de cuidados pós-serviço e acompanhamento para manter o resultado.',
+  },
 ];
 
 const Homepage = () => {
@@ -336,16 +338,21 @@ const Homepage = () => {
         <section className="relative overflow-hidden bg-[#050a16] py-20" id="servicos-campanha">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_40%,rgba(24,131,255,0.25),transparent_45%)]" />
           <div className="container relative">
-            <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+            <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
               <div className="rounded-3xl border border-primary/30 bg-[#070d1e]/90 p-6 shadow-2xl shadow-blue-950/60 sm:p-8">
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Serviços que executamos</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Como funciona</p>
                 <h2 className="mt-2 text-3xl font-black leading-tight text-white sm:text-4xl">
-                  Soluções completas para estética e proteção automotiva
+                  Menos promessa, mais processo com padrão Arycar
                 </h2>
-                <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                  {spotlightServices.map((service) => (
-                    <div key={service} className="rounded-xl border border-blue-300/15 bg-black/30 px-4 py-3">
-                      <p className="text-sm font-semibold leading-snug text-slate-100">{service}</p>
+                <p className="mt-4 max-w-2xl text-sm text-slate-300">
+                  Consolidamos as informações em um fluxo simples para evitar repetição: diagnóstico, execução e entrega orientada.
+                </p>
+
+                <div className="mt-8 space-y-3">
+                  {serviceWorkflow.map((item) => (
+                    <div key={item.step} className="rounded-xl border border-blue-300/15 bg-black/30 px-4 py-4">
+                      <p className="text-sm font-semibold text-slate-100">{item.step}</p>
+                      <p className="mt-1 text-sm text-slate-300">{item.description}</p>
                     </div>
                   ))}
                 </div>
@@ -355,9 +362,9 @@ const Homepage = () => {
                 <img src={serviceLavagem} alt="Carro azul recebendo detalhamento" className="h-60 w-full rounded-2xl object-cover" />
                 <div className="mt-5 space-y-3">
                   {[
-                    'Sistema leva e traz disponível para agilizar sua rotina.',
-                    'Pacotes com foco em brilho, descontaminação e proteção duradoura.',
-                    'Equipe especializada em acabamento interno e externo premium.',
+                    'Leva e traz para otimizar sua rotina de trabalho.',
+                    'Equipe treinada para acabamento interno e externo.',
+                    'Transparência no escopo e no prazo antes de iniciar.',
                   ].map((text) => (
                     <div key={text} className="flex items-start gap-2">
                       <BadgeCheck className="mt-0.5 h-4 w-4 text-primary" />
@@ -379,12 +386,18 @@ const Homepage = () => {
                 Segurança detalhada ponto a ponto para o seu carro.
               </h2>
               <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-300 lg:mx-0">
-                Layout mais estável para zoom 100%: selecione um serviço na coluna lateral e veja os detalhes completos no painel principal.
+                Sidebar de serviços reorganizada: selecione uma categoria à esquerda e veja os detalhes completos no painel principal, sem blocos repetidos.
               </p>
             </div>
 
-            <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1.55fr)] lg:items-stretch">
-              <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 lg:mx-0 lg:grid lg:max-h-[560px] lg:grid-cols-1 lg:gap-3 lg:overflow-visible lg:px-0 lg:pb-0">
+            <div className="grid gap-5 lg:grid-cols-[320px_minmax(0,1.55fr)] lg:items-stretch">
+              <aside className="space-y-3 lg:sticky lg:top-24 lg:h-fit">
+                <div className="rounded-2xl border border-slate-700/60 bg-[#0a1328]/80 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Sidebar de serviços</p>
+                  <p className="mt-2 text-sm text-slate-300">Toque no serviço para atualizar o painel com descrição e escopo principal.</p>
+                </div>
+
+                <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 lg:mx-0 lg:grid lg:max-h-[500px] lg:grid-cols-1 lg:gap-3 lg:overflow-visible lg:px-0 lg:pb-0">
                 {services.map((service) => {
                   const isActive = activeServiceId === service.id;
 
@@ -413,7 +426,8 @@ const Homepage = () => {
                     </button>
                   );
                 })}
-              </div>
+                </div>
+              </aside>
 
               <article className="relative overflow-hidden rounded-3xl border border-primary/40 bg-[#040b1b] p-5 shadow-[0_22px_60px_rgba(4,10,24,0.9)] sm:p-7 lg:min-h-[560px]">
                 <img
