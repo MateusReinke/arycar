@@ -248,7 +248,7 @@ const Homepage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <main itemScope itemType="https://schema.org/AutoRepair">
+      <main itemScope itemType="https://schema.org/AutoRepair" className="pb-40 md:pb-24">
 
         <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
           <div className="container flex h-16 items-center justify-between">
@@ -273,12 +273,12 @@ const Homepage = () => {
           </div>
         </header>
 
-        <section className="relative overflow-hidden py-20 lg:py-28">
+        <section className="relative overflow-hidden py-14 sm:py-16 lg:py-28">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/5" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.2),transparent_40%)]" />
           <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(6,15,32,0.95)_0%,rgba(7,17,38,0.82)_45%,rgba(10,32,78,0.65)_100%)]" />
-          <div className="container relative grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="space-y-6 text-center lg:text-left">
+          <div className="container relative grid items-start gap-8 sm:gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+            <div className="space-y-5 text-center lg:space-y-6 lg:text-left">
               <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
                 Qualidade, cuidado e detalhes em cada serviço
               </span>
@@ -286,24 +286,24 @@ const Homepage = () => {
                 ARYCAR: estética automotiva com <span className="text-primary">acabamento de vitrine</span>
               </h1>
               <p className="max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-                Inspirada no visual da campanha oficial, nossa homepage destaca os serviços mais procurados: lavagem, polimento, higienização, vitrificação e pacotes técnicos para pintura, rodas e motor.
+Lavagem, polimento, higienização e vitrificação com execução técnica, atendimento rápido e foco em resultado visível desde a primeira entrega.
               </p>
-              <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
-                <Button size="lg" className="h-12 px-8 text-base" asChild>
+              <div className="flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap sm:gap-4 lg:justify-start">
+                <Button size="lg" className="h-12 w-full px-8 text-base sm:w-auto" asChild>
                   <a href="#servicos">Conhecer serviços</a>
                 </Button>
-                <Button size="lg" variant="outline" className="h-12 px-8 text-base" onClick={() => setContactOpen(true)}>
+                <Button size="lg" variant="outline" className="h-12 w-full px-8 text-base sm:w-auto" onClick={() => setContactOpen(true)}>
                   Falar com especialista
                 </Button>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-muted-foreground lg:justify-start">
-                {['Agendamento rápido', 'Leva e traz', 'Atendimento para frotas', 'Equipe certificada'].map((pill) => (
-                  <span key={pill} className="rounded-full border border-border/80 bg-card/60 px-3 py-1">
+                {['Agendamento rápido', 'Leva e traz', 'Atendimento para frotas', 'Equipe certificada'].map((pill, index) => (
+                  <span key={pill} className={`rounded-full border border-border/80 bg-card/60 px-3 py-1 ${index > 1 ? 'hidden sm:inline-flex' : ''}`}>
                     {pill}
                   </span>
                 ))}
               </div>
-              <div className="grid grid-cols-1 gap-3 text-left sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-3 text-left sm:grid-cols-3">
                 <div className="rounded-xl border border-border/80 bg-card/50 p-3">
                   <p className="text-xl font-bold text-primary">+4.500</p>
                   <p className="text-xs text-muted-foreground">veículos atendidos</p>
@@ -312,7 +312,7 @@ const Homepage = () => {
                   <p className="text-xl font-bold text-primary">4.9/5</p>
                   <p className="text-xs text-muted-foreground">avaliação média dos clientes</p>
                 </div>
-                <div className="rounded-xl border border-border/80 bg-card/50 p-3">
+                <div className="col-span-2 rounded-xl border border-border/80 bg-card/50 p-3 sm:col-span-1">
                   <p className="text-xl font-bold text-primary">Até 12x</p>
                   <p className="text-xs text-muted-foreground">condições facilitadas</p>
                 </div>
@@ -405,7 +405,7 @@ const Homepage = () => {
                     <button
                       key={service.id}
                       onClick={() => setActiveServiceId(service.id)}
-                      className={`group relative min-w-[240px] overflow-hidden rounded-2xl border px-4 py-4 text-left transition-all duration-300 lg:min-w-0 lg:px-4 lg:py-5 ${
+                      className={`group relative overflow-hidden rounded-2xl border px-4 py-4 text-left transition-all duration-300 lg:px-4 lg:py-5 ${
                         isActive
                           ? 'border-primary/70 bg-[#060d20] shadow-[0_10px_35px_rgba(30,136,255,0.25)]'
                           : 'border-slate-700/60 bg-[#0a1328]/90 hover:border-primary/40'
@@ -418,8 +418,8 @@ const Homepage = () => {
                           <service.icon className="h-4 w-4" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h3 className="truncate text-base font-semibold text-white">{service.title}</h3>
-                          <p className="truncate text-[11px] uppercase tracking-[0.18em] text-slate-400">{service.subtitle}</p>
+                          <h3 className="text-base font-semibold text-white">{service.title}</h3>
+                          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{service.subtitle}</p>
                         </div>
                         <ChevronRight className={`h-4 w-4 transition ${isActive ? 'text-primary' : 'text-slate-500 group-hover:text-slate-300'}`} />
                       </div>
@@ -453,7 +453,7 @@ const Homepage = () => {
                   </ul>
 
                   <div className="mt-6 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-slate-300 lg:hidden">
-                    Dica: deslize os cards de serviço para os lados e toque para trocar os detalhes.
+                    Dica: toque em um serviço para trocar os detalhes sem informações cortadas no mobile.
                   </div>
 
                   <div className="mt-8 flex flex-col gap-4 border-t border-slate-700/60 pt-5 sm:flex-row sm:items-center sm:justify-between lg:mt-auto">
@@ -628,9 +628,9 @@ const Homepage = () => {
         </div>
       </footer>
 
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+      <div className="fixed bottom-4 left-3 right-3 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:left-auto sm:right-6">
         {contactOpen && (
-          <div className="w-[min(92vw,360px)] rounded-2xl border border-primary/30 bg-card/95 p-4 text-left shadow-2xl shadow-primary/20 backdrop-blur">
+          <div className="w-full max-w-[360px] rounded-2xl border border-primary/30 bg-card/95 p-4 text-left shadow-2xl shadow-primary/20 backdrop-blur">
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <p className="flex items-center gap-2 text-sm font-semibold">
@@ -684,7 +684,7 @@ const Homepage = () => {
         )}
 
         <button
-          className="max-w-[280px] rounded-2xl border border-primary/30 bg-card/95 p-4 text-left shadow-2xl shadow-primary/20 backdrop-blur"
+          className="w-full max-w-[320px] rounded-2xl border border-primary/30 bg-card/95 p-4 text-left shadow-2xl shadow-primary/20 backdrop-blur sm:max-w-[280px]"
           aria-label="Abrir atendimento inteligente"
           onClick={() => setContactOpen((prev) => !prev)}
         >
@@ -705,7 +705,7 @@ const Homepage = () => {
           href={whatsappLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed bottom-28 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[hsl(142,71%,45%)] text-white shadow-xl transition-transform hover:scale-110 active:scale-95"
+          className="fixed bottom-32 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(142,71%,45%)] text-white shadow-xl transition-transform hover:scale-110 active:scale-95 sm:bottom-28 sm:right-6 sm:h-14 sm:w-14"
           aria-label="WhatsApp"
         >
           <MessageCircle className="h-7 w-7" />
