@@ -397,7 +397,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                   <p className="mt-2 text-sm text-slate-300">Toque no serviço para atualizar o painel com descrição e escopo principal.</p>
                 </div>
 
-                <div className="grid gap-3 lg:max-h-[500px] lg:overflow-visible">
+                <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 lg:mx-0 lg:grid lg:max-h-[500px] lg:grid-cols-1 lg:gap-3 lg:overflow-visible lg:px-0 lg:pb-0">
                 {services.map((service) => {
                   const isActive = activeServiceId === service.id;
 
