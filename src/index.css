@@ -59,6 +59,18 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(circle at 18% 18%, hsl(var(--primary) / 0.14), transparent 28rem),
+      radial-gradient(circle at 78% 12%, hsl(190 95% 45% / 0.10), transparent 30rem),
+      radial-gradient(circle at 55% 88%, hsl(var(--primary) / 0.10), transparent 34rem),
+      linear-gradient(30deg, hsl(var(--primary) / 0.075) 12%, transparent 12.5%, transparent 87%, hsl(var(--primary) / 0.075) 87.5%, hsl(var(--primary) / 0.075)),
+      linear-gradient(150deg, hsl(var(--primary) / 0.075) 12%, transparent 12.5%, transparent 87%, hsl(var(--primary) / 0.075) 87.5%, hsl(var(--primary) / 0.075)),
+      linear-gradient(30deg, hsl(var(--primary) / 0.045) 12%, transparent 12.5%, transparent 87%, hsl(var(--primary) / 0.045) 87.5%, hsl(var(--primary) / 0.045)),
+      linear-gradient(150deg, hsl(var(--primary) / 0.045) 12%, transparent 12.5%, transparent 87%, hsl(var(--primary) / 0.045) 87.5%, hsl(var(--primary) / 0.045));
+    background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 28px 49px, 28px 49px;
+    background-size: auto, auto, auto, 56px 98px, 56px 98px, 56px 98px, 56px 98px;
+    background-attachment: fixed;
     font-family: 'Inter', sans-serif;
   }
 
@@ -70,5 +82,17 @@
 @layer utilities {
   .glass-card {
     @apply bg-card/80 backdrop-blur-md border border-border/50;
+  }
+
+  .site-dark-pattern {
+    @apply relative overflow-hidden bg-background;
+    background-image:
+      linear-gradient(180deg, hsl(220 50% 5% / 0.72), hsl(220 54% 4% / 0.92)),
+      radial-gradient(circle at 20% 12%, hsl(var(--primary) / 0.22), transparent 26rem),
+      radial-gradient(circle at 88% 28%, hsl(190 95% 45% / 0.16), transparent 30rem);
+  }
+
+  .pattern-panel {
+    @apply border border-primary/20 bg-card/75 shadow-2xl shadow-primary/10 backdrop-blur-md;
   }
 }

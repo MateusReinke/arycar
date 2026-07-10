@@ -108,6 +108,33 @@ const WashOverlay = ({ className = '' }: { className?: string }) => (
   </svg>
 );
 
+
+const PatternIconLayer = () => {
+  const icons = [
+    { Icon: Car, className: 'left-[6%] top-[9%] rotate-[-10deg]' },
+    { Icon: Droplets, className: 'left-[18%] top-[32%] rotate-[12deg]' },
+    { Icon: Shield, className: 'left-[72%] top-[12%] rotate-[8deg]' },
+    { Icon: Sparkles, className: 'left-[88%] top-[38%] rotate-[-12deg]' },
+    { Icon: Gauge, className: 'left-[10%] top-[72%] rotate-[8deg]' },
+    { Icon: WandSparkles, className: 'left-[78%] top-[78%] rotate-[-8deg]' },
+    { Icon: CircleDot, className: 'left-[48%] top-[22%]' },
+    { Icon: Car, className: 'left-[58%] top-[58%] rotate-[10deg]' },
+  ];
+
+  return (
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-40" aria-hidden="true">
+      {icons.map(({ Icon, className }, index) => (
+        <div
+          key={`${className}-${index}`}
+          className={`absolute rounded-2xl border border-primary/15 bg-background/25 p-2 text-primary/35 shadow-[0_0_40px_rgba(37,99,235,0.16)] backdrop-blur-[1px] ${className}`}
+        >
+          <Icon className="h-7 w-7 md:h-9 md:w-9" strokeWidth={1.6} />
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const beforeAfterShowcases = [
   {
     id: 'polimento',
@@ -292,10 +319,11 @@ const Homepage = () => {
   }, [seoKeywords]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <main itemScope itemType="https://schema.org/AutoRepair" className="pb-40 md:pb-24">
+    <div className="site-dark-pattern min-h-screen">
+      <PatternIconLayer />
+      <main itemScope itemType="https://schema.org/AutoRepair" className="relative z-10 pb-40 md:pb-24">
 
-        <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
+        <header className="sticky top-0 z-50 border-b border-primary/20 bg-background/80 backdrop-blur-xl">
           <div className="container flex h-16 items-center justify-between">
             <img src={arycarLogo} alt="ARYCAR Estética Automotiva" className="h-10 w-auto" />
             <nav className="hidden items-center gap-3 md:flex">
@@ -380,11 +408,11 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
           </div>
         </section>
 
-        <section className="relative overflow-hidden bg-[#050a16] py-20" id="servicos-campanha">
+        <section className="relative overflow-hidden py-20" id="servicos-campanha">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_40%,rgba(24,131,255,0.25),transparent_45%)]" />
           <div className="container relative">
             <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-              <div className="rounded-3xl border border-primary/30 bg-[#070d1e]/90 p-6 shadow-2xl shadow-blue-950/60 sm:p-8">
+              <div className="pattern-panel rounded-3xl p-6 sm:p-8">
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Como funciona</p>
                 <h2 className="mt-2 text-3xl font-black leading-tight text-white sm:text-4xl">
                   Menos promessa, mais processo com padrão Arycar
@@ -403,7 +431,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                 </div>
               </div>
 
-              <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-[#071226] p-6 shadow-xl shadow-primary/20">
+              <div className="pattern-panel relative overflow-hidden rounded-3xl p-6">
                 <WashOverlay className="-right-24 top-0 h-72 w-[520px] opacity-80" />
                 <div className="relative grid h-60 place-items-center rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/15 via-slate-950/50 to-slate-900/80">
                   <div className="absolute left-5 top-5 flex gap-2 text-primary/70">
@@ -434,7 +462,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
           </div>
         </section>
 
-        <section id="servicos" className="relative overflow-hidden bg-[#030816] py-20">
+        <section id="servicos" className="relative overflow-hidden py-20">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_25%,rgba(24,131,255,0.2),transparent_42%)]" />
           <div className="container relative">
             <div className="mb-10 text-center lg:text-left">
@@ -486,7 +514,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                 </div>
               </aside>
 
-              <article className="relative overflow-hidden rounded-3xl border border-primary/40 bg-[#040b1b] p-5 shadow-[0_22px_60px_rgba(4,10,24,0.9)] sm:p-7 lg:min-h-[560px]">
+              <article className="pattern-panel relative overflow-hidden rounded-3xl p-5 sm:p-7 lg:min-h-[560px]">
                 <WashOverlay className="-right-28 top-8 hidden h-[420px] w-[640px] opacity-70 md:block" />
                 <div className="pointer-events-none absolute right-8 top-8 hidden rounded-full border border-primary/20 bg-primary/10 p-5 text-primary/60 md:block">
                   <activeService.icon className="h-20 w-20" />
@@ -616,7 +644,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
           </div>
         </section>
 
-        <section className="bg-card/50 py-20">
+        <section className="bg-card/30 py-20 backdrop-blur-sm">
           <div className="container grid grid-cols-1 gap-10 md:grid-cols-3">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
@@ -681,7 +709,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
         </section>
       </main>
 
-      <footer className="border-t border-border py-8">
+      <footer className="relative z-10 border-t border-border py-8">
         <div className="container flex flex-col items-center gap-4">
           <img src={arycarLogo} alt="ARYCAR" className="h-12 w-auto opacity-60" />
           <p className="text-center text-sm text-muted-foreground">© {new Date().getFullYear()} ARYCAR Estética Automotiva. Todos os direitos reservados.</p>
