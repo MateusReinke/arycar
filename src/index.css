@@ -75,15 +75,12 @@
 
 @layer base {
   html {
-    background: #0b0c10;
+    background: #06111f;
   }
 
   body {
     min-height: 100vh;
-    background:
-      radial-gradient(circle at 18% 12%, rgba(56, 148, 255, 0.16), transparent 32rem),
-      radial-gradient(circle at 82% 4%, rgba(125, 211, 252, 0.11), transparent 28rem),
-      linear-gradient(135deg, #0b0c10 0%, #0f1117 45%, #121212 100%);
+    background: #06111f;
   }
 
   #root {
@@ -100,58 +97,79 @@
     z-index: 0;
     overflow: hidden;
     background:
-      linear-gradient(135deg, rgba(11, 12, 16, 0.95), rgba(18, 18, 18, 0.92)),
-      radial-gradient(circle at 20% 18%, rgba(77, 166, 255, 0.18), transparent 34rem),
-      radial-gradient(circle at 78% 72%, rgba(56, 189, 248, 0.13), transparent 30rem);
+      radial-gradient(circle at 18% 38%, rgba(0, 184, 213, 0.24), transparent 28rem),
+      radial-gradient(circle at 68% 42%, rgba(34, 108, 224, 0.22), transparent 34rem),
+      linear-gradient(115deg, rgba(3, 23, 36, 0.96) 0%, rgba(5, 20, 40, 0.94) 42%, rgba(6, 13, 28, 0.98) 100%);
+  }
+
+  .site-background::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle, rgba(80, 200, 255, 0.22) 1px, transparent 1.5px),
+      linear-gradient(90deg, rgba(19, 173, 216, 0.08), transparent 45%, rgba(45, 109, 229, 0.08));
+    background-size: 36px 36px, 100% 100%;
+    opacity: 0.42;
+  }
+
+  .site-background::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, rgba(0, 0, 0, 0.55), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.42)),
+      linear-gradient(180deg, rgba(0, 0, 0, 0.32), transparent 34%, rgba(0, 0, 0, 0.38));
   }
 
   .site-background__hex {
     position: absolute;
     inset: -4rem;
-    opacity: 0.18;
+    opacity: 0.62;
     background-color: transparent;
     background-image:
-      linear-gradient(30deg, rgba(147, 197, 253, 0.3) 12%, transparent 12.5%, transparent 87%, rgba(147, 197, 253, 0.3) 87.5%, rgba(147, 197, 253, 0.3)),
-      linear-gradient(150deg, rgba(147, 197, 253, 0.3) 12%, transparent 12.5%, transparent 87%, rgba(147, 197, 253, 0.3) 87.5%, rgba(147, 197, 253, 0.3)),
-      linear-gradient(30deg, rgba(147, 197, 253, 0.3) 12%, transparent 12.5%, transparent 87%, rgba(147, 197, 253, 0.3) 87.5%, rgba(147, 197, 253, 0.3)),
-      linear-gradient(150deg, rgba(147, 197, 253, 0.3) 12%, transparent 12.5%, transparent 87%, rgba(147, 197, 253, 0.3) 87.5%, rgba(147, 197, 253, 0.3)),
-      linear-gradient(60deg, rgba(147, 197, 253, 0.14) 25%, transparent 25.5%, transparent 75%, rgba(147, 197, 253, 0.14) 75%, rgba(147, 197, 253, 0.14));
-    background-position: 0 0, 0 0, 36px 63px, 36px 63px, 0 0;
-    background-size: 72px 126px;
-    mask-image: radial-gradient(circle at 50% 30%, black, transparent 72%);
+      linear-gradient(30deg, rgba(18, 176, 220, 0.55) 12%, transparent 12.5%, transparent 87%, rgba(18, 176, 220, 0.55) 87.5%, rgba(18, 176, 220, 0.55)),
+      linear-gradient(150deg, rgba(18, 176, 220, 0.55) 12%, transparent 12.5%, transparent 87%, rgba(18, 176, 220, 0.55) 87.5%, rgba(18, 176, 220, 0.55)),
+      linear-gradient(30deg, rgba(18, 176, 220, 0.4) 12%, transparent 12.5%, transparent 87%, rgba(18, 176, 220, 0.4) 87.5%, rgba(18, 176, 220, 0.4)),
+      linear-gradient(150deg, rgba(18, 176, 220, 0.4) 12%, transparent 12.5%, transparent 87%, rgba(18, 176, 220, 0.4) 87.5%, rgba(18, 176, 220, 0.4)),
+      linear-gradient(60deg, rgba(88, 193, 255, 0.18) 25%, transparent 25.5%, transparent 75%, rgba(88, 193, 255, 0.18) 75%, rgba(88, 193, 255, 0.18));
+    background-position: 0 0, 0 0, 38px 66px, 38px 66px, 0 0;
+    background-size: 76px 132px;
   }
 
   .site-background__glow {
     position: absolute;
     border-radius: 9999px;
-    filter: blur(18px);
+    filter: blur(28px);
   }
 
   .site-background__glow--one {
-    left: 8%;
-    top: 12%;
-    width: 18rem;
-    height: 18rem;
-    background: rgba(59, 130, 246, 0.13);
+    left: 9%;
+    top: 21%;
+    width: 24rem;
+    height: 24rem;
+    background: rgba(0, 196, 221, 0.18);
   }
 
   .site-background__glow--two {
-    right: 6%;
-    bottom: 10%;
-    width: 22rem;
-    height: 22rem;
-    background: rgba(14, 165, 233, 0.1);
+    right: 17%;
+    top: 24%;
+    width: 30rem;
+    height: 30rem;
+    background: rgba(38, 113, 230, 0.16);
   }
 
   .site-background__icons {
     position: absolute;
     inset: 0;
-    color: rgba(191, 219, 254, 0.07);
+    color: rgba(230, 247, 255, 0.065);
+    z-index: 1;
   }
 
   .floating-line-icon {
     position: absolute;
     animation: float-line-icon 16s ease-in-out infinite;
+    filter: drop-shadow(0 0 5px rgba(125, 211, 252, 0.18));
     transform: translate3d(0, 0, 0) rotate(-7deg);
   }
 

@@ -45,7 +45,7 @@ const App = () => (
           <BrowserRouter>
             <SiteBackground />
             <div className="relative z-10">
-            <Routes>
+              <Routes>
               <Route path="/" element={<Homepage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/cadastro" element={<Register />} />
@@ -86,7 +86,7 @@ const App = () => (
               />
 
               <Route path="*" element={<NotFound />} />
-            </Routes>
+              </Routes>
             </div>
           </BrowserRouter>
         </AppProvider>
