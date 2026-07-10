@@ -59,9 +59,18 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    overflow-x: hidden;
+    background-color: hsl(var(--background));
+    background-image:
+      linear-gradient(90deg, hsl(var(--primary) / 0.055) 1px, transparent 1px),
+      linear-gradient(0deg, hsl(var(--primary) / 0.045) 1px, transparent 1px),
+      radial-gradient(circle at 18% 20%, hsl(var(--primary) / 0.08), transparent 28rem),
+      radial-gradient(circle at 82% 22%, hsl(210 70% 35% / 0.06), transparent 32rem);
+    background-position: center;
+    background-size: 72px 72px, 72px 72px, auto, auto;
+    background-attachment: fixed;
     font-family: 'Inter', sans-serif;
   }
-
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif;
   }
@@ -70,5 +79,18 @@
 @layer utilities {
   .glass-card {
     @apply bg-card/80 backdrop-blur-md border border-border/50;
+  }
+
+  .site-dark-pattern {
+    @apply relative overflow-hidden bg-background;
+    background-image:
+      linear-gradient(180deg, hsl(220 45% 4% / 0.94), hsl(220 45% 4% / 0.98)),
+      linear-gradient(90deg, hsl(var(--primary) / 0.045) 1px, transparent 1px),
+      linear-gradient(0deg, hsl(var(--primary) / 0.035) 1px, transparent 1px);
+    background-size: auto, 72px 72px, 72px 72px;
+  }
+
+  .pattern-panel {
+    @apply border border-primary/15 bg-card/85 shadow-2xl shadow-black/40 backdrop-blur-md;
   }
 }
