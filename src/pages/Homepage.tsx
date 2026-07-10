@@ -14,6 +14,9 @@ import {
   BadgeCheck,
   Bot,
   PhoneCall,
+  WandSparkles,
+  Gauge,
+  CircleDot,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,12 +28,6 @@ import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 
 import arycarLogo from '@/assets/arycar-logo.png';
-import servicePolimento from '@/assets/service-polimento.jpg';
-import serviceVitrificacao from '@/assets/service-vitrificacao.jpg';
-import serviceLavagem from '@/assets/service-lavagem.jpg';
-import serviceHigienizacao from '@/assets/service-higienizacao.jpg';
-import serviceCouro from '@/assets/service-couro.jpg';
-import serviceFarois from '@/assets/service-farois.jpg';
 
 import before1 from '@/assets/before-1.jpg';
 import after1 from '@/assets/after-1.jpg';
@@ -48,7 +45,6 @@ const services = [
     title: 'Polimento',
     subtitle: 'Brilho e Correção',
     desc: 'Polimento comercial e técnico com correção de pintura e brilho espelhado.',
-    image: servicePolimento,
     features: ['Remoção de marcas leves', 'Refino técnico em etapas', 'Acabamento brilhante'],
   },
   {
@@ -57,7 +53,6 @@ const services = [
     title: 'Vitrificação',
     subtitle: 'Proteção Cerâmica',
     desc: 'Proteção cerâmica duradoura para pintura com acabamento hidrofóbico.',
-    image: serviceVitrificacao,
     features: ['Barreira contra intempéries', 'Toque hidrofóbico', 'Maior durabilidade da pintura'],
   },
   {
@@ -66,7 +61,6 @@ const services = [
     title: 'Lavagem Detalhada',
     subtitle: 'Limpeza Premium',
     desc: 'Limpeza completa interna e externa com produtos premium.',
-    image: serviceLavagem,
     features: ['Pré-lavagem técnica', 'Aspiração + acabamento interno', 'Finalização com brilho'],
   },
   {
@@ -75,7 +69,6 @@ const services = [
     title: 'Higienização',
     subtitle: 'Saúde e Conforto',
     desc: 'Sanitização com ozônio, limpeza profunda de estofados e carpetes.',
-    image: serviceHigienizacao,
     features: ['Extração de sujeira profunda', 'Neutralização de odores', 'Proteção para famílias e apps'],
   },
   {
@@ -84,7 +77,6 @@ const services = [
     title: 'Tratamento de Couro',
     subtitle: 'Interior Conservado',
     desc: 'Hidratação e proteção de bancos e painéis em couro.',
-    image: serviceCouro,
     features: ['Limpeza técnica de couro', 'Hidratação especializada', 'Proteção contra ressecamento'],
   },
   {
@@ -93,10 +85,28 @@ const services = [
     title: 'Restauração de Faróis',
     subtitle: 'Visibilidade e Segurança',
     desc: 'Recuperação da transparência e aplicação de proteção UV.',
-    image: serviceFarois,
     features: ['Remoção de opacidade', 'Polimento de lente', 'Proteção UV'],
   },
 ];
+
+const WashOverlay = ({ className = '' }: { className?: string }) => (
+  <svg
+    className={`pointer-events-none absolute text-primary/30 ${className}`}
+    viewBox="0 0 520 320"
+    fill="none"
+    aria-hidden="true"
+  >
+    <path d="M78 214c18-45 52-70 105-70h121c41 0 71 20 92 61l15 29" stroke="currentColor" strokeWidth="10" strokeLinecap="round" />
+    <path d="M135 145l31-48h126l47 48" stroke="currentColor" strokeWidth="8" strokeLinejoin="round" />
+    <circle cx="155" cy="235" r="30" stroke="currentColor" strokeWidth="9" />
+    <circle cx="365" cy="235" r="30" stroke="currentColor" strokeWidth="9" />
+    <path d="M74 88c76-44 163-47 262-9 44 17 80 18 108 3" stroke="currentColor" strokeWidth="7" strokeLinecap="round" strokeDasharray="18 18" />
+    <path d="M408 31c24 26 24 52 0 78M438 45c14 15 14 31 0 47" stroke="currentColor" strokeWidth="7" strokeLinecap="round" />
+    {[60, 108, 456, 486].map((x, index) => (
+      <circle key={x} cx={x} cy={index % 2 ? 56 : 112} r={index % 2 ? 9 : 13} fill="currentColor" />
+    ))}
+  </svg>
+);
 
 const beforeAfterShowcases = [
   {
@@ -106,6 +116,9 @@ const beforeAfterShowcases = [
     description: 'Redução de marcas leves e realce de brilho com acabamento espelhado.',
     beforeImage: before1,
     afterImage: after1,
+    beforeLabel: 'Marcas na pintura',
+    afterLabel: 'Brilho espelhado',
+    accent: 'from-sky-500/25 to-blue-950/80',
   },
   {
     id: 'vitrificacao',
@@ -114,6 +127,9 @@ const beforeAfterShowcases = [
     description: 'Pintura com proteção duradoura e toque hidrofóbico visível no acabamento.',
     beforeImage: before2,
     afterImage: after2,
+    beforeLabel: 'Sem proteção',
+    afterLabel: 'Efeito hidrofóbico',
+    accent: 'from-cyan-400/25 to-slate-950/80',
   },
   {
     id: 'higienizacao',
@@ -122,6 +138,32 @@ const beforeAfterShowcases = [
     description: 'Remoção de sujeiras profundas e aspecto renovado em bancos e carpetes.',
     beforeImage: before3,
     afterImage: after3,
+    beforeLabel: 'Interior saturado',
+    afterLabel: 'Cabine renovada',
+    accent: 'from-emerald-400/20 to-slate-950/80',
+  },
+
+  {
+    id: 'lavagem',
+    serviceId: 2,
+    title: 'Lavagem Detalhada',
+    description: 'Pré-lavagem, limpeza de cantos e finalização para remover sujeira acumulada com segurança.',
+    beforeImage: before1,
+    afterImage: after3,
+    beforeLabel: 'Sujeira acumulada',
+    afterLabel: 'Acabamento limpo',
+    accent: 'from-blue-400/25 to-slate-950/80',
+  },
+  {
+    id: 'farois',
+    serviceId: 5,
+    title: 'Restauração de Faróis',
+    description: 'Lente mais transparente para melhorar aparência, visibilidade e segurança na condução noturna.',
+    beforeImage: before3,
+    afterImage: after1,
+    beforeLabel: 'Lente opaca',
+    afterLabel: 'Transparência recuperada',
+    accent: 'from-yellow-300/25 to-slate-950/80',
   },
   {
     id: 'couro',
@@ -130,6 +172,9 @@ const beforeAfterShowcases = [
     description: 'Revitalização de textura e uniformidade de cor para interior premium.',
     beforeImage: before2,
     afterImage: after2,
+    beforeLabel: 'Couro ressecado',
+    afterLabel: 'Toque hidratado',
+    accent: 'from-amber-500/25 to-stone-950/80',
   },
 ];
 
@@ -358,9 +403,21 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/25 via-primary/10 to-transparent p-6 shadow-xl shadow-primary/20">
-                <img src={serviceLavagem} alt="Carro azul recebendo detalhamento" className="h-60 w-full rounded-2xl object-cover" />
-                <div className="mt-5 space-y-3">
+              <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-[#071226] p-6 shadow-xl shadow-primary/20">
+                <WashOverlay className="-right-24 top-0 h-72 w-[520px] opacity-80" />
+                <div className="relative grid h-60 place-items-center rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/15 via-slate-950/50 to-slate-900/80">
+                  <div className="absolute left-5 top-5 flex gap-2 text-primary/70">
+                    <Droplets className="h-7 w-7" />
+                    <WandSparkles className="h-7 w-7" />
+                    <Gauge className="h-7 w-7" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary">Lava-rápido premium</p>
+                    <p className="mt-3 text-3xl font-black text-white">Água, espuma e brilho</p>
+                    <p className="mt-2 text-sm text-slate-300">Overlays ilustrados sem foto de fundo para destacar o processo.</p>
+                  </div>
+                </div>
+                <div className="relative mt-5 space-y-3">
                   {[
                     'Leva e traz para otimizar sua rotina de trabalho.',
                     'Equipe treinada para acabamento interno e externo.',
@@ -430,12 +487,10 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
               </aside>
 
               <article className="relative overflow-hidden rounded-3xl border border-primary/40 bg-[#040b1b] p-5 shadow-[0_22px_60px_rgba(4,10,24,0.9)] sm:p-7 lg:min-h-[560px]">
-                <img
-                  src={activeService.image}
-                  alt={activeService.title}
-                  className="pointer-events-none absolute right-0 top-0 hidden h-full w-[48%] object-cover opacity-10 md:block"
-                  loading="lazy"
-                />
+                <WashOverlay className="-right-28 top-8 hidden h-[420px] w-[640px] opacity-70 md:block" />
+                <div className="pointer-events-none absolute right-8 top-8 hidden rounded-full border border-primary/20 bg-primary/10 p-5 text-primary/60 md:block">
+                  <activeService.icon className="h-20 w-20" />
+                </div>
                 <div className="relative z-10 flex h-full flex-col">
                   <span className="inline-flex w-fit rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
                     Serviço selecionado
@@ -475,11 +530,11 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
               <span className="text-sm font-semibold uppercase tracking-widest text-primary">Galeria de resultados reais</span>
               <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Compare o antes e depois deslizando</h2>
               <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-                Escolha um dos 4 serviços abaixo e arraste para os lados para visualizar o efeito do serviço no veículo.
+                Escolha um dos 6 serviços abaixo e arraste para os lados para visualizar o efeito do serviço no veículo.
               </p>
             </div>
 
-            <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3">
               {beforeAfterShowcases.map((showcase) => {
                 const service = services[showcase.serviceId];
                 const isActive = activeShowcaseId === showcase.id;
@@ -501,7 +556,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
               })}
             </div>
 
-            <article className="rounded-2xl border border-primary/30 bg-card p-4 shadow-lg shadow-primary/10 sm:p-6">
+            <article className={`rounded-2xl border border-primary/30 bg-gradient-to-br ${activeShowcase.accent} p-4 shadow-lg shadow-primary/10 sm:p-6`}>
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="text-xl font-bold">{activeShowcase.title}</h3>
@@ -510,17 +565,17 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Arraste para comparar</p>
               </div>
 
-              <div className="relative overflow-hidden rounded-xl border border-border/80">
+              <div className="relative overflow-hidden rounded-xl border border-white/10 bg-slate-950">
                 <img
                   src={activeShowcase.afterImage}
                   alt={`${activeShowcase.title} - Depois`}
-                  className="h-64 w-full object-cover sm:h-[420px]"
+                  className="h-64 w-full object-cover saturate-125 contrast-110 sm:h-[420px]"
                   loading="lazy"
                 />
                 <img
                   src={activeShowcase.beforeImage}
                   alt={`${activeShowcase.title} - Antes`}
-                  className="absolute inset-0 h-64 w-full object-cover sm:h-[420px]"
+                  className="absolute inset-0 h-64 w-full object-cover grayscale contrast-110 brightness-75 sm:h-[420px]"
                   style={{ clipPath: `inset(0 ${100 - (comparisonPositions[activeShowcase.id] ?? 50)}% 0 0)` }}
                   loading="lazy"
                 />
@@ -534,8 +589,13 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                   </div>
                 </div>
 
-                <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white">Antes</div>
-                <div className="pointer-events-none absolute right-3 top-3 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white">Depois</div>
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/20" />
+                <WashOverlay className="bottom-0 right-0 h-52 w-80 opacity-35" />
+                <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-white">Antes · {activeShowcase.beforeLabel}</div>
+                <div className="pointer-events-none absolute right-3 top-3 rounded-full bg-primary/90 px-3 py-1 text-xs font-semibold text-primary-foreground">Depois · {activeShowcase.afterLabel}</div>
+                <div className="pointer-events-none absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-white">
+                  <CircleDot className="h-3 w-3 text-primary" /> Comparativo por serviço
+                </div>
 
                 <input
                   type="range"
