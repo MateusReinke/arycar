@@ -27,14 +27,6 @@ import { storageService } from '@/services/storage';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 
-import arycarLogo from '@/assets/arycar-logo.png';
-
-import before1 from '@/assets/before-1.jpg';
-import after1 from '@/assets/after-1.jpg';
-import before2 from '@/assets/before-2.jpg';
-import after2 from '@/assets/after-2.jpg';
-import before3 from '@/assets/before-3.jpg';
-import after3 from '@/assets/after-3.jpg';
 
 const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL;
 
@@ -59,6 +51,7 @@ const services = [
     id: 2,
     icon: Droplets,
     title: 'Lavagem Detalhada',
+    emoji: '🫧',
     subtitle: 'Limpeza Premium',
     desc: 'Limpeza completa interna e externa com produtos premium.',
     features: ['Pré-lavagem técnica', 'Aspiração + acabamento interno', 'Finalização com brilho'],
@@ -75,6 +68,7 @@ const services = [
     id: 4,
     icon: Sun,
     title: 'Tratamento de Couro',
+    emoji: '🧽',
     subtitle: 'Interior Conservado',
     desc: 'Hidratação e proteção de bancos e painéis em couro.',
     features: ['Limpeza técnica de couro', 'Hidratação especializada', 'Proteção contra ressecamento'],
@@ -83,6 +77,7 @@ const services = [
     id: 5,
     icon: Car,
     title: 'Restauração de Faróis',
+    emoji: '💡',
     subtitle: 'Visibilidade e Segurança',
     desc: 'Recuperação da transparência e aplicação de proteção UV.',
     features: ['Remoção de opacidade', 'Polimento de lente', 'Proteção UV'],
@@ -111,97 +106,92 @@ const WashOverlay = ({ className = '' }: { className?: string }) => (
 
 const PatternIconLayer = () => {
   const icons = [
-    { Icon: Car, className: 'left-[6%] top-[9%] rotate-[-10deg]' },
-    { Icon: Droplets, className: 'left-[18%] top-[32%] rotate-[12deg]' },
-    { Icon: Shield, className: 'left-[72%] top-[12%] rotate-[8deg]' },
-    { Icon: Sparkles, className: 'left-[88%] top-[38%] rotate-[-12deg]' },
-    { Icon: Gauge, className: 'left-[10%] top-[72%] rotate-[8deg]' },
-    { Icon: WandSparkles, className: 'left-[78%] top-[78%] rotate-[-8deg]' },
-    { Icon: CircleDot, className: 'left-[48%] top-[22%]' },
-    { Icon: Car, className: 'left-[58%] top-[58%] rotate-[10deg]' },
+    { emoji: '🚗', className: 'left-[4%] top-[10%] rotate-[-10deg]' },
+    { emoji: '🫧', className: 'left-[14%] top-[30%] rotate-[12deg]' },
+    { emoji: '🧽', className: 'left-[24%] top-[68%] rotate-[-8deg]' },
+    { emoji: '✨', className: 'left-[38%] top-[16%] rotate-[8deg]' },
+    { emoji: '🛞', className: 'left-[52%] top-[72%] rotate-[10deg]' },
+    { emoji: '💦', className: 'left-[66%] top-[18%] rotate-[-12deg]' },
+    { emoji: '🧼', className: 'left-[78%] top-[56%] rotate-[6deg]' },
+    { emoji: '🔧', className: 'left-[90%] top-[28%] rotate-[-10deg]' },
+    { emoji: '🚙', className: 'left-[84%] top-[82%] rotate-[12deg]' },
+    { emoji: '⭐', className: 'left-[8%] top-[86%] rotate-[8deg]' },
   ];
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-40" aria-hidden="true">
-      {icons.map(({ Icon, className }, index) => (
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-55" aria-hidden="true">
+      {icons.map(({ emoji, className }, index) => (
         <div
-          key={`${className}-${index}`}
-          className={`absolute rounded-2xl border border-primary/15 bg-background/25 p-2 text-primary/35 shadow-[0_0_40px_rgba(37,99,235,0.16)] backdrop-blur-[1px] ${className}`}
+          key={`${emoji}-${index}`}
+          className={`absolute grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/[0.035] text-xl shadow-[0_0_35px_rgba(0,0,0,0.35)] backdrop-blur-[1px] md:h-14 md:w-14 md:text-2xl ${className}`}
         >
-          <Icon className="h-7 w-7 md:h-9 md:w-9" strokeWidth={1.6} />
+          {emoji}
         </div>
       ))}
     </div>
   );
 };
-
 const beforeAfterShowcases = [
   {
     id: 'polimento',
     serviceId: 0,
     title: 'Polimento Técnico',
+    emoji: '✨',
     description: 'Redução de marcas leves e realce de brilho com acabamento espelhado.',
-    beforeImage: before1,
-    afterImage: after1,
     beforeLabel: 'Marcas na pintura',
     afterLabel: 'Brilho espelhado',
-    accent: 'from-sky-500/25 to-blue-950/80',
+    accent: 'from-white/[0.045] to-primary/[0.055]',
   },
   {
     id: 'vitrificacao',
     serviceId: 1,
     title: 'Vitrificação Cerâmica',
+    emoji: '🛡️',
     description: 'Pintura com proteção duradoura e toque hidrofóbico visível no acabamento.',
-    beforeImage: before2,
-    afterImage: after2,
     beforeLabel: 'Sem proteção',
     afterLabel: 'Efeito hidrofóbico',
-    accent: 'from-cyan-400/25 to-slate-950/80',
+    accent: 'from-white/[0.045] to-primary/[0.055]',
   },
   {
     id: 'higienizacao',
     serviceId: 3,
     title: 'Higienização Interna',
+    emoji: '🧼',
     description: 'Remoção de sujeiras profundas e aspecto renovado em bancos e carpetes.',
-    beforeImage: before3,
-    afterImage: after3,
     beforeLabel: 'Interior saturado',
     afterLabel: 'Cabine renovada',
-    accent: 'from-emerald-400/20 to-slate-950/80',
+    accent: 'from-white/[0.045] to-primary/[0.055]',
   },
 
   {
     id: 'lavagem',
     serviceId: 2,
     title: 'Lavagem Detalhada',
+    emoji: '🫧',
     description: 'Pré-lavagem, limpeza de cantos e finalização para remover sujeira acumulada com segurança.',
-    beforeImage: before1,
-    afterImage: after3,
     beforeLabel: 'Sujeira acumulada',
     afterLabel: 'Acabamento limpo',
-    accent: 'from-blue-400/25 to-slate-950/80',
+    accent: 'from-white/[0.045] to-primary/[0.055]',
   },
   {
     id: 'farois',
     serviceId: 5,
     title: 'Restauração de Faróis',
+    emoji: '💡',
     description: 'Lente mais transparente para melhorar aparência, visibilidade e segurança na condução noturna.',
-    beforeImage: before3,
-    afterImage: after1,
     beforeLabel: 'Lente opaca',
     afterLabel: 'Transparência recuperada',
-    accent: 'from-yellow-300/25 to-slate-950/80',
+    accent: 'from-white/[0.045] to-primary/[0.055]',
   },
   {
     id: 'couro',
     serviceId: 4,
     title: 'Tratamento de Couro',
+    emoji: '🧽',
     description: 'Revitalização de textura e uniformidade de cor para interior premium.',
-    beforeImage: before2,
-    afterImage: after2,
     beforeLabel: 'Couro ressecado',
     afterLabel: 'Toque hidratado',
-    accent: 'from-amber-500/25 to-stone-950/80',
+    accent: 'from-white/[0.045] to-primary/[0.055]',
   },
 ];
 
@@ -323,9 +313,9 @@ const Homepage = () => {
       <PatternIconLayer />
       <main itemScope itemType="https://schema.org/AutoRepair" className="relative z-10 pb-40 md:pb-24">
 
-        <header className="sticky top-0 z-50 border-b border-primary/20 bg-background/80 backdrop-blur-xl">
+        <header className="sticky top-0 z-50 border-b border-white/10 bg-background/85 backdrop-blur-xl">
           <div className="container flex h-16 items-center justify-between">
-            <img src={arycarLogo} alt="ARYCAR Estética Automotiva" className="h-10 w-auto" />
+            <Link to="/" className="text-xl font-black tracking-[0.18em] text-white">ARY<span className="text-primary">CAR</span></Link>
             <nav className="hidden items-center gap-3 md:flex">
               <Button variant="ghost" size="sm" asChild>
                 <a href="#servicos">Serviços</a>
@@ -347,9 +337,9 @@ const Homepage = () => {
         </header>
 
         <section className="relative overflow-hidden py-14 sm:py-16 lg:py-28">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/5" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.2),transparent_40%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(6,15,32,0.95)_0%,rgba(7,17,38,0.82)_45%,rgba(10,32,78,0.65)_100%)]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] via-transparent to-primary/[0.04]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.08),transparent_40%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(6,15,32,0.95)_0%,rgba(7,17,38,0.82)_45%,rgba(7,15,32,0.72)_100%)]" />
           <div className="container relative grid items-start gap-8 sm:gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div className="space-y-5 text-center lg:space-y-6 lg:text-left">
               <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
@@ -393,7 +383,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
             </div>
 
             <div className="relative mx-auto w-full max-w-md rounded-3xl border border-primary/20 bg-card/70 p-6 shadow-2xl shadow-primary/20 backdrop-blur">
-              <img src={arycarLogo} alt="Logo Arycar" className="mx-auto h-40 w-auto drop-shadow-2xl" />
+              <div className="mx-auto grid h-36 w-36 place-items-center rounded-[2rem] border border-primary/20 bg-white/[0.03] text-center shadow-2xl shadow-black/30"><div><p className="text-4xl">🚗</p><p className="mt-2 text-xl font-black tracking-[0.2em] text-white">ARY</p><p className="text-sm font-bold tracking-[0.25em] text-primary">CAR</p></div></div>
               <div className="mt-6 space-y-4">
                 <div className="flex items-start gap-3 rounded-xl bg-background/80 p-3">
                   <BadgeCheck className="mt-0.5 h-5 w-5 text-primary" />
@@ -442,7 +432,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                   <div className="text-center">
                     <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary">Lava-rápido premium</p>
                     <p className="mt-3 text-3xl font-black text-white">Água, espuma e brilho</p>
-                    <p className="mt-2 text-sm text-slate-300">Overlays ilustrados sem foto de fundo para destacar o processo.</p>
+                    <p className="mt-2 text-sm text-slate-300">Visual moderno sem imagens, focado em ícones e processo.</p>
                   </div>
                 </div>
                 <div className="relative mt-5 space-y-3">
@@ -556,9 +546,9 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
           <div className="container">
             <div className="mb-12 text-center">
               <span className="text-sm font-semibold uppercase tracking-widest text-primary">Galeria de resultados reais</span>
-              <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Compare o antes e depois deslizando</h2>
+              <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Compare o antes e depois em visual moderno</h2>
               <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-                Escolha um dos 6 serviços abaixo e arraste para os lados para visualizar o efeito do serviço no veículo.
+                Escolha um dos 6 serviços abaixo e arraste para os lados para visualizar o efeito do serviço sem usar fotos.
               </p>
             </div>
 
@@ -594,19 +584,23 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
               </div>
 
               <div className="relative overflow-hidden rounded-xl border border-white/10 bg-slate-950">
-                <img
-                  src={activeShowcase.afterImage}
-                  alt={`${activeShowcase.title} - Depois`}
-                  className="h-64 w-full object-cover saturate-125 contrast-110 sm:h-[420px]"
-                  loading="lazy"
-                />
-                <img
-                  src={activeShowcase.beforeImage}
-                  alt={`${activeShowcase.title} - Antes`}
-                  className="absolute inset-0 h-64 w-full object-cover grayscale contrast-110 brightness-75 sm:h-[420px]"
+                <div className="grid h-64 w-full place-items-center bg-[radial-gradient(circle_at_70%_35%,rgba(37,99,235,0.14),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.04),rgba(37,99,235,0.05))] sm:h-[420px]">
+                  <div className="text-center">
+                    <p className="text-7xl sm:text-8xl">{activeShowcase.emoji}</p>
+                    <p className="mt-4 text-sm font-semibold uppercase tracking-[0.28em] text-primary">Depois</p>
+                    <p className="mt-2 text-2xl font-black text-white sm:text-4xl">{activeShowcase.afterLabel}</p>
+                  </div>
+                </div>
+                <div
+                  className="absolute inset-0 grid h-64 w-full place-items-center bg-[linear-gradient(135deg,rgba(255,255,255,0.025),rgba(0,0,0,0.72))] grayscale sm:h-[420px]"
                   style={{ clipPath: `inset(0 ${100 - (comparisonPositions[activeShowcase.id] ?? 50)}% 0 0)` }}
-                  loading="lazy"
-                />
+                >
+                  <div className="text-center opacity-70">
+                    <p className="text-7xl sm:text-8xl">{activeShowcase.emoji}</p>
+                    <p className="mt-4 text-sm font-semibold uppercase tracking-[0.28em] text-white/60">Antes</p>
+                    <p className="mt-2 text-2xl font-black text-white/70 sm:text-4xl">{activeShowcase.beforeLabel}</p>
+                  </div>
+                </div>
 
                 <div
                   className="pointer-events-none absolute inset-y-0 w-0.5 bg-white/90 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]"
@@ -711,7 +705,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
 
       <footer className="relative z-10 border-t border-border py-8">
         <div className="container flex flex-col items-center gap-4">
-          <img src={arycarLogo} alt="ARYCAR" className="h-12 w-auto opacity-60" />
+          <p className="text-xl font-black tracking-[0.18em] text-white/70">ARY<span className="text-primary/80">CAR</span></p>
           <p className="text-center text-sm text-muted-foreground">© {new Date().getFullYear()} ARYCAR Estética Automotiva. Todos os direitos reservados.</p>
         </div>
       </footer>

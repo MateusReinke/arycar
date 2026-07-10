@@ -61,19 +61,15 @@
     @apply bg-background text-foreground font-sans antialiased;
     background-color: hsl(var(--background));
     background-image:
-      radial-gradient(circle at 18% 18%, hsl(var(--primary) / 0.14), transparent 28rem),
-      radial-gradient(circle at 78% 12%, hsl(190 95% 45% / 0.10), transparent 30rem),
-      radial-gradient(circle at 55% 88%, hsl(var(--primary) / 0.10), transparent 34rem),
-      linear-gradient(30deg, hsl(var(--primary) / 0.075) 12%, transparent 12.5%, transparent 87%, hsl(var(--primary) / 0.075) 87.5%, hsl(var(--primary) / 0.075)),
-      linear-gradient(150deg, hsl(var(--primary) / 0.075) 12%, transparent 12.5%, transparent 87%, hsl(var(--primary) / 0.075) 87.5%, hsl(var(--primary) / 0.075)),
-      linear-gradient(30deg, hsl(var(--primary) / 0.045) 12%, transparent 12.5%, transparent 87%, hsl(var(--primary) / 0.045) 87.5%, hsl(var(--primary) / 0.045)),
-      linear-gradient(150deg, hsl(var(--primary) / 0.045) 12%, transparent 12.5%, transparent 87%, hsl(var(--primary) / 0.045) 87.5%, hsl(var(--primary) / 0.045));
-    background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 28px 49px, 28px 49px;
-    background-size: auto, auto, auto, 56px 98px, 56px 98px, 56px 98px, 56px 98px;
+      linear-gradient(90deg, hsl(var(--primary) / 0.055) 1px, transparent 1px),
+      linear-gradient(0deg, hsl(var(--primary) / 0.045) 1px, transparent 1px),
+      radial-gradient(circle at 18% 20%, hsl(var(--primary) / 0.08), transparent 28rem),
+      radial-gradient(circle at 82% 22%, hsl(210 70% 35% / 0.06), transparent 32rem);
+    background-position: center;
+    background-size: 72px 72px, 72px 72px, auto, auto;
     background-attachment: fixed;
     font-family: 'Inter', sans-serif;
   }
-
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif;
   }
@@ -87,12 +83,13 @@
   .site-dark-pattern {
     @apply relative overflow-hidden bg-background;
     background-image:
-      linear-gradient(180deg, hsl(220 50% 5% / 0.72), hsl(220 54% 4% / 0.92)),
-      radial-gradient(circle at 20% 12%, hsl(var(--primary) / 0.22), transparent 26rem),
-      radial-gradient(circle at 88% 28%, hsl(190 95% 45% / 0.16), transparent 30rem);
+      linear-gradient(180deg, hsl(220 45% 4% / 0.94), hsl(220 45% 4% / 0.98)),
+      linear-gradient(90deg, hsl(var(--primary) / 0.045) 1px, transparent 1px),
+      linear-gradient(0deg, hsl(var(--primary) / 0.035) 1px, transparent 1px);
+    background-size: auto, 72px 72px, 72px 72px;
   }
 
   .pattern-panel {
-    @apply border border-primary/20 bg-card/75 shadow-2xl shadow-primary/10 backdrop-blur-md;
+    @apply border border-primary/15 bg-card/85 shadow-2xl shadow-black/40 backdrop-blur-md;
   }
 }
