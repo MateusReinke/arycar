@@ -59,6 +59,7 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    overflow-x: hidden;
     background-color: hsl(var(--background));
     background-image:
       linear-gradient(90deg, hsl(var(--primary) / 0.055) 1px, transparent 1px),

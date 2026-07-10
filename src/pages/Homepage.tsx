@@ -17,6 +17,8 @@ import {
   WandSparkles,
   Gauge,
   CircleDot,
+  Menu,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -214,6 +216,7 @@ const Homepage = () => {
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [activeServiceId, setActiveServiceId] = useState<number | null>(0);
   const [contactOpen, setContactOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [leadName, setLeadName] = useState('');
   const [leadPhone, setLeadPhone] = useState('');
   const [leadVehicle, setLeadVehicle] = useState('');
@@ -236,6 +239,11 @@ const Homepage = () => {
   const isAgentConfigured = Boolean(N8N_WEBHOOK_URL);
 
   const whatsappLink = whatsappNumber ? `https://wa.me/55${whatsappNumber.replace(/\D/g, '')}` : '#';
+
+  const openContactForm = () => {
+    setContactOpen(true);
+    setMobileMenuOpen(false);
+  };
 
   const handleAgentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -314,9 +322,9 @@ const Homepage = () => {
       <main itemScope itemType="https://schema.org/AutoRepair" className="relative z-10 pb-40 md:pb-24">
 
         <header className="sticky top-0 z-50 border-b border-white/10 bg-background/85 backdrop-blur-xl">
-          <div className="container flex h-16 items-center justify-between">
-            <Link to="/" className="text-xl font-black tracking-[0.18em] text-white">ARY<span className="text-primary">CAR</span></Link>
-            <nav className="hidden items-center gap-3 md:flex">
+          <div className="container relative flex h-16 max-w-[1400px] items-center justify-between">
+            <Link to="/" className="text-xl font-black tracking-[0.18em] text-white" onClick={() => setMobileMenuOpen(false)}>ARY<span className="text-primary">CAR</span></Link>
+            <nav className="hidden items-center gap-3 md:flex" aria-label="Navegação principal">
               <Button variant="ghost" size="sm" asChild>
                 <a href="#servicos">Serviços</a>
               </Button>
@@ -333,14 +341,45 @@ const Homepage = () => {
                 </Link>
               </Button>
             </nav>
+            <Button
+              variant="outline"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              aria-expanded={mobileMenuOpen}
+              aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            {mobileMenuOpen && (
+              <div className="absolute left-4 right-4 top-full mt-3 rounded-2xl border border-white/10 bg-card/95 p-3 shadow-2xl shadow-black/50 backdrop-blur-xl md:hidden">
+                {[
+                  { href: '#servicos', label: 'Serviços' },
+                  { href: '#galeria', label: 'Galeria' },
+                  { href: '#faq', label: 'FAQ' },
+                ].map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    className="block min-h-12 rounded-xl px-4 py-3 text-sm font-semibold text-foreground hover:bg-primary/10"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {item.label}
+                  </a>
+                ))}
+                <Button className="mt-2 min-h-12 w-full" asChild>
+                  <Link to="/login" onClick={() => setMobileMenuOpen(false)}>Área de Gestão</Link>
+                </Button>
+              </div>
+            )}
           </div>
         </header>
 
-        <section className="relative overflow-hidden py-14 sm:py-16 lg:py-28">
+        <section className="relative overflow-hidden py-12 sm:py-14 lg:flex lg:min-h-[calc(100vh-4rem)] lg:items-center lg:py-16">
           <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] via-transparent to-primary/[0.04]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.08),transparent_40%)]" />
           <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(6,15,32,0.95)_0%,rgba(7,17,38,0.82)_45%,rgba(7,15,32,0.72)_100%)]" />
-          <div className="container relative grid items-start gap-8 sm:gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div className="container relative grid max-w-[1400px] items-start gap-8 sm:gap-10 lg:grid-cols-[55fr_45fr] lg:items-center">
             <div className="space-y-5 text-center lg:space-y-6 lg:text-left">
               <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
                 Qualidade, cuidado e detalhes em cada serviço
@@ -355,7 +394,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                 <Button size="lg" className="h-12 w-full px-8 text-base sm:w-auto" asChild>
                   <a href="#servicos">Conhecer serviços</a>
                 </Button>
-                <Button size="lg" variant="outline" className="h-12 w-full px-8 text-base sm:w-auto" onClick={() => setContactOpen(true)}>
+                <Button size="lg" variant="outline" className="h-12 w-full px-8 text-base sm:w-auto" onClick={openContactForm}>
                   Falar com especialista
                 </Button>
               </div>
@@ -400,8 +439,8 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
 
         <section className="relative overflow-hidden py-20" id="servicos-campanha">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_40%,rgba(24,131,255,0.25),transparent_45%)]" />
-          <div className="container relative">
-            <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+          <div className="container relative max-w-[1400px]">
+            <div className="grid gap-10 lg:grid-cols-[55fr_45fr] lg:items-start">
               <div className="pattern-panel rounded-3xl p-6 sm:p-8">
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Como funciona</p>
                 <h2 className="mt-2 text-3xl font-black leading-tight text-white sm:text-4xl">
@@ -454,7 +493,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
 
         <section id="servicos" className="relative overflow-hidden py-20">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_25%,rgba(24,131,255,0.2),transparent_42%)]" />
-          <div className="container relative">
+          <div className="container relative max-w-[1400px]">
             <div className="mb-10 text-center lg:text-left">
               <span className="text-sm font-semibold uppercase tracking-widest text-primary">Cobertura técnica</span>
               <h2 className="mt-2 text-3xl font-black leading-tight text-white sm:text-4xl lg:max-w-xl">
@@ -480,7 +519,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                     <button
                       key={service.id}
                       onClick={() => setActiveServiceId(service.id)}
-                      className={`group relative overflow-hidden rounded-2xl border px-4 py-4 text-left transition-all duration-300 lg:px-4 lg:py-5 ${
+                      className={`group relative min-h-12 overflow-hidden rounded-2xl border px-4 py-4 text-left transition-all duration-300 lg:px-4 lg:py-5 ${
                         isActive
                           ? 'border-primary/70 bg-[#060d20] shadow-[0_10px_35px_rgba(30,136,255,0.25)]'
                           : 'border-slate-700/60 bg-[#0a1328]/90 hover:border-primary/40'
@@ -531,7 +570,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
 
                   <div className="mt-8 flex flex-col gap-4 border-t border-slate-700/60 pt-5 sm:flex-row sm:items-center sm:justify-between lg:mt-auto">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Atendimento premium em todos os pacotes</p>
-                    <Button className="w-full sm:w-auto" onClick={() => setContactOpen(true)}>
+                    <Button className="w-full sm:w-auto" onClick={openContactForm}>
                       Solicitar orçamento
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
@@ -543,7 +582,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
         </section>
 
         <section id="galeria" className="py-20">
-          <div className="container">
+          <div className="container max-w-[1400px]">
             <div className="mb-12 text-center">
               <span className="text-sm font-semibold uppercase tracking-widest text-primary">Galeria de resultados reais</span>
               <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Compare o antes e depois em visual moderno</h2>
@@ -561,7 +600,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                   <button
                     key={showcase.id}
                     onClick={() => setActiveShowcaseId(showcase.id)}
-                    className={`rounded-xl border px-3 py-3 text-left transition ${
+                    className={`min-h-12 rounded-xl border px-3 py-3 text-left transition ${
                       isActive
                         ? 'border-primary bg-primary/10 shadow-sm shadow-primary/20'
                         : 'border-border bg-card hover:border-primary/40'
@@ -639,8 +678,8 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
         </section>
 
         <section className="bg-card/30 py-20 backdrop-blur-sm">
-          <div className="container grid grid-cols-1 gap-10 md:grid-cols-3">
-            <div className="flex items-start gap-4">
+          <div className="container grid max-w-[1400px] grid-cols-1 gap-8 text-center md:grid-cols-3 md:text-left">
+            <div className="flex flex-col items-center gap-4 md:flex-row md:items-start">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
                 <MapPin className="h-6 w-6 text-primary" />
               </div>
@@ -649,7 +688,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                 <p className="text-sm leading-relaxed text-muted-foreground">Buscamos e entregamos seu veículo no endereço desejado com protocolos de cuidado durante todo o trajeto.</p>
               </div>
             </div>
-            <div className="flex items-start gap-4">
+            <div className="flex flex-col items-center gap-4 md:flex-row md:items-start">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
                 <Shield className="h-6 w-6 text-primary" />
               </div>
@@ -658,7 +697,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                 <p className="text-sm leading-relaxed text-muted-foreground">Combinamos marcas premium, técnicas atualizadas e acabamento minucioso para máxima valorização do seu carro.</p>
               </div>
             </div>
-            <div className="flex items-start gap-4">
+            <div className="flex flex-col items-center gap-4 md:flex-row md:items-start">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
                 <Clock className="h-6 w-6 text-primary" />
               </div>
