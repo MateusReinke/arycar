@@ -247,10 +247,10 @@ const Homepage = () => {
   }, [seoKeywords]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-transparent">
       <main itemScope itemType="https://schema.org/AutoRepair" className="pb-40 md:pb-24">
 
-        <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
+        <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0b0c10]/85 backdrop-blur-xl">
           <div className="container flex h-16 items-center justify-between">
             <img src={arycarLogo} alt="ARYCAR Estética Automotiva" className="h-10 w-auto" />
             <nav className="hidden items-center gap-3 md:flex">
@@ -335,7 +335,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
           </div>
         </section>
 
-        <section className="relative overflow-hidden bg-[#050a16] py-20" id="servicos-campanha">
+        <section className="relative overflow-hidden bg-black/20 py-20" id="servicos-campanha">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_40%,rgba(24,131,255,0.25),transparent_45%)]" />
           <div className="container relative">
             <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
@@ -377,7 +377,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
           </div>
         </section>
 
-        <section id="servicos" className="relative overflow-hidden bg-[#030816] py-20">
+        <section id="servicos" className="relative overflow-hidden bg-black/25 py-20">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_25%,rgba(24,131,255,0.2),transparent_42%)]" />
           <div className="container relative">
             <div className="mb-10 text-center lg:text-left">
@@ -556,7 +556,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
           </div>
         </section>
 
-        <section className="bg-card/50 py-20">
+        <section className="bg-black/20 py-20">
           <div className="container grid grid-cols-1 gap-10 md:grid-cols-3">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
@@ -621,7 +621,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
         </section>
       </main>
 
-      <footer className="border-t border-border py-8">
+      <footer className="border-t border-white/10 bg-black/20 py-8">
         <div className="container flex flex-col items-center gap-4">
           <img src={arycarLogo} alt="ARYCAR" className="h-12 w-auto opacity-60" />
           <p className="text-center text-sm text-muted-foreground">© {new Date().getFullYear()} ARYCAR Estética Automotiva. Todos os direitos reservados.</p>

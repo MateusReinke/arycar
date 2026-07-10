@@ -72,3 +72,107 @@
     @apply bg-card/80 backdrop-blur-md border border-border/50;
   }
 }
+
+@layer base {
+  html {
+    background: #0b0c10;
+  }
+
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 18% 12%, rgba(56, 148, 255, 0.16), transparent 32rem),
+      radial-gradient(circle at 82% 4%, rgba(125, 211, 252, 0.11), transparent 28rem),
+      linear-gradient(135deg, #0b0c10 0%, #0f1117 45%, #121212 100%);
+  }
+
+  #root {
+    min-height: 100vh;
+    background: transparent;
+  }
+}
+
+@layer components {
+  .site-background {
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    background:
+      linear-gradient(135deg, rgba(11, 12, 16, 0.95), rgba(18, 18, 18, 0.92)),
+      radial-gradient(circle at 20% 18%, rgba(77, 166, 255, 0.18), transparent 34rem),
+      radial-gradient(circle at 78% 72%, rgba(56, 189, 248, 0.13), transparent 30rem);
+  }
+
+  .site-background__hex {
+    position: absolute;
+    inset: -4rem;
+    opacity: 0.18;
+    background-color: transparent;
+    background-image:
+      linear-gradient(30deg, rgba(147, 197, 253, 0.3) 12%, transparent 12.5%, transparent 87%, rgba(147, 197, 253, 0.3) 87.5%, rgba(147, 197, 253, 0.3)),
+      linear-gradient(150deg, rgba(147, 197, 253, 0.3) 12%, transparent 12.5%, transparent 87%, rgba(147, 197, 253, 0.3) 87.5%, rgba(147, 197, 253, 0.3)),
+      linear-gradient(30deg, rgba(147, 197, 253, 0.3) 12%, transparent 12.5%, transparent 87%, rgba(147, 197, 253, 0.3) 87.5%, rgba(147, 197, 253, 0.3)),
+      linear-gradient(150deg, rgba(147, 197, 253, 0.3) 12%, transparent 12.5%, transparent 87%, rgba(147, 197, 253, 0.3) 87.5%, rgba(147, 197, 253, 0.3)),
+      linear-gradient(60deg, rgba(147, 197, 253, 0.14) 25%, transparent 25.5%, transparent 75%, rgba(147, 197, 253, 0.14) 75%, rgba(147, 197, 253, 0.14));
+    background-position: 0 0, 0 0, 36px 63px, 36px 63px, 0 0;
+    background-size: 72px 126px;
+    mask-image: radial-gradient(circle at 50% 30%, black, transparent 72%);
+  }
+
+  .site-background__glow {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(18px);
+  }
+
+  .site-background__glow--one {
+    left: 8%;
+    top: 12%;
+    width: 18rem;
+    height: 18rem;
+    background: rgba(59, 130, 246, 0.13);
+  }
+
+  .site-background__glow--two {
+    right: 6%;
+    bottom: 10%;
+    width: 22rem;
+    height: 22rem;
+    background: rgba(14, 165, 233, 0.1);
+  }
+
+  .site-background__icons {
+    position: absolute;
+    inset: 0;
+    color: rgba(191, 219, 254, 0.07);
+  }
+
+  .floating-line-icon {
+    position: absolute;
+    animation: float-line-icon 16s ease-in-out infinite;
+    transform: translate3d(0, 0, 0) rotate(-7deg);
+  }
+
+  .float-delay-1 { animation-delay: -2s; }
+  .float-delay-2 { animation-delay: -4s; }
+  .float-delay-3 { animation-delay: -6s; }
+  .float-delay-4 { animation-delay: -8s; }
+  .float-delay-5 { animation-delay: -10s; }
+}
+
+@layer utilities {
+  .page-surface {
+    @apply relative bg-transparent;
+  }
+}
+
+@keyframes float-line-icon {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotate(-7deg);
+  }
+  50% {
+    transform: translate3d(0.75rem, -1rem, 0) rotate(4deg);
+  }
+}

@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from '@/context/AppContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import Header from '@/components/Header';
+import SiteBackground from '@/components/SiteBackground';
 import Homepage from './pages/Homepage';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
@@ -42,6 +43,8 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <SiteBackground />
+            <div className="relative z-10">
             <Routes>
               <Route path="/" element={<Homepage />} />
               <Route path="/login" element={<Login />} />
@@ -84,6 +87,7 @@ const App = () => (
 
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </div>
           </BrowserRouter>
         </AppProvider>
       </AuthProvider>

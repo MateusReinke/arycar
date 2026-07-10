@@ -27,7 +27,7 @@ const Header = () => {
   ].filter(Boolean) as { to: string; label: string; icon: LucideIcon }[];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0b0c10]/85 backdrop-blur-xl">
       <div className="container flex h-16 items-center justify-between">
         <Link to={canUseOps ? '/vendedores' : '/client'} className="flex items-center gap-3" onClick={resetFlow}>
           <img src={arycarLogo} alt="ARYCAR" className="h-9 w-auto" />
