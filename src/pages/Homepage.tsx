@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { storageService } from '@/services/storage';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
@@ -133,6 +133,12 @@ const beforeAfterShowcases = [
   },
 ];
 
+const heroStats = [
+  { value: '+4.500', label: 'veículos atendidos' },
+  { value: '4.9/5', label: 'avaliação média dos clientes' },
+  { value: 'Até 12x', label: 'condições facilitadas' },
+];
+
 const serviceWorkflow = [
   {
     step: '1. Diagnóstico rápido',
@@ -149,6 +155,7 @@ const serviceWorkflow = [
 ];
 
 const Homepage = () => {
+  const servicePanelTitleId = useId();
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [activeServiceId, setActiveServiceId] = useState<number | null>(0);
   const [contactOpen, setContactOpen] = useState(false);
@@ -273,26 +280,27 @@ const Homepage = () => {
           </div>
         </header>
 
-        <section className="relative overflow-hidden py-14 sm:py-16 lg:py-28">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/5" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.2),transparent_40%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(6,15,32,0.95)_0%,rgba(7,17,38,0.82)_45%,rgba(10,32,78,0.65)_100%)]" />
+        <section className="geometric-surface relative overflow-hidden py-16 sm:py-20 lg:py-32">
+          {/* Camadas de overlay reduzem o ruído do padrão 3D e preservam contraste AA nos textos. */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-transparent to-primary/5" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.22),transparent_40%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(2,8,20,0.98)_0%,rgba(5,14,34,0.9)_45%,rgba(9,28,70,0.74)_100%)]" />
           <div className="container relative grid items-start gap-8 sm:gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div className="space-y-5 text-center lg:space-y-6 lg:text-left">
               <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
                 Qualidade, cuidado e detalhes em cada serviço
               </span>
               <h1 className="text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
-                ARYCAR: estética automotiva com <span className="text-primary">acabamento de vitrine</span>
+                ARYCAR: estética automotiva com <span className="bg-gradient-to-r from-sky-300 via-primary to-cyan-200 bg-clip-text text-transparent drop-shadow-[0_0_24px_rgba(59,130,246,0.45)]">acabamento de vitrine</span>
               </h1>
               <p className="max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
 Lavagem, polimento, higienização e vitrificação com execução técnica, atendimento rápido e foco em resultado visível desde a primeira entrega.
               </p>
               <div className="flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap sm:gap-4 lg:justify-start">
-                <Button size="lg" className="h-12 w-full px-8 text-base sm:w-auto" asChild>
+                <Button size="lg" className="h-12 w-full bg-primary px-8 text-base shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-primary/40 sm:w-auto" asChild>
                   <a href="#servicos">Conhecer serviços</a>
                 </Button>
-                <Button size="lg" variant="outline" className="h-12 w-full px-8 text-base sm:w-auto" onClick={() => setContactOpen(true)}>
+                <Button size="lg" variant="outline" className="h-12 w-full border-primary/50 bg-white/5 px-8 text-base transition-all hover:-translate-y-0.5 hover:border-primary hover:bg-primary/10 hover:text-white sm:w-auto" onClick={() => setContactOpen(true)}>
                   Falar com especialista
                 </Button>
               </div>
@@ -303,19 +311,13 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                   </span>
                 ))}
               </div>
-              <div className="grid grid-cols-2 gap-3 text-left sm:grid-cols-3">
-                <div className="rounded-xl border border-border/80 bg-card/50 p-3">
-                  <p className="text-xl font-bold text-primary">+4.500</p>
-                  <p className="text-xs text-muted-foreground">veículos atendidos</p>
-                </div>
-                <div className="rounded-xl border border-border/80 bg-card/50 p-3">
-                  <p className="text-xl font-bold text-primary">4.9/5</p>
-                  <p className="text-xs text-muted-foreground">avaliação média dos clientes</p>
-                </div>
-                <div className="col-span-2 rounded-xl border border-border/80 bg-card/50 p-3 sm:col-span-1">
-                  <p className="text-xl font-bold text-primary">Até 12x</p>
-                  <p className="text-xs text-muted-foreground">condições facilitadas</p>
-                </div>
+              <div className="grid grid-cols-1 gap-3 text-left min-[420px]:grid-cols-3">
+                {heroStats.map((stat) => (
+                  <div key={stat.value} className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 shadow-lg shadow-black/20 backdrop-blur transition hover:border-primary/45 hover:bg-primary/10">
+                    <p className="text-2xl font-black text-primary">{stat.value}</p>
+                    <p className="mt-1 text-xs leading-snug text-slate-300">{stat.label}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -350,7 +352,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
 
                 <div className="mt-8 space-y-3">
                   {serviceWorkflow.map((item) => (
-                    <div key={item.step} className="rounded-xl border border-blue-300/15 bg-black/30 px-4 py-4">
+                    <div key={item.step} className="rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-4 shadow-inner shadow-white/5 transition hover:border-primary/35 hover:bg-primary/10">
                       <p className="text-sm font-semibold text-slate-100">{item.step}</p>
                       <p className="mt-1 text-sm text-slate-300">{item.description}</p>
                     </div>
@@ -397,7 +399,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                   <p className="mt-2 text-sm text-slate-300">Toque no serviço para atualizar o painel com descrição e escopo principal.</p>
                 </div>
 
-                <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 lg:mx-0 lg:grid lg:max-h-[500px] lg:grid-cols-1 lg:gap-3 lg:overflow-visible lg:px-0 lg:pb-0">
+                <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 lg:mx-0 lg:grid lg:max-h-[500px] lg:grid-cols-1 lg:gap-3 lg:overflow-visible lg:px-0 lg:pb-0" role="tablist" aria-label="Serviços de estética automotiva">
                 {services.map((service) => {
                   const isActive = activeServiceId === service.id;
 
@@ -410,7 +412,9 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                           ? 'border-primary/70 bg-[#060d20] shadow-[0_10px_35px_rgba(30,136,255,0.25)]'
                           : 'border-slate-700/60 bg-[#0a1328]/90 hover:border-primary/40'
                       }`}
-                      aria-pressed={isActive}
+                      role="tab"
+                      aria-selected={isActive}
+                      aria-controls="service-detail-panel"
                     >
                       {isActive && <span className="absolute inset-y-0 left-0 w-1 rounded-full bg-primary" />}
                       <div className="flex items-center gap-3">
@@ -429,7 +433,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                 </div>
               </aside>
 
-              <article className="relative overflow-hidden rounded-3xl border border-primary/40 bg-[#040b1b] p-5 shadow-[0_22px_60px_rgba(4,10,24,0.9)] sm:p-7 lg:min-h-[560px]">
+              <article id="service-detail-panel" role="tabpanel" aria-labelledby={servicePanelTitleId} className="relative overflow-hidden rounded-3xl border border-primary/40 bg-[#040b1b] p-5 shadow-[0_22px_60px_rgba(4,10,24,0.9)] transition-all duration-300 sm:p-7 lg:min-h-[560px]">
                 <img
                   src={activeService.image}
                   alt={activeService.title}
@@ -441,7 +445,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                     Serviço selecionado
                   </span>
 
-                  <h3 className="mt-4 text-2xl font-black leading-tight text-white sm:text-3xl lg:text-4xl">{activeService.title}</h3>
+                  <h3 id={servicePanelTitleId} className="mt-4 text-2xl font-black leading-tight text-white sm:text-3xl lg:text-4xl">{activeService.title}</h3>
                   <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300 sm:text-base">{activeService.desc}</p>
 
                   <ul className="mt-6 grid gap-3 text-sm sm:grid-cols-2">
@@ -458,7 +462,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
 
                   <div className="mt-8 flex flex-col gap-4 border-t border-slate-700/60 pt-5 sm:flex-row sm:items-center sm:justify-between lg:mt-auto">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Atendimento premium em todos os pacotes</p>
-                    <Button className="w-full sm:w-auto" onClick={() => setContactOpen(true)}>
+                    <Button className="w-full bg-gradient-to-r from-primary to-cyan-500 font-bold shadow-xl shadow-primary/30 transition-all hover:-translate-y-0.5 hover:shadow-primary/50 sm:w-auto" onClick={() => setContactOpen(true)}>
                       Solicitar orçamento
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
@@ -510,6 +514,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Arraste para comparar</p>
               </div>
 
+              {/* Slider real: o input range cobre a imagem inteira, mantendo suporte a mouse, touch e teclado. */}
               <div className="relative overflow-hidden rounded-xl border border-border/80">
                 <img
                   src={activeShowcase.afterImage}
