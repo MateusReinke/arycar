@@ -35,12 +35,9 @@ import serviceHigienizacao from '@/assets/service-higienizacao.jpg';
 import serviceCouro from '@/assets/service-couro.jpg';
 import serviceFarois from '@/assets/service-farois.jpg';
 
-import before1 from '@/assets/before-1.jpg';
-import after1 from '@/assets/after-1.jpg';
-import before2 from '@/assets/before-2.jpg';
-import after2 from '@/assets/after-2.jpg';
-import before3 from '@/assets/before-3.jpg';
-import after3 from '@/assets/after-3.jpg';
+// Imagens de antes/depois vêm de /public/before-after (não do bundle), seguindo o
+// padrão "<serviço>-antes.jpg" / "<serviço>-depois.jpg" — ver public/before-after/README.md.
+const beforeAfterImage = (service: string, stage: 'antes' | 'depois') => `/before-after/${service}-${stage}.jpg`;
 
 const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL;
 
@@ -107,24 +104,24 @@ const beforeAfterShowcases = [
     serviceId: 0,
     title: 'Polimento Técnico',
     description: 'Redução de marcas leves e realce de brilho com acabamento espelhado.',
-    beforeImage: before1,
-    afterImage: after1,
+    beforeImage: beforeAfterImage('polimento', 'antes'),
+    afterImage: beforeAfterImage('polimento', 'depois'),
   },
   {
     id: 'vitrificacao',
     serviceId: 1,
     title: 'Vitrificação Cerâmica',
     description: 'Pintura com proteção duradoura e toque hidrofóbico visível no acabamento.',
-    beforeImage: before2,
-    afterImage: after2,
+    beforeImage: beforeAfterImage('vitrificacao', 'antes'),
+    afterImage: beforeAfterImage('vitrificacao', 'depois'),
   },
   {
     id: 'higienizacao',
     serviceId: 3,
     title: 'Higienização Interna',
     description: 'Remoção de sujeiras profundas e aspecto renovado em bancos e carpetes.',
-    beforeImage: before3,
-    afterImage: after3,
+    beforeImage: beforeAfterImage('higienizacao', 'antes'),
+    afterImage: beforeAfterImage('higienizacao', 'depois'),
   },
 ];
 
@@ -369,9 +366,9 @@ const Homepage = () => {
 
         <section className="geometric-surface relative overflow-hidden py-16 sm:py-20 lg:py-32">
           {/* Camadas de overlay reduzem o ruído do padrão 3D e preservam contraste AA nos textos. */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-transparent to-primary/5" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.22),transparent_40%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(2,8,20,0.98)_0%,rgba(5,14,34,0.9)_45%,rgba(9,28,70,0.74)_100%)]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-transparent to-primary/10" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.3),transparent_42%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(4,10,24,0.72)_0%,rgba(8,20,44,0.5)_45%,rgba(16,44,104,0.26)_100%)]" />
           <div className="container relative grid items-start gap-8 sm:gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div className="space-y-5 text-center lg:space-y-6 lg:text-left">
               <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
@@ -424,11 +421,11 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
           </div>
         </section>
 
-        <section className="relative overflow-hidden bg-[#050a16] py-20" id="servicos-campanha">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_40%,rgba(24,131,255,0.25),transparent_45%)]" />
+        <section className="relative overflow-hidden bg-surface py-20" id="servicos-campanha">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_40%,rgba(24,131,255,0.3),transparent_45%)]" />
           <div className="container relative">
             <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-              <div className="rounded-3xl border border-primary/30 bg-[#070d1e]/90 p-6 shadow-2xl shadow-blue-950/60 sm:p-8">
+              <div className="rounded-3xl border border-primary/30 bg-card/90 p-6 shadow-2xl shadow-blue-950/40 sm:p-8">
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Como funciona</p>
                 <h2 className="mt-2 text-3xl font-black leading-tight text-white sm:text-4xl">
                   Menos promessa, mais processo com padrão Arycar
@@ -466,8 +463,8 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
           </div>
         </section>
 
-        <section id="servicos" className="relative scroll-mt-16 overflow-hidden bg-[#030816] py-20">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_25%,rgba(24,131,255,0.2),transparent_42%)]" />
+        <section id="servicos" className="relative scroll-mt-16 overflow-hidden bg-background py-20">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_25%,rgba(24,131,255,0.26),transparent_42%)]" />
           <div className="container relative">
             <div className="mb-10 text-center lg:text-left">
               <span className="text-sm font-semibold uppercase tracking-widest text-primary">Cobertura técnica</span>
@@ -481,7 +478,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
 
             <div className="grid gap-5 lg:grid-cols-[320px_minmax(0,1.55fr)] lg:items-stretch">
               <aside className="space-y-3 lg:sticky lg:top-24 lg:h-fit">
-                <div className="rounded-2xl border border-slate-700/60 bg-[#0a1328]/80 p-4">
+                <div className="rounded-2xl border border-border bg-card/80 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Sidebar de serviços</p>
                   <p className="mt-2 text-sm text-slate-300">Toque no serviço para atualizar o painel com descrição e escopo principal.</p>
                 </div>
@@ -496,8 +493,8 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                       onClick={() => setActiveServiceId(service.id)}
                       className={`group relative overflow-hidden rounded-2xl border px-4 py-4 text-left transition-all duration-300 lg:px-4 lg:py-5 ${
                         isActive
-                          ? 'border-primary/70 bg-[#060d20] shadow-[0_10px_35px_rgba(30,136,255,0.25)]'
-                          : 'border-slate-700/60 bg-[#0a1328]/90 hover:border-primary/40'
+                          ? 'border-primary/70 bg-card shadow-[0_10px_35px_rgba(30,136,255,0.25)]'
+                          : 'border-border bg-card/70 hover:border-primary/40'
                       }`}
                       role="tab"
                       aria-selected={isActive}
@@ -520,7 +517,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                 </div>
               </aside>
 
-              <article id="service-detail-panel" role="tabpanel" aria-labelledby={servicePanelTitleId} className="relative overflow-hidden rounded-3xl border border-primary/40 bg-[#040b1b] p-5 shadow-[0_22px_60px_rgba(4,10,24,0.9)] transition-all duration-300 sm:p-7 lg:min-h-[560px]">
+              <article id="service-detail-panel" role="tabpanel" aria-labelledby={servicePanelTitleId} className="relative overflow-hidden rounded-3xl border border-primary/40 bg-card p-5 shadow-[0_22px_60px_rgba(4,10,24,0.65)] transition-all duration-300 sm:p-7 lg:min-h-[560px]">
                 <img
                   src={activeService.image}
                   alt={activeService.title}
@@ -537,7 +534,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
 
                   <ul className="mt-6 grid gap-3 text-sm sm:grid-cols-2">
                     {activeService.features.map((feature) => (
-                      <li key={feature} className="rounded-xl border border-slate-700/70 bg-slate-900/70 px-4 py-3 text-slate-100">
+                      <li key={feature} className="rounded-xl border border-slate-700/60 bg-slate-800/50 px-4 py-3 text-slate-100">
                         • {feature}
                       </li>
                     ))}
