@@ -158,10 +158,29 @@ const normalizeService = (raw: Record<string, unknown>): Service => {
   };
 };
 
+const AUTH_STORAGE_KEY = 'arycar_auth_user';
+
+const getAuthToken = (): string | null => {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { token?: string };
+    return parsed.token || null;
+  } catch {
+    return null;
+  }
+};
+
+const authHeaders = (): HeadersInit => {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(buildApiUrl(path), {
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders(),
       ...(init?.headers || {}),
     },
     ...init,
@@ -285,7 +304,9 @@ export const backendApi = {
 
   async findOpenOrderByPlate(plate: string): Promise<OpenOrderResponse | null> {
     try {
-      const response = await fetch(buildApiUrl(`/api/orders/open-by-plate/${plate}`));
+      const response = await fetch(buildApiUrl(`/api/orders/open-by-plate/${plate}`), {
+        headers: { ...authHeaders() },
+      });
       if (!response.ok) {
         return null;
       }

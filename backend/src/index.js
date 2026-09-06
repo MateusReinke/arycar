@@ -34,6 +34,15 @@ const pool = new Pool(databaseConfig);
 const DEFAULT_ADMIN_EMAIL = 'admin@arycar.com';
 const DEFAULT_ADMIN_PASSWORD = 'Admin@123';
 
+const AUTH_TOKEN_SECRET = process.env.AUTH_TOKEN_SECRET || crypto.randomBytes(32).toString('hex');
+if (!process.env.AUTH_TOKEN_SECRET) {
+  console.warn(
+    '[arycar-api] AUTH_TOKEN_SECRET não definido: usando um segredo gerado neste boot. ' +
+    'Defina AUTH_TOKEN_SECRET no ambiente para que as sessões continuem válidas entre reinícios do servidor.',
+  );
+}
+const AUTH_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
+
 const seedVehicleTypes = ['carro', 'moto', 'caminhao'];
 const motoFactor = 0.7;
 const truckFactor = 1.35;
@@ -90,11 +99,77 @@ const hashPassword = async (plainTextPassword) => {
 };
 
 const verifyPassword = async (plainTextPassword, storedPasswordHash) => {
-  if (!storedPasswordHash) return false;
-  if (!storedPasswordHash.includes(':')) return String(plainTextPassword) === String(storedPasswordHash);
+  if (!storedPasswordHash || !storedPasswordHash.includes(':')) return false;
   const [salt, savedHash] = String(storedPasswordHash).split(':');
   const derived = crypto.scryptSync(String(plainTextPassword), salt, 64).toString('hex');
-  return crypto.timingSafeEqual(Buffer.from(savedHash, 'hex'), Buffer.from(derived, 'hex'));
+  const savedBuffer = Buffer.from(savedHash, 'hex');
+  const derivedBuffer = Buffer.from(derived, 'hex');
+  return savedBuffer.length === derivedBuffer.length && crypto.timingSafeEqual(savedBuffer, derivedBuffer);
+};
+
+// Minimal signed session token (HMAC-SHA256), avoids pulling in a JWT dependency
+// for a single-secret, single-server bearer token.
+const signAuthToken = (payload) => {
+  const now = Math.floor(Date.now() / 1000);
+  const body = Buffer.from(JSON.stringify({ ...payload, iat: now, exp: now + AUTH_TOKEN_TTL_SECONDS })).toString('base64url');
+  const signature = crypto.createHmac('sha256', AUTH_TOKEN_SECRET).update(body).digest('base64url');
+  return `${body}.${signature}`;
+};
+
+const verifyAuthToken = (token) => {
+  if (!token || typeof token !== 'string' || !token.includes('.')) return null;
+
+  const [body, signature] = token.split('.');
+  if (!body || !signature) return null;
+
+  const expectedSignature = crypto.createHmac('sha256', AUTH_TOKEN_SECRET).update(body).digest('base64url');
+  const signatureBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expectedSignature);
+
+  if (signatureBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)) {
+    return null;
+  }
+
+  try {
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+};
+
+// Requires a valid bearer token; attaches { id, role } to req.user.
+const authenticate = (req, res, next) => {
+  const [scheme, token] = String(req.headers.authorization || '').split(' ');
+
+  if (scheme !== 'Bearer' || !token) {
+    return res.status(401).json({ message: 'Autenticação necessária.' });
+  }
+
+  const payload = verifyAuthToken(token);
+  if (!payload || !payload.sub || !payload.role) {
+    return res.status(401).json({ message: 'Sessão inválida ou expirada. Faça login novamente.' });
+  }
+
+  req.user = { id: payload.sub, role: payload.role };
+  return next();
+};
+
+// Must run after `authenticate`. Allows only the given roles.
+const requireRole = (...roles) => (req, res, next) => {
+  if (!req.user || !roles.includes(req.user.role)) {
+    return res.status(403).json({ message: 'Você não tem permissão para acessar este recurso.' });
+  }
+  return next();
+};
+
+// Must run after `authenticate`. Allows the user themself (matching :id) or the given roles.
+const requireSelfOrRole = (...roles) => (req, res, next) => {
+  if (req.user && (req.user.id === req.params.id || roles.includes(req.user.role))) {
+    return next();
+  }
+  return res.status(403).json({ message: 'Você não tem permissão para acessar este recurso.' });
 };
 
 
@@ -629,18 +704,7 @@ app.get('/api/version', (_req, res) => {
   });
 });
 
-app.get('/api/admin/default-user', async (_req, res) => {
-  try {
-    const { rows } = await pool.query(
-      `SELECT id, name, email, role, active, created_at FROM users WHERE role = 'admin' ORDER BY created_at ASC LIMIT 1`,
-    );
-    return res.status(200).json(rows[0] || null);
-  } catch (error) {
-    return res.status(500).json({ message: 'Erro ao buscar admin padrão.', details: error.message });
-  }
-});
-
-app.get('/api/products', async (_req, res) => {
+app.get('/api/products', authenticate, requireRole('admin'), async (_req, res) => {
   try {
     const { rows } = await pool.query(`
       SELECT id, product_type AS "productType", brand, name, unit, stock_current AS "stockCurrent", stock_min AS "stockMin", price_per_liter AS "pricePerLiter", active
@@ -653,7 +717,7 @@ app.get('/api/products', async (_req, res) => {
   }
 });
 
-app.post('/api/products', async (req, res) => {
+app.post('/api/products', authenticate, requireRole('admin'), async (req, res) => {
   const {
     productType = 'Insumo',
     brand = 'Genérica',
@@ -692,7 +756,7 @@ app.post('/api/products', async (req, res) => {
   }
 });
 
-app.put('/api/products/:id', async (req, res) => {
+app.put('/api/products/:id', authenticate, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
   const {
     productType = 'Insumo',
@@ -744,7 +808,7 @@ app.put('/api/products/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/products/:id', async (req, res) => {
+app.delete('/api/products/:id', authenticate, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -761,7 +825,7 @@ app.delete('/api/products/:id', async (req, res) => {
   }
 });
 
-app.get('/api/stock/alerts', async (_req, res) => {
+app.get('/api/stock/alerts', authenticate, requireRole('admin'), async (_req, res) => {
   try {
     const { rows } = await pool.query(`
       SELECT
@@ -827,7 +891,8 @@ app.post('/api/auth/register-customer', async (req, res) => {
 
     await client.query('COMMIT');
 
-    return res.status(201).json(createdUser.rows[0]);
+    const createdRow = createdUser.rows[0];
+    return res.status(201).json({ ...createdRow, token: signAuthToken({ sub: createdRow.id, role: createdRow.role }) });
   } catch (error) {
     await client.query('ROLLBACK');
     return res.status(500).json({ message: 'Erro ao cadastrar cliente.', details: error.message });
@@ -876,13 +941,14 @@ app.post('/api/auth/login', async (req, res) => {
       email: user.email,
       phone: user.phone,
       role: user.role,
+      token: signAuthToken({ sub: user.id, role: user.role }),
     });
   } catch (error) {
     return res.status(500).json({ message: 'Erro ao autenticar usuário.', details: error.message });
   }
 });
 
-app.get('/api/users', async (_req, res) => {
+app.get('/api/users', authenticate, requireRole('admin'), async (_req, res) => {
   try {
     const { rows } = await pool.query('SELECT id, name, email, phone, role, active, created_at FROM users ORDER BY created_at DESC');
     return res.status(200).json(rows);
@@ -891,7 +957,7 @@ app.get('/api/users', async (_req, res) => {
   }
 });
 
-app.post('/api/users', async (req, res) => {
+app.post('/api/users', authenticate, requireRole('admin'), async (req, res) => {
   const {
     name,
     email,
@@ -944,7 +1010,7 @@ app.post('/api/users', async (req, res) => {
 });
 
 
-app.get('/api/users/:id/profile', async (req, res) => {
+app.get('/api/users/:id/profile', authenticate, requireSelfOrRole('admin'), async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT id, name, email, phone, role, active, cpf, address, birth_date, emergency_contact, department, job_title, created_at, updated_at
@@ -964,7 +1030,7 @@ app.get('/api/users/:id/profile', async (req, res) => {
   }
 });
 
-app.put('/api/users/:id/profile', async (req, res) => {
+app.put('/api/users/:id/profile', authenticate, requireSelfOrRole('admin'), async (req, res) => {
   const { name, email, phone, cpf, address, birthDate, emergencyContact, department, jobTitle } = req.body;
 
   if (!name) {
@@ -1010,7 +1076,7 @@ app.put('/api/users/:id/profile', async (req, res) => {
   }
 });
 
-app.put('/api/users/:id/password', async (req, res) => {
+app.put('/api/users/:id/password', authenticate, requireSelfOrRole('admin'), async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
   if (!currentPassword || !newPassword) {
@@ -1118,7 +1184,7 @@ app.get('/api/services', async (_req, res) => {
   }
 });
 
-app.post('/api/services', async (req, res) => {
+app.post('/api/services', authenticate, requireRole('admin'), async (req, res) => {
   const {
     name,
     hours = 1,
@@ -1215,7 +1281,7 @@ app.post('/api/services', async (req, res) => {
   }
 });
 
-app.put('/api/services/:id', async (req, res) => {
+app.put('/api/services/:id', authenticate, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
   const {
     name,
@@ -1325,7 +1391,7 @@ app.put('/api/services/:id', async (req, res) => {
   }
 });
 
-app.post('/api/work-order-items/:id/complete', async (req, res) => {
+app.post('/api/work-order-items/:id/complete', authenticate, requireRole('admin', 'employee'), async (req, res) => {
   const { id } = req.params;
 
   const client = await pool.connect();
@@ -1362,7 +1428,7 @@ app.post('/api/work-order-items/:id/complete', async (req, res) => {
   }
 });
 
-app.delete('/api/services/:id', async (req, res) => {
+app.delete('/api/services/:id', authenticate, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -1378,7 +1444,7 @@ app.delete('/api/services/:id', async (req, res) => {
   }
 });
 
-app.get('/api/order-statuses', async (_req, res) => {
+app.get('/api/order-statuses', authenticate, requireRole('admin'), async (_req, res) => {
   try {
     const { rows } = await pool.query('SELECT id, code, label, color_class, created_at FROM order_statuses ORDER BY created_at ASC');
     return res.status(200).json(rows);
@@ -1387,7 +1453,7 @@ app.get('/api/order-statuses', async (_req, res) => {
   }
 });
 
-app.post('/api/order-statuses', async (req, res) => {
+app.post('/api/order-statuses', authenticate, requireRole('admin'), async (req, res) => {
   const { code, label, colorClass } = req.body;
   if (!code || !label || !colorClass) {
     return res.status(400).json({ message: 'code, label e colorClass são obrigatórios.' });
@@ -1408,7 +1474,7 @@ app.post('/api/order-statuses', async (req, res) => {
   }
 });
 
-app.get('/api/orders/open-by-plate/:plate', async (req, res) => {
+app.get('/api/orders/open-by-plate/:plate', authenticate, requireRole('admin', 'employee'), async (req, res) => {
   const plate = String(req.params.plate || '')
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, '')

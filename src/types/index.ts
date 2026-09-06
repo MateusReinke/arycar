@@ -130,6 +130,7 @@ export interface AuthUser {
   emergencyContact?: string;
   department?: string;
   jobTitle?: string;
+  token?: string;
 }
 
 export interface LoginPayload {
