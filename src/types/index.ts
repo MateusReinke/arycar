@@ -49,6 +49,22 @@ export interface Product {
   stockMin: number;
   pricePerLiter: number;
   active: boolean;
+  usedInServices?: number;
+}
+
+export type StockMovementType = 'manual_in' | 'manual_out' | 'service_consumption' | string;
+
+export interface StockMovement {
+  id: string;
+  productId: string;
+  productName: string;
+  movementType: StockMovementType;
+  qty: number;
+  unit: UnitType;
+  stockBefore: number;
+  stockAfter: number;
+  details?: { reason?: string | null } & Record<string, unknown>;
+  createdAt: string;
 }
 
 export interface ServiceProductConsumption {
@@ -130,6 +146,7 @@ export interface AuthUser {
   emergencyContact?: string;
   department?: string;
   jobTitle?: string;
+  token?: string;
 }
 
 export interface LoginPayload {

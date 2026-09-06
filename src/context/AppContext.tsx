@@ -138,7 +138,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const finalizeOrder = useCallback((): OrderSummary | null => {
     if (!currentCustomer || !currentVehicle || cart.length === 0) return null;
-    if (storageService.hasOpenOrderByVehicle(currentVehicle.plate)) return null;
+    if (storageService.findOpenOrderByPlate(currentVehicle.plate)) return null;
     const order: OrderSummary = {
       id: Date.now().toString(),
       items: [...cart],
