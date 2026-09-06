@@ -89,7 +89,7 @@ const Queue = () => {
   const availableToAdd = useMemo(() => {
     if (!editingOrder) return [];
     const currentIds = editingOrder.items.map(i => i.service.id);
-    const disabledIds = getDisabledServiceIds(currentIds);
+    const disabledIds = getDisabledServiceIds(currentIds, services);
     return services
       .filter(s => s.vehicleTypes.includes(editingOrder.vehicleType))
       .filter(s => !currentIds.includes(s.id))

@@ -796,40 +796,43 @@ app.post('/api/auth/register-customer', async (req, res) => {
   const normalizedEmail = normalizeEmail(email);
   const normalizedPhone = normalizePhone(phone);
 
+  const client = await pool.connect();
   try {
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
 
-    const existingUser = await pool.query(
+    const existingUser = await client.query(
       `SELECT id FROM users WHERE email = $1 OR phone = $2 LIMIT 1`,
       [normalizedEmail, normalizedPhone],
     );
 
     if (existingUser.rows.length > 0) {
-      await pool.query('ROLLBACK');
+      await client.query('ROLLBACK');
       return res.status(409).json({ message: 'Já existe um usuário com esse e-mail ou telefone.' });
     }
 
     const passwordHash = await hashPassword(String(password));
 
-    const createdUser = await pool.query(
+    const createdUser = await client.query(
       `INSERT INTO users(name, email, phone, password_hash, role, active)
        VALUES($1, $2, $3, $4, 'customer', TRUE)
        RETURNING id, name, email, phone, role`,
       [String(name).trim(), normalizedEmail, normalizedPhone, passwordHash],
     );
 
-    await pool.query(
+    await client.query(
       `INSERT INTO service_requests(user_id, description)
        VALUES($1, $2)`,
       [createdUser.rows[0].id, String(serviceRequest).trim()],
     );
 
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
 
     return res.status(201).json(createdUser.rows[0]);
   } catch (error) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     return res.status(500).json({ message: 'Erro ao cadastrar cliente.', details: error.message });
+  } finally {
+    client.release();
   }
 });
 
@@ -1044,53 +1047,68 @@ app.put('/api/users/:id/password', async (req, res) => {
   }
 });
 
+const SERVICE_SELECT_COLUMNS = `
+  s.id,
+  s.name,
+  s.hours,
+  s.needs_scheduling,
+  s.products,
+  s.observation,
+  s.price_rule,
+  s.per_unit,
+  s.active,
+  s.average_time_minutes,
+  s.created_at,
+  s.updated_at,
+  COALESCE(
+    json_agg(DISTINCT jsonb_build_object(
+      'productId', sp.product_id,
+      'quantity', sp.qty,
+      'unit', sp.unit,
+      'wasteFactor', sp.waste_factor,
+      'productName', p.name,
+      'productUnit', p.unit
+    )) FILTER (WHERE sp.id IS NOT NULL),
+    '[]'::json
+  ) AS product_consumption,
+  COALESCE(
+    json_object_agg(pr.vehicle_type, json_build_object(
+      'costP', pr.cost_p,
+      'costM', pr.cost_m,
+      'costG', pr.cost_g,
+      'priceP', pr.price_p,
+      'priceM', pr.price_m,
+      'priceG', pr.price_g
+    )) FILTER (WHERE pr.id IS NOT NULL),
+    '{}'::json
+  ) AS pricing,
+  COALESCE(
+    array_remove(array_agg(DISTINCT svt.vehicle_type), NULL),
+    ARRAY['carro', 'moto', 'caminhao']::text[]
+  ) AS vehicle_types
+`;
+
+const SERVICE_SELECT_FROM = `
+  FROM services s
+  LEFT JOIN service_products sp ON sp.service_id = s.id
+  LEFT JOIN products p ON p.id = sp.product_id
+  LEFT JOIN service_pricing pr ON pr.service_id = s.id
+  LEFT JOIN service_vehicle_types svt ON svt.service_id = s.id
+`;
+
+const fetchServiceById = async (client, id) => {
+  const { rows } = await client.query(
+    `SELECT ${SERVICE_SELECT_COLUMNS} ${SERVICE_SELECT_FROM} WHERE s.id = $1 GROUP BY s.id`,
+    [id],
+  );
+  return rows[0] || null;
+};
+
 app.get('/api/services', async (_req, res) => {
   try {
     const { rows } = await pool.query(`
-      SELECT
-        s.id,
-        s.name,
-        s.hours,
-        s.needs_scheduling,
-        s.products,
-        s.observation,
-        s.price_rule,
-        s.per_unit,
-        s.active,
-        s.average_time_minutes,
-        s.created_at,
-        s.updated_at,
-        COALESCE(
-          json_agg(DISTINCT jsonb_build_object(
-            'productId', sp.product_id,
-            'quantity', sp.qty,
-            'unit', sp.unit,
-            'wasteFactor', sp.waste_factor,
-            'productName', p.name,
-            'productUnit', p.unit
-          )) FILTER (WHERE sp.id IS NOT NULL),
-          '[]'::json
-        ) AS product_consumption,
-        COALESCE(
-          json_object_agg(pr.vehicle_type, json_build_object(
-            'costP', pr.cost_p,
-            'costM', pr.cost_m,
-            'costG', pr.cost_g,
-            'priceP', pr.price_p,
-            'priceM', pr.price_m,
-            'priceG', pr.price_g
-          )) FILTER (WHERE pr.id IS NOT NULL),
-          '{}'::json
-        ) AS pricing,
-        COALESCE(
-          array_remove(array_agg(DISTINCT svt.vehicle_type), NULL),
-          ARRAY['carro', 'moto', 'caminhao']::text[]
-        ) AS vehicle_types
-      FROM services s
-      LEFT JOIN service_products sp ON sp.service_id = s.id
-      LEFT JOIN products p ON p.id = sp.product_id
-      LEFT JOIN service_pricing pr ON pr.service_id = s.id
-      LEFT JOIN service_vehicle_types svt ON svt.service_id = s.id
+      SELECT ${SERVICE_SELECT_COLUMNS}
+      ${SERVICE_SELECT_FROM}
       GROUP BY s.id
       ORDER BY s.created_at DESC
     `);
@@ -1120,10 +1138,11 @@ app.post('/api/services', async (req, res) => {
     return res.status(400).json({ message: 'name é obrigatório.' });
   }
 
+  const client = await pool.connect();
   try {
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
 
-    const { rows } = await pool.query(
+    const { rows } = await client.query(
       `INSERT INTO services(name, hours, needs_scheduling, products, observation, price_rule, per_unit, active, average_time_minutes)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
@@ -1141,7 +1160,7 @@ app.post('/api/services', async (req, res) => {
       : ['carro', 'moto', 'caminhao'];
 
     for (const type of safeVehicleTypes) {
-      await pool.query(
+      await client.query(
         `INSERT INTO service_vehicle_types(service_id, vehicle_type)
          VALUES($1, $2)
          ON CONFLICT (service_id, vehicle_type) DO NOTHING`,
@@ -1149,7 +1168,7 @@ app.post('/api/services', async (req, res) => {
       );
 
       const typePricing = pricing[type] || {};
-      await pool.query(
+      await client.query(
         `INSERT INTO service_pricing(service_id, vehicle_type, cost_p, cost_m, cost_g, price_p, price_m, price_g)
          VALUES($1, $2, $3, $4, $5, $6, $7, $8)
          ON CONFLICT (service_id, vehicle_type)
@@ -1169,7 +1188,7 @@ app.post('/api/services', async (req, res) => {
     }
 
     for (const consumption of productConsumption) {
-      await pool.query(
+      await client.query(
         `INSERT INTO service_products(service_id, product_id, qty, unit, waste_factor)
          VALUES($1, $2, $3, $4, $5)
          ON CONFLICT(service_id, product_id)
@@ -1184,11 +1203,15 @@ app.post('/api/services', async (req, res) => {
       );
     }
 
-    await pool.query('COMMIT');
-    return res.status(201).json(service);
+    const fullService = await fetchServiceById(client, service.id);
+
+    await client.query('COMMIT');
+    return res.status(201).json(fullService);
   } catch (error) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     return res.status(500).json({ message: 'Erro ao criar serviço.', details: error.message });
+  } finally {
+    client.release();
   }
 });
 
@@ -1213,10 +1236,11 @@ app.put('/api/services/:id', async (req, res) => {
     return res.status(400).json({ message: 'name é obrigatório.' });
   }
 
+  const client = await pool.connect();
   try {
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
 
-    const { rows } = await pool.query(
+    const { rows } = await client.query(
       `UPDATE services
        SET name = $1,
            hours = $2,
@@ -1234,13 +1258,13 @@ app.put('/api/services/:id', async (req, res) => {
     );
 
     if (rows.length === 0) {
-      await pool.query('ROLLBACK');
+      await client.query('ROLLBACK');
       return res.status(404).json({ message: 'Serviço não encontrado.' });
     }
 
-    await pool.query('DELETE FROM service_vehicle_types WHERE service_id = $1', [id]);
-    await pool.query('DELETE FROM service_pricing WHERE service_id = $1', [id]);
-    await pool.query('DELETE FROM service_products WHERE service_id = $1', [id]);
+    await client.query('DELETE FROM service_vehicle_types WHERE service_id = $1', [id]);
+    await client.query('DELETE FROM service_pricing WHERE service_id = $1', [id]);
+    await client.query('DELETE FROM service_products WHERE service_id = $1', [id]);
 
     const normalizedVehicleTypes = Array.from(new Set((Array.isArray(vehicleTypes) ? vehicleTypes : [])
       .map((type) => String(type || '').trim().toLowerCase())
@@ -1251,7 +1275,7 @@ app.put('/api/services/:id', async (req, res) => {
       : ['carro', 'moto', 'caminhao'];
 
     for (const type of safeVehicleTypes) {
-      await pool.query(
+      await client.query(
         `INSERT INTO service_vehicle_types(service_id, vehicle_type)
          VALUES($1, $2)
          ON CONFLICT (service_id, vehicle_type) DO NOTHING`,
@@ -1259,7 +1283,7 @@ app.put('/api/services/:id', async (req, res) => {
       );
 
       const typePricing = pricing[type] || {};
-      await pool.query(
+      await client.query(
         `INSERT INTO service_pricing(service_id, vehicle_type, cost_p, cost_m, cost_g, price_p, price_m, price_g)
          VALUES($1, $2, $3, $4, $5, $6, $7, $8)
          ON CONFLICT (service_id, vehicle_type)
@@ -1279,7 +1303,7 @@ app.put('/api/services/:id', async (req, res) => {
     }
 
     for (const consumption of productConsumption) {
-      await pool.query(
+      await client.query(
         `INSERT INTO service_products(service_id, product_id, qty, unit, waste_factor)
          VALUES($1, $2, $3, $4, $5)
          ON CONFLICT(service_id, product_id)
@@ -1288,46 +1312,53 @@ app.put('/api/services/:id', async (req, res) => {
       );
     }
 
-    await pool.query('COMMIT');
+    const fullService = await fetchServiceById(client, id);
 
-    return res.status(200).json(rows[0]);
+    await client.query('COMMIT');
+
+    return res.status(200).json(fullService);
   } catch (error) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     return res.status(500).json({ message: 'Erro ao atualizar serviço.', details: error.message });
+  } finally {
+    client.release();
   }
 });
 
 app.post('/api/work-order-items/:id/complete', async (req, res) => {
   const { id } = req.params;
 
+  const client = await pool.connect();
   try {
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
 
-    const { rows } = await pool.query('SELECT id, status FROM order_items WHERE id = $1 FOR UPDATE', [id]);
+    const { rows } = await client.query('SELECT id, status FROM order_items WHERE id = $1 FOR UPDATE', [id]);
     if (rows.length === 0) {
-      await pool.query('ROLLBACK');
+      await client.query('ROLLBACK');
       return res.status(404).json({ message: 'Item de OS não encontrado.' });
     }
 
     if (rows[0].status === 'done') {
-      await pool.query('ROLLBACK');
+      await client.query('ROLLBACK');
       return res.status(200).json({ ok: true });
     }
 
-    await pool.query('SELECT consume_stock_on_done($1)', [id]);
+    await client.query('SELECT consume_stock_on_done($1)', [id]);
 
-    await pool.query(
+    await client.query(
       `UPDATE order_items
        SET status = 'done', done_at = NOW()
        WHERE id = $1`,
       [id],
     );
 
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
     return res.status(200).json({ ok: true });
   } catch (error) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     return res.status(422).json({ message: 'Falha ao concluir item de OS.', details: error.message });
+  } finally {
+    client.release();
   }
 });
 

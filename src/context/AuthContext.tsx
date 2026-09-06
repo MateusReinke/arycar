@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { AuthUser, UserRole } from '@/types';
 
 const STORAGE_KEY = 'arycar_auth_user';
@@ -34,12 +34,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem(STORAGE_KEY);
   };
 
-  const hasRole = (roles: UserRole[]) => {
+  const hasRole = useCallback((roles: UserRole[]) => {
     if (!user) return false;
     return roles.includes(user.role);
-  };
+  }, [user]);
 
-  const value = useMemo(() => ({ user, login, logout, hasRole }), [user]);
+  const value = useMemo(() => ({ user, login, logout, hasRole }), [user, hasRole]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

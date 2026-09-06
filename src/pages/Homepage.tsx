@@ -123,14 +123,6 @@ const beforeAfterShowcases = [
     beforeImage: before3,
     afterImage: after3,
   },
-  {
-    id: 'couro',
-    serviceId: 4,
-    title: 'Tratamento de Couro',
-    description: 'Revitalização de textura e uniformidade de cor para interior premium.',
-    beforeImage: before2,
-    afterImage: after2,
-  },
 ];
 
 const heroStats = [
@@ -479,11 +471,11 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
               <span className="text-sm font-semibold uppercase tracking-widest text-primary">Galeria de resultados reais</span>
               <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Compare o antes e depois deslizando</h2>
               <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-                Escolha um dos 4 serviços abaixo e arraste para os lados para visualizar o efeito do serviço no veículo.
+                Escolha um dos serviços abaixo e arraste para os lados para visualizar o efeito do serviço no veículo.
               </p>
             </div>
 
-            <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
               {beforeAfterShowcases.map((showcase) => {
                 const service = services[showcase.serviceId];
                 const isActive = activeShowcaseId === showcase.id;
