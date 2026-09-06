@@ -14,12 +14,15 @@ import {
   BadgeCheck,
   Bot,
   PhoneCall,
+  Menu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useState, useEffect, useId } from 'react';
+import { apiConfig } from '@/config/api';
 import { storageService } from '@/services/storage';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
@@ -131,6 +134,12 @@ const heroStats = [
   { value: 'Até 12x', label: 'condições facilitadas' },
 ];
 
+const sectionLinks = [
+  { href: '#servicos', label: 'Serviços' },
+  { href: '#galeria', label: 'Galeria' },
+  { href: '#faq', label: 'FAQ' },
+];
+
 const serviceWorkflow = [
   {
     step: '1. Diagnóstico rápido',
@@ -146,11 +155,20 @@ const serviceWorkflow = [
   },
 ];
 
+const formatLeadPhone = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
 const Homepage = () => {
   const servicePanelTitleId = useId();
+  const leadFormId = useId();
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [activeServiceId, setActiveServiceId] = useState<number | null>(0);
   const [contactOpen, setContactOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [leadName, setLeadName] = useState('');
   const [leadPhone, setLeadPhone] = useState('');
   const [leadVehicle, setLeadVehicle] = useState('');
@@ -164,8 +182,10 @@ const Homepage = () => {
   );
 
   useEffect(() => {
-    const settings = storageService.getSettings();
-    setWhatsappNumber(settings.whatsappNumber || '');
+    // O número do deploy (env) é a fonte principal: o ajuste salvo no painel Admin
+    // fica só no navegador de quem configurou e não chega aos visitantes.
+    const localNumber = storageService.getSettings().whatsappNumber || '';
+    setWhatsappNumber(apiConfig.WHATSAPP_NUMBER || localNumber);
   }, []);
 
   const activeShowcase = beforeAfterShowcases.find((showcase) => showcase.id === activeShowcaseId) || beforeAfterShowcases[0];
@@ -173,6 +193,26 @@ const Homepage = () => {
   const isAgentConfigured = Boolean(N8N_WEBHOOK_URL);
 
   const whatsappLink = whatsappNumber ? `https://wa.me/55${whatsappNumber.replace(/\D/g, '')}` : '#';
+
+  const clearLeadForm = () => {
+    setLeadName('');
+    setLeadPhone('');
+    setLeadVehicle('');
+    setLeadService('');
+    setLeadMessage('');
+  };
+
+  const openWhatsappWithLead = () => {
+    const lines = [
+      `Olá! Meu nome é ${leadName.trim()}.`,
+      `Veículo: ${leadVehicle.trim()}`,
+      `Serviço desejado: ${leadService.trim()}`,
+      leadMessage.trim() ? `Observação: ${leadMessage.trim()}` : '',
+      `Telefone para contato: ${leadPhone.trim()}`,
+    ].filter(Boolean);
+
+    window.open(`${whatsappLink}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank', 'noopener,noreferrer');
+  };
 
   const handleAgentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,8 +233,18 @@ const Homepage = () => {
       timestamp: new Date().toISOString(),
     };
 
+    // Sem webhook configurado, o pedido não pode se perder: leva o visitante para
+    // o WhatsApp já com os dados preenchidos, em vez de mostrar um erro sem saída.
     if (!isAgentConfigured) {
-      toast.error('Configure VITE_N8N_WEBHOOK_URL para ativar o Assistente Arycar no deploy.');
+      if (whatsappNumber) {
+        openWhatsappWithLead();
+        toast.success('Abrimos o WhatsApp com seu pedido preenchido. É só enviar!');
+        clearLeadForm();
+        setContactOpen(false);
+        return;
+      }
+
+      toast.error('Não foi possível iniciar o atendimento agora. Tente novamente em instantes.');
       return;
     }
 
@@ -212,13 +262,16 @@ const Homepage = () => {
       }
 
       toast.success('Atendimento iniciado! Nosso agente já recebeu sua solicitação.');
-      setLeadName('');
-      setLeadPhone('');
-      setLeadVehicle('');
-      setLeadService('');
-      setLeadMessage('');
+      clearLeadForm();
       setContactOpen(false);
     } catch {
+      if (whatsappNumber) {
+        openWhatsappWithLead();
+        toast.warning('Nosso agente está indisponível. Abrimos o WhatsApp com seu pedido preenchido.');
+        setContactOpen(false);
+        return;
+      }
+
       toast.error('Não foi possível enviar agora. Tente novamente em instantes.');
     } finally {
       setIsSubmitting(false);
@@ -248,20 +301,20 @@ const Homepage = () => {
   return (
     <div className="min-h-screen bg-background">
       <main itemScope itemType="https://schema.org/AutoRepair" className="pb-40 md:pb-24">
+        {/* Dados estruturados: só publicamos o telefone quando ele está de fato configurado. */}
+        <meta itemProp="name" content="Arycar Estética Automotiva" />
+        {whatsappNumber && <meta itemProp="telephone" content={`+55${whatsappNumber}`} />}
 
         <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
           <div className="container flex h-16 items-center justify-between">
             <img src={arycarLogo} alt="ARYCAR Estética Automotiva" className="h-10 w-auto" />
+
             <nav className="hidden items-center gap-3 md:flex">
-              <Button variant="ghost" size="sm" asChild>
-                <a href="#servicos">Serviços</a>
-              </Button>
-              <Button variant="ghost" size="sm" asChild>
-                <a href="#galeria">Galeria</a>
-              </Button>
-              <Button variant="ghost" size="sm" asChild>
-                <a href="#faq">FAQ</a>
-              </Button>
+              {sectionLinks.map((link) => (
+                <Button key={link.href} variant="ghost" size="sm" asChild>
+                  <a href={link.href}>{link.label}</a>
+                </Button>
+              ))}
               <Button size="sm" asChild>
                 <Link to="/login">
                   Área de Gestão
@@ -269,6 +322,48 @@ const Homepage = () => {
                 </Link>
               </Button>
             </nav>
+
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="md:hidden" aria-label="Abrir menu de navegação">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[280px]">
+                <SheetHeader>
+                  <SheetTitle>Navegar</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6 space-y-2">
+                  {sectionLinks.map((link) => (
+                    <Button
+                      key={link.href}
+                      variant="ghost"
+                      className="w-full justify-start"
+                      asChild
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      <a href={link.href}>{link.label}</a>
+                    </Button>
+                  ))}
+                  <Button
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setContactOpen(true);
+                    }}
+                  >
+                    <PhoneCall className="mr-2 h-4 w-4" />
+                    Falar com especialista
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start" asChild onClick={() => setMenuOpen(false)}>
+                    <Link to="/login">
+                      Área de Gestão
+                      <ChevronRight className="ml-1 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </header>
 
@@ -371,7 +466,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
           </div>
         </section>
 
-        <section id="servicos" className="relative overflow-hidden bg-[#030816] py-20">
+        <section id="servicos" className="relative scroll-mt-16 overflow-hidden bg-[#030816] py-20">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_25%,rgba(24,131,255,0.2),transparent_42%)]" />
           <div className="container relative">
             <div className="mb-10 text-center lg:text-left">
@@ -465,7 +560,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
           </div>
         </section>
 
-        <section id="galeria" className="py-20">
+        <section id="galeria" className="scroll-mt-16 py-20">
           <div className="container">
             <div className="mb-12 text-center">
               <span className="text-sm font-semibold uppercase tracking-widest text-primary">Galeria de resultados reais</span>
@@ -585,7 +680,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
           </div>
         </section>
 
-        <section id="faq" className="py-20">
+        <section id="faq" className="scroll-mt-16 py-20">
           <div className="container max-w-4xl">
             <div className="mb-10 text-center">
               <span className="text-sm font-semibold uppercase tracking-widest text-primary">FAQ</span>
@@ -603,7 +698,7 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                 },
                 {
                   question: 'Posso agendar atendimento pelo WhatsApp?',
-                  answer: 'Sim. Você pode clicar no botão flutuante e iniciar o contato imediato com nossa equipe.',
+                  answer: 'Sim. Abra o assistente no canto da tela, informe seu veículo e o serviço desejado — a conversa segue direto com nossa equipe.',
                 },
               ].map((faq) => (
                 <article key={faq.question} className="rounded-2xl border border-border bg-card p-5" itemScope itemType="https://schema.org/Question">
@@ -618,16 +713,57 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
         </section>
       </main>
 
-      <footer className="border-t border-border py-8">
-        <div className="container flex flex-col items-center gap-4">
-          <img src={arycarLogo} alt="ARYCAR" className="h-12 w-auto opacity-60" />
-          <p className="text-center text-sm text-muted-foreground">© {new Date().getFullYear()} ARYCAR Estética Automotiva. Todos os direitos reservados.</p>
+      {/* pb generoso: os widgets flutuantes ocupam ~176px do canto inferior e
+          cobririam o telefone/CTA do rodapé quando a página chega ao fim. */}
+      <footer className="border-t border-border pb-48 pt-10 md:pb-44">
+        <div className="container flex flex-col items-center gap-6 md:flex-row md:items-start md:justify-between">
+          <div className="flex flex-col items-center gap-3 md:items-start">
+            <img src={arycarLogo} alt="ARYCAR" className="h-12 w-auto opacity-70" />
+            <p className="max-w-xs text-center text-sm text-muted-foreground md:text-left">
+              Estética automotiva com execução técnica: polimento, vitrificação, higienização e leva e traz.
+            </p>
+          </div>
+
+          <nav aria-label="Links do rodapé" className="flex flex-col items-center gap-2 md:items-start">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary">Navegar</p>
+            {sectionLinks.map((link) => (
+              <a key={link.href} href={link.href} className="text-sm text-muted-foreground transition hover:text-foreground">
+                {link.label}
+              </a>
+            ))}
+            <Link to="/login" className="text-sm text-muted-foreground transition hover:text-foreground">
+              Área de Gestão
+            </Link>
+          </nav>
+
+          <div className="flex flex-col items-center gap-3 md:items-start">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary">Atendimento</p>
+            <Button variant="outline" size="sm" onClick={() => setContactOpen(true)}>
+              <PhoneCall className="mr-2 h-4 w-4" />
+              Pedir orçamento
+            </Button>
+            {whatsappNumber && (
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-foreground"
+              >
+                <MessageCircle className="h-4 w-4 text-[hsl(142,71%,45%)]" />
+                {formatLeadPhone(whatsappNumber)}
+              </a>
+            )}
+          </div>
         </div>
+
+        <p className="container mt-8 text-center text-xs text-muted-foreground">
+          © {new Date().getFullYear()} ARYCAR Estética Automotiva. Todos os direitos reservados.
+        </p>
       </footer>
 
       <div className="fixed bottom-4 left-3 right-3 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:left-auto sm:right-6">
         {contactOpen && (
-          <div className="w-full max-w-[360px] rounded-2xl border border-primary/30 bg-card/95 p-4 text-left shadow-2xl shadow-primary/20 backdrop-blur">
+          <div className="max-h-[75vh] w-full max-w-[360px] overflow-y-auto rounded-2xl border border-primary/30 bg-card/95 p-4 text-left shadow-2xl shadow-primary/20 backdrop-blur">
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <p className="flex items-center gap-2 text-sm font-semibold">
@@ -636,8 +772,10 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {isAgentConfigured
-                    ? 'Assistente online: as solicitações são enviadas direto para seu fluxo no n8n.'
-                    : 'Configure VITE_N8N_WEBHOOK_URL no deploy para ativar o envio automático no n8n.'}
+                    ? 'Conte o que seu carro precisa. Retornamos com o orçamento rapidinho.'
+                    : whatsappNumber
+                      ? 'Preencha os dados e continue a conversa direto no WhatsApp.'
+                      : 'Conte o que seu carro precisa e nossa equipe entra em contato.'}
                 </p>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setContactOpen(false)}>
@@ -647,34 +785,81 @@ Lavagem, polimento, higienização e vitrificação com execução técnica, ate
 
             <form onSubmit={handleAgentSubmit} className="space-y-3">
               <div>
-                <Label>Nome *</Label>
-                <Input value={leadName} onChange={(e) => setLeadName(e.target.value)} placeholder="Seu nome" />
+                <Label htmlFor={`${leadFormId}-name`}>Nome *</Label>
+                <Input
+                  id={`${leadFormId}-name`}
+                  name="name"
+                  autoComplete="name"
+                  value={leadName}
+                  onChange={(e) => setLeadName(e.target.value)}
+                  placeholder="Seu nome"
+                />
               </div>
               <div>
-                <Label>Telefone *</Label>
-                <Input value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} placeholder="(11) 99999-9999" />
+                <Label htmlFor={`${leadFormId}-phone`}>Telefone *</Label>
+                <Input
+                  id={`${leadFormId}-phone`}
+                  name="tel"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  value={leadPhone}
+                  onChange={(e) => setLeadPhone(formatLeadPhone(e.target.value))}
+                  placeholder="(11) 99999-9999"
+                />
               </div>
               <div>
-                <Label>Veículo *</Label>
-                <Input value={leadVehicle} onChange={(e) => setLeadVehicle(e.target.value)} placeholder="Ex.: Onix 2022" />
+                <Label htmlFor={`${leadFormId}-vehicle`}>Veículo *</Label>
+                <Input
+                  id={`${leadFormId}-vehicle`}
+                  name="vehicle"
+                  value={leadVehicle}
+                  onChange={(e) => setLeadVehicle(e.target.value)}
+                  placeholder="Ex.: Onix 2022"
+                />
               </div>
               <div>
-                <Label>Serviço desejado *</Label>
-                <Input value={leadService} onChange={(e) => setLeadService(e.target.value)} placeholder="Ex.: Polimento técnico" />
+                <Label htmlFor={`${leadFormId}-service`}>Serviço desejado *</Label>
+                <Input
+                  id={`${leadFormId}-service`}
+                  name="service"
+                  list={`${leadFormId}-service-options`}
+                  value={leadService}
+                  onChange={(e) => setLeadService(e.target.value)}
+                  placeholder="Ex.: Polimento técnico"
+                />
+                <datalist id={`${leadFormId}-service-options`}>
+                  {services.map((service) => (
+                    <option key={service.id} value={service.title} />
+                  ))}
+                </datalist>
               </div>
               <div>
-                <Label>Mensagem</Label>
-                <Textarea value={leadMessage} onChange={(e) => setLeadMessage(e.target.value)} placeholder="Quero orçamento para..." rows={3} />
+                <Label htmlFor={`${leadFormId}-message`}>Mensagem</Label>
+                <Textarea
+                  id={`${leadFormId}-message`}
+                  name="message"
+                  value={leadMessage}
+                  onChange={(e) => setLeadMessage(e.target.value)}
+                  placeholder="Quero orçamento para..."
+                  rows={3}
+                />
               </div>
               <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
                 <div>
-                  <p className="text-sm font-medium">Receber contato pelo WhatsApp</p>
+                  <Label htmlFor={`${leadFormId}-whatsapp`} className="text-sm font-medium">
+                    Receber contato pelo WhatsApp
+                  </Label>
                   <p className="text-xs text-muted-foreground">Nossa equipe prioriza esse canal quando ativado.</p>
                 </div>
-                <Switch checked={preferWhatsapp} onCheckedChange={setPreferWhatsapp} />
+                <Switch id={`${leadFormId}-whatsapp`} checked={preferWhatsapp} onCheckedChange={setPreferWhatsapp} />
               </div>
               <Button disabled={isSubmitting} className="w-full" type="submit">
-                {isSubmitting ? 'Enviando...' : 'Iniciar atendimento'}
+                {isSubmitting
+                  ? 'Enviando...'
+                  : !isAgentConfigured && whatsappNumber
+                    ? 'Continuar no WhatsApp'
+                    : 'Iniciar atendimento'}
               </Button>
             </form>
           </div>

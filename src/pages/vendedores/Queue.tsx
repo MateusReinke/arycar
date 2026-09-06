@@ -19,7 +19,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { Clock, Car, Plus, Trash2, Edit, RefreshCw } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Clock, Car, Plus, Trash2, Edit, RefreshCw, Search } from 'lucide-react';
 
 const Queue = () => {
   const { services, getPrice } = useApp();
@@ -32,13 +33,24 @@ const Queue = () => {
   const [orders, setOrders] = useState<OrderSummary[]>(() => storageService.getOrders());
   const [editingOrder, setEditingOrder] = useState<OrderSummary | null>(null);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
+  const [search, setSearch] = useState('');
 
   const refresh = () => setOrders(storageService.getOrders());
 
   const filtered = useMemo(() => {
-    const list = statusFilter === 'all' ? orders : orders.filter(o => o.status === statusFilter);
+    const term = search.trim().toLowerCase();
+    const list = orders
+      .filter(o => statusFilter === 'all' || o.status === statusFilter)
+      .filter(o => {
+        if (!term) return true;
+        return (
+          o.vehiclePlate.toLowerCase().includes(term)
+          || o.customerName.toLowerCase().includes(term)
+          || o.id.slice(-4).includes(term)
+        );
+      });
     return [...list].reverse();
-  }, [orders, statusFilter]);
+  }, [orders, statusFilter, search]);
 
   const updateStatus = (order: OrderSummary, status: OrderStatus) => {
     const updated = { ...order, status };
@@ -104,7 +116,17 @@ const Queue = () => {
     <div className="container py-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h1 className="text-2xl font-bold">Fila de Serviços</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar placa, cliente ou OS"
+              className="pl-9"
+              aria-label="Buscar ordens de serviço"
+            />
+          </div>
           <Button variant="outline" size="sm" onClick={refresh}>
             <RefreshCw className="h-4 w-4 mr-1" /> Atualizar
           </Button>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, PlusCircle, MessageCircle, Tags, Boxes, Car } from 'lucide-react';
+import { Users, PlusCircle, MessageCircle, Tags, Boxes, Car, DollarSign } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import ServiceForm from '@/components/admin/ServiceForm';
 import EmployeeManager from '@/components/admin/EmployeeManager';
 import StockManager from '@/components/admin/StockManager';
+import StockAlerts from '@/components/admin/StockAlerts';
+import PriceTable from '@/components/admin/PriceTable';
 import CustomerVehicleManager from '@/components/admin/CustomerVehicleManager';
 import { storageService } from '@/services/storage';
 import { toast } from 'sonner';
@@ -44,7 +46,10 @@ const WhatsAppSettings = () => {
         <div>
           <Label className="text-xs">Número do WhatsApp (com DDD)</Label>
           <Input value={number} onChange={e => setNumber(formatPhone(e.target.value))} placeholder="(11) 99999-9999" />
-          <p className="text-xs text-muted-foreground mt-1">Este número será exibido no botão flutuante da Homepage.</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Este número vale apenas para <strong>este navegador</strong> (fica salvo localmente). Para que o botão de WhatsApp
+            apareça para todos os visitantes do site, defina <code>VITE_WHATSAPP_NUMBER</code> nas variáveis de ambiente do deploy.
+          </p>
         </div>
         <Button onClick={handleSave}>Salvar</Button>
       </CardContent>
@@ -145,6 +150,7 @@ const Admin = () => {
       <Tabs defaultValue="services" className="w-full">
         <TabsList className="mb-4 w-full justify-start flex-wrap h-auto">
           <TabsTrigger value="services" className="gap-2"><PlusCircle className="h-4 w-4" />Serviços</TabsTrigger>
+          <TabsTrigger value="prices" className="gap-2"><DollarSign className="h-4 w-4" />Tabela de preços</TabsTrigger>
           <TabsTrigger value="employees" className="gap-2"><Users className="h-4 w-4" />Funcionários</TabsTrigger>
           <TabsTrigger value="customers" className="gap-2"><Car className="h-4 w-4" />Clientes e Veículos</TabsTrigger>
           <TabsTrigger value="status" className="gap-2"><Tags className="h-4 w-4" />Status</TabsTrigger>
@@ -152,10 +158,16 @@ const Admin = () => {
           <TabsTrigger value="settings" className="gap-2"><MessageCircle className="h-4 w-4" />Configurações</TabsTrigger>
         </TabsList>
         <TabsContent value="services"><ServiceForm /></TabsContent>
+        <TabsContent value="prices"><PriceTable /></TabsContent>
         <TabsContent value="employees"><EmployeeManager /></TabsContent>
         <TabsContent value="customers"><CustomerVehicleManager /></TabsContent>
         <TabsContent value="status"><StatusManager /></TabsContent>
-        <TabsContent value="stock"><StockManager /></TabsContent>
+        <TabsContent value="stock">
+          <div className="space-y-4">
+            <StockAlerts />
+            <StockManager />
+          </div>
+        </TabsContent>
         <TabsContent value="settings"><WhatsAppSettings /></TabsContent>
       </Tabs>
     </div>

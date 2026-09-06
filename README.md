@@ -45,12 +45,15 @@ Configure estas variáveis de ambiente no projeto (Environment Variables):
 - `VITE_PLATE_API_TOKEN`
 - `VITE_FIPE_API_URL`
 - `VITE_N8N_WEBHOOK_URL`
+- `VITE_WHATSAPP_NUMBER`
 
 > `CORS_ORIGIN` aceita múltiplas origens separadas por vírgula (exemplo: `https://app.exemplo.com,https://admin.exemplo.com`).
 
 > `AUTH_TOKEN_SECRET` assina as sessões (login) da API. Se não for definida, a API gera uma chave aleatória a cada boot e todos os usuários são deslogados a cada reinício/deploy — defina um valor fixo e secreto em produção (ex.: `openssl rand -hex 32`).
 
-> As variáveis `VITE_*` são de build do frontend. Elas foram adicionadas como `build.args` no `docker-compose.yml`, então passam a aparecer no painel do Coolify e entram corretamente no build da imagem web.
+> `VITE_WHATSAPP_NUMBER` é o número (somente dígitos, com DDD, sem o 55) usado no botão flutuante de WhatsApp da homepage. O número salvo em **Admin → Configurações** fica apenas no navegador de quem configurou, então é esta variável que vale para os visitantes do site.
+
+> As variáveis `VITE_*` são de build do frontend. Elas são declaradas como `build.args` no `docker-compose.yml` **e** como `ARG`/`ENV` no `Dockerfile` — as duas pontas são necessárias: um build arg que não é declarado no `Dockerfile` é silenciosamente ignorado e a variável chega vazia ao bundle.
 
 > `VITE_N8N_WEBHOOK_URL` é a URL do webhook que recebe os dados do formulário do **Assistente Arycar** na home.
 

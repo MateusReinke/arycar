@@ -11,6 +11,7 @@ services:
         VITE_PLATE_API_TOKEN: ${VITE_PLATE_API_TOKEN}
         VITE_FIPE_API_URL: ${VITE_FIPE_API_URL}
         VITE_N8N_WEBHOOK_URL: ${VITE_N8N_WEBHOOK_URL}
+        VITE_WHATSAPP_NUMBER: ${VITE_WHATSAPP_NUMBER}
     ports:
       - "8089:80"
     depends_on:
