@@ -61,19 +61,15 @@ No deploy, preencha todas as variáveis obrigatórias (`DATABASE_*`, `CORS_ORIGI
 > As `VITE_*` são usadas no build da imagem do frontend e, por isso, também precisam existir no Environment Variables do projeto.
 
 
-## 4) Criar usuário ADMIN para login
+## 4) Login do ADMIN padrão
 
-Com o banco já criado e os scripts `001_schema.sql`/`002_roles_policies.sql` aplicados, rode:
+A própria API cria um usuário admin automaticamente na primeira inicialização (com senha já protegida por hash), então não é necessário inserir nada manualmente no banco. Faça login com:
 
-```bash
-psql "postgresql://USER:PASSWORD@HOST:5432/arycar_db" -c "INSERT INTO users (name, email, password_hash, role, active) VALUES ('Administrador', 'admin@arycar.com.br', 'admin123', 'admin', TRUE) ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name,     password_hash = EXCLUDED.password_hash,     role = EXCLUDED.role,     active = TRUE;"
-```
-
-Depois, faça login na tela com:
-
-- E-mail: `admin@arycar.com.br`
-- Senha: `admin123`
+- E-mail: `admin@arycar.com`
+- Senha: `Admin@123`
 - Perfil: `Admin`
 
-> Recomendado: trocar a senha após o primeiro acesso.
+> **Importante:** troque essa senha padrão assim que possível em **Minha conta**, e defina `AUTH_TOKEN_SECRET` no ambiente (veja `.env.example`) para que as sessões de login não sejam invalidadas a cada reinício da API.
+>
+> Nunca insira senhas em texto puro em `password_hash` via SQL manual — o backend só reconhece senhas no formato `salt:hash` (scrypt) gerado por ele mesmo; qualquer outro valor fica salvo sem proteção nenhuma.
 

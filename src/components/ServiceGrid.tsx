@@ -5,7 +5,7 @@ import { getDisabledServiceIds, getExclusionReason } from '@/data/serviceExclusi
 const ServiceGrid = () => {
   const { availableServices, cart } = useApp();
   const cartIds = cart.map(i => i.service.id);
-  const disabledIds = getDisabledServiceIds(cartIds);
+  const disabledIds = getDisabledServiceIds(cartIds, availableServices);
 
   return (
     <div>

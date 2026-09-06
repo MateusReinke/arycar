@@ -34,6 +34,15 @@ const pool = new Pool(databaseConfig);
 const DEFAULT_ADMIN_EMAIL = 'admin@arycar.com';
 const DEFAULT_ADMIN_PASSWORD = 'Admin@123';
 
+const AUTH_TOKEN_SECRET = process.env.AUTH_TOKEN_SECRET || crypto.randomBytes(32).toString('hex');
+if (!process.env.AUTH_TOKEN_SECRET) {
+  console.warn(
+    '[arycar-api] AUTH_TOKEN_SECRET não definido: usando um segredo gerado neste boot. ' +
+    'Defina AUTH_TOKEN_SECRET no ambiente para que as sessões continuem válidas entre reinícios do servidor.',
+  );
+}
+const AUTH_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
+
 const seedVehicleTypes = ['carro', 'moto', 'caminhao'];
 const motoFactor = 0.7;
 const truckFactor = 1.35;
@@ -90,11 +99,77 @@ const hashPassword = async (plainTextPassword) => {
 };
 
 const verifyPassword = async (plainTextPassword, storedPasswordHash) => {
-  if (!storedPasswordHash) return false;
-  if (!storedPasswordHash.includes(':')) return String(plainTextPassword) === String(storedPasswordHash);
+  if (!storedPasswordHash || !storedPasswordHash.includes(':')) return false;
   const [salt, savedHash] = String(storedPasswordHash).split(':');
   const derived = crypto.scryptSync(String(plainTextPassword), salt, 64).toString('hex');
-  return crypto.timingSafeEqual(Buffer.from(savedHash, 'hex'), Buffer.from(derived, 'hex'));
+  const savedBuffer = Buffer.from(savedHash, 'hex');
+  const derivedBuffer = Buffer.from(derived, 'hex');
+  return savedBuffer.length === derivedBuffer.length && crypto.timingSafeEqual(savedBuffer, derivedBuffer);
+};
+
+// Minimal signed session token (HMAC-SHA256), avoids pulling in a JWT dependency
+// for a single-secret, single-server bearer token.
+const signAuthToken = (payload) => {
+  const now = Math.floor(Date.now() / 1000);
+  const body = Buffer.from(JSON.stringify({ ...payload, iat: now, exp: now + AUTH_TOKEN_TTL_SECONDS })).toString('base64url');
+  const signature = crypto.createHmac('sha256', AUTH_TOKEN_SECRET).update(body).digest('base64url');
+  return `${body}.${signature}`;
+};
+
+const verifyAuthToken = (token) => {
+  if (!token || typeof token !== 'string' || !token.includes('.')) return null;
+
+  const [body, signature] = token.split('.');
+  if (!body || !signature) return null;
+
+  const expectedSignature = crypto.createHmac('sha256', AUTH_TOKEN_SECRET).update(body).digest('base64url');
+  const signatureBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expectedSignature);
+
+  if (signatureBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)) {
+    return null;
+  }
+
+  try {
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+};
+
+// Requires a valid bearer token; attaches { id, role } to req.user.
+const authenticate = (req, res, next) => {
+  const [scheme, token] = String(req.headers.authorization || '').split(' ');
+
+  if (scheme !== 'Bearer' || !token) {
+    return res.status(401).json({ message: 'Autenticação necessária.' });
+  }
+
+  const payload = verifyAuthToken(token);
+  if (!payload || !payload.sub || !payload.role) {
+    return res.status(401).json({ message: 'Sessão inválida ou expirada. Faça login novamente.' });
+  }
+
+  req.user = { id: payload.sub, role: payload.role };
+  return next();
+};
+
+// Must run after `authenticate`. Allows only the given roles.
+const requireRole = (...roles) => (req, res, next) => {
+  if (!req.user || !roles.includes(req.user.role)) {
+    return res.status(403).json({ message: 'Você não tem permissão para acessar este recurso.' });
+  }
+  return next();
+};
+
+// Must run after `authenticate`. Allows the user themself (matching :id) or the given roles.
+const requireSelfOrRole = (...roles) => (req, res, next) => {
+  if (req.user && (req.user.id === req.params.id || roles.includes(req.user.role))) {
+    return next();
+  }
+  return res.status(403).json({ message: 'Você não tem permissão para acessar este recurso.' });
 };
 
 
@@ -629,18 +704,7 @@ app.get('/api/version', (_req, res) => {
   });
 });
 
-app.get('/api/admin/default-user', async (_req, res) => {
-  try {
-    const { rows } = await pool.query(
-      `SELECT id, name, email, role, active, created_at FROM users WHERE role = 'admin' ORDER BY created_at ASC LIMIT 1`,
-    );
-    return res.status(200).json(rows[0] || null);
-  } catch (error) {
-    return res.status(500).json({ message: 'Erro ao buscar admin padrão.', details: error.message });
-  }
-});
-
-app.get('/api/products', async (_req, res) => {
+app.get('/api/products', authenticate, requireRole('admin'), async (_req, res) => {
   try {
     const { rows } = await pool.query(`
       SELECT
@@ -659,7 +723,7 @@ app.get('/api/products', async (_req, res) => {
   }
 });
 
-app.post('/api/products', async (req, res) => {
+app.post('/api/products', authenticate, requireRole('admin'), async (req, res) => {
   const {
     productType = 'Insumo',
     brand = 'Genérica',
@@ -698,7 +762,7 @@ app.post('/api/products', async (req, res) => {
   }
 });
 
-app.put('/api/products/:id', async (req, res) => {
+app.put('/api/products/:id', authenticate, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
   const {
     productType = 'Insumo',
@@ -750,7 +814,7 @@ app.put('/api/products/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/products/:id', async (req, res) => {
+app.delete('/api/products/:id', authenticate, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -767,7 +831,7 @@ app.delete('/api/products/:id', async (req, res) => {
   }
 });
 
-app.post('/api/products/:id/stock-entries', async (req, res) => {
+app.post('/api/products/:id/stock-entries', authenticate, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
   const delta = Number(req.body?.delta);
   const reason = String(req.body?.reason || '').trim();
@@ -829,7 +893,7 @@ app.post('/api/products/:id/stock-entries', async (req, res) => {
   }
 });
 
-app.get('/api/stock/movements', async (req, res) => {
+app.get('/api/stock/movements', authenticate, requireRole('admin'), async (req, res) => {
   const limit = Math.min(Math.max(Number(req.query.limit) || 30, 1), 200);
 
   try {
@@ -857,7 +921,7 @@ app.get('/api/stock/movements', async (req, res) => {
   }
 });
 
-app.get('/api/stock/alerts', async (_req, res) => {
+app.get('/api/stock/alerts', authenticate, requireRole('admin'), async (_req, res) => {
   try {
     const { rows } = await pool.query(`
       SELECT
@@ -892,40 +956,44 @@ app.post('/api/auth/register-customer', async (req, res) => {
   const normalizedEmail = normalizeEmail(email);
   const normalizedPhone = normalizePhone(phone);
 
+  const client = await pool.connect();
   try {
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
 
-    const existingUser = await pool.query(
+    const existingUser = await client.query(
       `SELECT id FROM users WHERE email = $1 OR phone = $2 LIMIT 1`,
       [normalizedEmail, normalizedPhone],
     );
 
     if (existingUser.rows.length > 0) {
-      await pool.query('ROLLBACK');
+      await client.query('ROLLBACK');
       return res.status(409).json({ message: 'Já existe um usuário com esse e-mail ou telefone.' });
     }
 
     const passwordHash = await hashPassword(String(password));
 
-    const createdUser = await pool.query(
+    const createdUser = await client.query(
       `INSERT INTO users(name, email, phone, password_hash, role, active)
        VALUES($1, $2, $3, $4, 'customer', TRUE)
        RETURNING id, name, email, phone, role`,
       [String(name).trim(), normalizedEmail, normalizedPhone, passwordHash],
     );
 
-    await pool.query(
+    await client.query(
       `INSERT INTO service_requests(user_id, description)
        VALUES($1, $2)`,
       [createdUser.rows[0].id, String(serviceRequest).trim()],
     );
 
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
 
-    return res.status(201).json(createdUser.rows[0]);
+    const createdRow = createdUser.rows[0];
+    return res.status(201).json({ ...createdRow, token: signAuthToken({ sub: createdRow.id, role: createdRow.role }) });
   } catch (error) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     return res.status(500).json({ message: 'Erro ao cadastrar cliente.', details: error.message });
+  } finally {
+    client.release();
   }
 });
 
@@ -969,13 +1037,14 @@ app.post('/api/auth/login', async (req, res) => {
       email: user.email,
       phone: user.phone,
       role: user.role,
+      token: signAuthToken({ sub: user.id, role: user.role }),
     });
   } catch (error) {
     return res.status(500).json({ message: 'Erro ao autenticar usuário.', details: error.message });
   }
 });
 
-app.get('/api/users', async (_req, res) => {
+app.get('/api/users', authenticate, requireRole('admin'), async (_req, res) => {
   try {
     const { rows } = await pool.query('SELECT id, name, email, phone, role, active, created_at FROM users ORDER BY created_at DESC');
     return res.status(200).json(rows);
@@ -984,7 +1053,7 @@ app.get('/api/users', async (_req, res) => {
   }
 });
 
-app.post('/api/users', async (req, res) => {
+app.post('/api/users', authenticate, requireRole('admin'), async (req, res) => {
   const {
     name,
     email,
@@ -1037,7 +1106,7 @@ app.post('/api/users', async (req, res) => {
 });
 
 
-app.get('/api/users/:id/profile', async (req, res) => {
+app.get('/api/users/:id/profile', authenticate, requireSelfOrRole('admin'), async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT id, name, email, phone, role, active, cpf, address, birth_date, emergency_contact, department, job_title, created_at, updated_at
@@ -1057,7 +1126,7 @@ app.get('/api/users/:id/profile', async (req, res) => {
   }
 });
 
-app.put('/api/users/:id/profile', async (req, res) => {
+app.put('/api/users/:id/profile', authenticate, requireSelfOrRole('admin'), async (req, res) => {
   const { name, email, phone, cpf, address, birthDate, emergencyContact, department, jobTitle } = req.body;
 
   if (!name) {
@@ -1103,7 +1172,7 @@ app.put('/api/users/:id/profile', async (req, res) => {
   }
 });
 
-app.put('/api/users/:id/password', async (req, res) => {
+app.put('/api/users/:id/password', authenticate, requireSelfOrRole('admin'), async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
   if (!currentPassword || !newPassword) {
@@ -1140,53 +1209,68 @@ app.put('/api/users/:id/password', async (req, res) => {
   }
 });
 
+const SERVICE_SELECT_COLUMNS = `
+  s.id,
+  s.name,
+  s.hours,
+  s.needs_scheduling,
+  s.products,
+  s.observation,
+  s.price_rule,
+  s.per_unit,
+  s.active,
+  s.average_time_minutes,
+  s.created_at,
+  s.updated_at,
+  COALESCE(
+    json_agg(DISTINCT jsonb_build_object(
+      'productId', sp.product_id,
+      'quantity', sp.qty,
+      'unit', sp.unit,
+      'wasteFactor', sp.waste_factor,
+      'productName', p.name,
+      'productUnit', p.unit
+    )) FILTER (WHERE sp.id IS NOT NULL),
+    '[]'::json
+  ) AS product_consumption,
+  COALESCE(
+    json_object_agg(pr.vehicle_type, json_build_object(
+      'costP', pr.cost_p,
+      'costM', pr.cost_m,
+      'costG', pr.cost_g,
+      'priceP', pr.price_p,
+      'priceM', pr.price_m,
+      'priceG', pr.price_g
+    )) FILTER (WHERE pr.id IS NOT NULL),
+    '{}'::json
+  ) AS pricing,
+  COALESCE(
+    array_remove(array_agg(DISTINCT svt.vehicle_type), NULL),
+    ARRAY['carro', 'moto', 'caminhao']::text[]
+  ) AS vehicle_types
+`;
+
+const SERVICE_SELECT_FROM = `
+  FROM services s
+  LEFT JOIN service_products sp ON sp.service_id = s.id
+  LEFT JOIN products p ON p.id = sp.product_id
+  LEFT JOIN service_pricing pr ON pr.service_id = s.id
+  LEFT JOIN service_vehicle_types svt ON svt.service_id = s.id
+`;
+
+const fetchServiceById = async (client, id) => {
+  const { rows } = await client.query(
+    `SELECT ${SERVICE_SELECT_COLUMNS} ${SERVICE_SELECT_FROM} WHERE s.id = $1 GROUP BY s.id`,
+    [id],
+  );
+  return rows[0] || null;
+};
+
 app.get('/api/services', async (_req, res) => {
   try {
     const { rows } = await pool.query(`
-      SELECT
-        s.id,
-        s.name,
-        s.hours,
-        s.needs_scheduling,
-        s.products,
-        s.observation,
-        s.price_rule,
-        s.per_unit,
-        s.active,
-        s.average_time_minutes,
-        s.created_at,
-        s.updated_at,
-        COALESCE(
-          json_agg(DISTINCT jsonb_build_object(
-            'productId', sp.product_id,
-            'quantity', sp.qty,
-            'unit', sp.unit,
-            'wasteFactor', sp.waste_factor,
-            'productName', p.name,
-            'productUnit', p.unit
-          )) FILTER (WHERE sp.id IS NOT NULL),
-          '[]'::json
-        ) AS product_consumption,
-        COALESCE(
-          json_object_agg(pr.vehicle_type, json_build_object(
-            'costP', pr.cost_p,
-            'costM', pr.cost_m,
-            'costG', pr.cost_g,
-            'priceP', pr.price_p,
-            'priceM', pr.price_m,
-            'priceG', pr.price_g
-          )) FILTER (WHERE pr.id IS NOT NULL),
-          '{}'::json
-        ) AS pricing,
-        COALESCE(
-          array_remove(array_agg(DISTINCT svt.vehicle_type), NULL),
-          ARRAY['carro', 'moto', 'caminhao']::text[]
-        ) AS vehicle_types
-      FROM services s
-      LEFT JOIN service_products sp ON sp.service_id = s.id
-      LEFT JOIN products p ON p.id = sp.product_id
-      LEFT JOIN service_pricing pr ON pr.service_id = s.id
-      LEFT JOIN service_vehicle_types svt ON svt.service_id = s.id
+      SELECT ${SERVICE_SELECT_COLUMNS}
+      ${SERVICE_SELECT_FROM}
       GROUP BY s.id
       ORDER BY s.created_at DESC
     `);
@@ -1196,7 +1280,7 @@ app.get('/api/services', async (_req, res) => {
   }
 });
 
-app.post('/api/services', async (req, res) => {
+app.post('/api/services', authenticate, requireRole('admin'), async (req, res) => {
   const {
     name,
     hours = 1,
@@ -1216,10 +1300,11 @@ app.post('/api/services', async (req, res) => {
     return res.status(400).json({ message: 'name é obrigatório.' });
   }
 
+  const client = await pool.connect();
   try {
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
 
-    const { rows } = await pool.query(
+    const { rows } = await client.query(
       `INSERT INTO services(name, hours, needs_scheduling, products, observation, price_rule, per_unit, active, average_time_minutes)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
@@ -1237,7 +1322,7 @@ app.post('/api/services', async (req, res) => {
       : ['carro', 'moto', 'caminhao'];
 
     for (const type of safeVehicleTypes) {
-      await pool.query(
+      await client.query(
         `INSERT INTO service_vehicle_types(service_id, vehicle_type)
          VALUES($1, $2)
          ON CONFLICT (service_id, vehicle_type) DO NOTHING`,
@@ -1245,7 +1330,7 @@ app.post('/api/services', async (req, res) => {
       );
 
       const typePricing = pricing[type] || {};
-      await pool.query(
+      await client.query(
         `INSERT INTO service_pricing(service_id, vehicle_type, cost_p, cost_m, cost_g, price_p, price_m, price_g)
          VALUES($1, $2, $3, $4, $5, $6, $7, $8)
          ON CONFLICT (service_id, vehicle_type)
@@ -1265,7 +1350,7 @@ app.post('/api/services', async (req, res) => {
     }
 
     for (const consumption of productConsumption) {
-      await pool.query(
+      await client.query(
         `INSERT INTO service_products(service_id, product_id, qty, unit, waste_factor)
          VALUES($1, $2, $3, $4, $5)
          ON CONFLICT(service_id, product_id)
@@ -1280,15 +1365,19 @@ app.post('/api/services', async (req, res) => {
       );
     }
 
-    await pool.query('COMMIT');
-    return res.status(201).json(service);
+    const fullService = await fetchServiceById(client, service.id);
+
+    await client.query('COMMIT');
+    return res.status(201).json(fullService);
   } catch (error) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     return res.status(500).json({ message: 'Erro ao criar serviço.', details: error.message });
+  } finally {
+    client.release();
   }
 });
 
-app.put('/api/services/:id', async (req, res) => {
+app.put('/api/services/:id', authenticate, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
   const {
     name,
@@ -1309,10 +1398,11 @@ app.put('/api/services/:id', async (req, res) => {
     return res.status(400).json({ message: 'name é obrigatório.' });
   }
 
+  const client = await pool.connect();
   try {
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
 
-    const { rows } = await pool.query(
+    const { rows } = await client.query(
       `UPDATE services
        SET name = $1,
            hours = $2,
@@ -1330,13 +1420,13 @@ app.put('/api/services/:id', async (req, res) => {
     );
 
     if (rows.length === 0) {
-      await pool.query('ROLLBACK');
+      await client.query('ROLLBACK');
       return res.status(404).json({ message: 'Serviço não encontrado.' });
     }
 
-    await pool.query('DELETE FROM service_vehicle_types WHERE service_id = $1', [id]);
-    await pool.query('DELETE FROM service_pricing WHERE service_id = $1', [id]);
-    await pool.query('DELETE FROM service_products WHERE service_id = $1', [id]);
+    await client.query('DELETE FROM service_vehicle_types WHERE service_id = $1', [id]);
+    await client.query('DELETE FROM service_pricing WHERE service_id = $1', [id]);
+    await client.query('DELETE FROM service_products WHERE service_id = $1', [id]);
 
     const normalizedVehicleTypes = Array.from(new Set((Array.isArray(vehicleTypes) ? vehicleTypes : [])
       .map((type) => String(type || '').trim().toLowerCase())
@@ -1347,7 +1437,7 @@ app.put('/api/services/:id', async (req, res) => {
       : ['carro', 'moto', 'caminhao'];
 
     for (const type of safeVehicleTypes) {
-      await pool.query(
+      await client.query(
         `INSERT INTO service_vehicle_types(service_id, vehicle_type)
          VALUES($1, $2)
          ON CONFLICT (service_id, vehicle_type) DO NOTHING`,
@@ -1355,7 +1445,7 @@ app.put('/api/services/:id', async (req, res) => {
       );
 
       const typePricing = pricing[type] || {};
-      await pool.query(
+      await client.query(
         `INSERT INTO service_pricing(service_id, vehicle_type, cost_p, cost_m, cost_g, price_p, price_m, price_g)
          VALUES($1, $2, $3, $4, $5, $6, $7, $8)
          ON CONFLICT (service_id, vehicle_type)
@@ -1375,7 +1465,7 @@ app.put('/api/services/:id', async (req, res) => {
     }
 
     for (const consumption of productConsumption) {
-      await pool.query(
+      await client.query(
         `INSERT INTO service_products(service_id, product_id, qty, unit, waste_factor)
          VALUES($1, $2, $3, $4, $5)
          ON CONFLICT(service_id, product_id)
@@ -1384,50 +1474,57 @@ app.put('/api/services/:id', async (req, res) => {
       );
     }
 
-    await pool.query('COMMIT');
+    const fullService = await fetchServiceById(client, id);
 
-    return res.status(200).json(rows[0]);
+    await client.query('COMMIT');
+
+    return res.status(200).json(fullService);
   } catch (error) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     return res.status(500).json({ message: 'Erro ao atualizar serviço.', details: error.message });
+  } finally {
+    client.release();
   }
 });
 
-app.post('/api/work-order-items/:id/complete', async (req, res) => {
+app.post('/api/work-order-items/:id/complete', authenticate, requireRole('admin', 'employee'), async (req, res) => {
   const { id } = req.params;
 
+  const client = await pool.connect();
   try {
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
 
-    const { rows } = await pool.query('SELECT id, status FROM order_items WHERE id = $1 FOR UPDATE', [id]);
+    const { rows } = await client.query('SELECT id, status FROM order_items WHERE id = $1 FOR UPDATE', [id]);
     if (rows.length === 0) {
-      await pool.query('ROLLBACK');
+      await client.query('ROLLBACK');
       return res.status(404).json({ message: 'Item de OS não encontrado.' });
     }
 
     if (rows[0].status === 'done') {
-      await pool.query('ROLLBACK');
+      await client.query('ROLLBACK');
       return res.status(200).json({ ok: true });
     }
 
-    await pool.query('SELECT consume_stock_on_done($1)', [id]);
+    await client.query('SELECT consume_stock_on_done($1)', [id]);
 
-    await pool.query(
+    await client.query(
       `UPDATE order_items
        SET status = 'done', done_at = NOW()
        WHERE id = $1`,
       [id],
     );
 
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
     return res.status(200).json({ ok: true });
   } catch (error) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     return res.status(422).json({ message: 'Falha ao concluir item de OS.', details: error.message });
+  } finally {
+    client.release();
   }
 });
 
-app.delete('/api/services/:id', async (req, res) => {
+app.delete('/api/services/:id', authenticate, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -1443,7 +1540,7 @@ app.delete('/api/services/:id', async (req, res) => {
   }
 });
 
-app.get('/api/order-statuses', async (_req, res) => {
+app.get('/api/order-statuses', authenticate, requireRole('admin'), async (_req, res) => {
   try {
     const { rows } = await pool.query('SELECT id, code, label, color_class, created_at FROM order_statuses ORDER BY created_at ASC');
     return res.status(200).json(rows);
@@ -1452,7 +1549,7 @@ app.get('/api/order-statuses', async (_req, res) => {
   }
 });
 
-app.post('/api/order-statuses', async (req, res) => {
+app.post('/api/order-statuses', authenticate, requireRole('admin'), async (req, res) => {
   const { code, label, colorClass } = req.body;
   if (!code || !label || !colorClass) {
     return res.status(400).json({ message: 'code, label e colorClass são obrigatórios.' });
@@ -1473,7 +1570,7 @@ app.post('/api/order-statuses', async (req, res) => {
   }
 });
 
-app.get('/api/orders/open-by-plate/:plate', async (req, res) => {
+app.get('/api/orders/open-by-plate/:plate', authenticate, requireRole('admin', 'employee'), async (req, res) => {
   const plate = String(req.params.plate || '')
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, '')

@@ -1,3 +1,4 @@
+import { Suspense, lazy } from 'react';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -7,17 +8,24 @@ import { AppProvider } from '@/context/AppContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import Header from '@/components/Header';
 import Homepage from './pages/Homepage';
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
-import Dashboard from './pages/vendedores/Dashboard';
-import Queue from './pages/vendedores/Queue';
-import Customers from './pages/vendedores/Customers';
-import Vehicles from './pages/vendedores/Vehicles';
-import Admin from './pages/admin/Admin';
-import CustomerPortal from './pages/client/CustomerPortal';
-import NotFound from './pages/NotFound';
-import AccountSettings from './pages/account/AccountSettings';
 import { UserRole } from './types';
+
+const Login = lazy(() => import('./pages/auth/Login'));
+const Register = lazy(() => import('./pages/auth/Register'));
+const Dashboard = lazy(() => import('./pages/vendedores/Dashboard'));
+const Queue = lazy(() => import('./pages/vendedores/Queue'));
+const Customers = lazy(() => import('./pages/vendedores/Customers'));
+const Vehicles = lazy(() => import('./pages/vendedores/Vehicles'));
+const Admin = lazy(() => import('./pages/admin/Admin'));
+const CustomerPortal = lazy(() => import('./pages/client/CustomerPortal'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const AccountSettings = lazy(() => import('./pages/account/AccountSettings'));
+
+const RouteFallback = () => (
+  <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -42,6 +50,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Homepage />} />
               <Route path="/login" element={<Login />} />
@@ -84,6 +93,7 @@ const App = () => (
 
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
           </BrowserRouter>
         </AppProvider>
       </AuthProvider>

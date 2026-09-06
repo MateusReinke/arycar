@@ -198,6 +198,10 @@ const CustomerVehicleManager = () => {
         cepDebounceRef.current = null;
       }
     };
+    // fillAddressByCep is intentionally excluded: it changes identity on every
+    // isLoadingCep/lastResolvedCep update, and this debounce must only restart
+    // when the typed CEP itself changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerForm.cep]);
 
   const upsertCustomer = async () => {

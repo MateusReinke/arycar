@@ -173,18 +173,65 @@ const normalizeService = (raw: Record<string, unknown>): Service => {
   };
 };
 
+const AUTH_STORAGE_KEY = 'arycar_auth_user';
+
+const getAuthToken = (): string | null => {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { token?: string };
+    return parsed.token || null;
+  } catch {
+    return null;
+  }
+};
+
+const authHeaders = (): HeadersInit => {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// A API responde erros como { message, details }. Sem isso o app mostrava o
+// JSON cru no toast (ex.: `{"message":"Credenciais inválidas."}`).
+const extractErrorMessage = async (response: Response): Promise<string> => {
+  const fallback = `Falha na requisição (${response.status})`;
+  const body = await response.text().catch(() => '');
+  if (!body) return fallback;
+
+  try {
+    const parsed = JSON.parse(body) as { message?: unknown };
+    if (typeof parsed?.message === 'string' && parsed.message.trim()) {
+      return parsed.message;
+    }
+  } catch {
+    // corpo não é JSON: usa o texto como veio
+  }
+
+  return body.trim() || fallback;
+};
+
 const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(buildApiUrl(path), {
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders(),
       ...(init?.headers || {}),
     },
     ...init,
   });
 
   if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(errorBody || `Falha na requisição (${response.status})`);
+    // A sessão expirou/foi revogada: limpa o login local para o app levar o
+    // usuário de volta ao /login em vez de repetir erros com a tela "logada".
+    if (response.status === 401) {
+      try {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+      } catch {
+        // storage indisponível: segue com o erro normal
+      }
+    }
+
+    throw new Error(await extractErrorMessage(response));
   }
 
   if (response.status === 204) {
@@ -316,7 +363,9 @@ export const backendApi = {
 
   async findOpenOrderByPlate(plate: string): Promise<OpenOrderResponse | null> {
     try {
-      const response = await fetch(buildApiUrl(`/api/orders/open-by-plate/${plate}`));
+      const response = await fetch(buildApiUrl(`/api/orders/open-by-plate/${plate}`), {
+        headers: { ...authHeaders() },
+      });
       if (!response.ok) {
         return null;
       }

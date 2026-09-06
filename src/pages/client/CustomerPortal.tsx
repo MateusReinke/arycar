@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { storageService } from '@/services/storage';
 import { useAuth } from '@/context/AuthContext';
 import { getOrderStatusLabel, getStatusColorClass, Vehicle, VehicleSize, VehicleType, vehicleSizeLabels, vehicleTypeLabels } from '@/types';
@@ -28,10 +28,15 @@ const CustomerPortal = () => {
     whatsappNotifications: Boolean(customer?.whatsappNotifications),
   }));
 
-  const vehicles = useMemo(
-    () => customer ? storageService.getVehiclesByCustomer(customer.id) : [],
-    [customer],
-  );
+  const [vehicles, setVehicles] = useState(() => customer ? storageService.getVehiclesByCustomer(customer.id) : []);
+
+  const refreshVehicles = useCallback(() => {
+    setVehicles(customer ? storageService.getVehiclesByCustomer(customer.id) : []);
+  }, [customer]);
+
+  useEffect(() => {
+    refreshVehicles();
+  }, [refreshVehicles]);
 
   const [vehicleId, setVehicleId] = useState('');
   const [serviceName, setServiceName] = useState('');
@@ -126,8 +131,9 @@ const CustomerPortal = () => {
 
     storageService.addVehicle(payload);
     setNewVehicle({ plate: '', type: 'carro', size: 'M', brand: '', model: '', color: '', year: '', km: '' });
+    refreshVehicles();
+    setVehicleId(payload.id);
     toast.success('Veículo cadastrado.');
-    window.location.reload();
   };
 
   const updatePasswordFirstAccess = async () => {
@@ -141,8 +147,8 @@ const CustomerPortal = () => {
       storageService.updateCustomer({ ...customer, forcePasswordChange: false });
       setPasswordModalOpen(false);
       toast.success('Senha atualizada com sucesso.');
-    } catch (_error) {
-      toast.error('Não foi possível trocar a senha agora. Confira os dados e tente novamente.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível trocar a senha agora. Confira os dados e tente novamente.');
     }
   };
 
@@ -155,8 +161,17 @@ const CustomerPortal = () => {
           <DialogHeader><DialogTitle>Primeiro acesso: troque sua senha</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">Por segurança, atualize sua senha padrão (celular cadastrado) antes de continuar.</p>
           <div className="space-y-3">
-            <div><Label>Senha atual</Label><Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Seu celular cadastrado" /></div>
-            <div><Label>Nova senha</Label><Input type="password" value={nextPassword} onChange={(e) => setNextPassword(e.target.value)} placeholder="Nova senha" /></div>
+            <div>
+              <Label htmlFor="first-access-current">Senha atual</Label>
+              <Input id="first-access-current" type="password" autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Seu celular cadastrado" />
+            </div>
+            <div>
+              <Label htmlFor="first-access-next">Nova senha</Label>
+              <Input id="first-access-next" type="password" autoComplete="new-password" value={nextPassword} onChange={(e) => setNextPassword(e.target.value)} placeholder="Nova senha" />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Mínimo de 8 caracteres, com letra maiúscula, minúscula, número e símbolo.
+              </p>
+            </div>
           </div>
           <Button onClick={updatePasswordFirstAccess}>Atualizar senha</Button>
         </DialogContent>
@@ -177,16 +192,16 @@ const CustomerPortal = () => {
           <Card>
             <CardHeader><CardTitle>Minha conta</CardTitle></CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
-              <div><Label>Nome</Label><Input value={customer.name} disabled /></div>
-              <div><Label>Celular</Label><Input value={customer.phone} disabled /></div>
-              <div><Label>E-mail</Label><Input value={customerDraft.email} onChange={(e) => setCustomerDraft({ ...customerDraft, email: e.target.value })} /></div>
-              <div><Label>Endereço para Leva e Traz</Label><Input value={customerDraft.address} onChange={(e) => setCustomerDraft({ ...customerDraft, address: e.target.value })} /></div>
+              <div><Label htmlFor="account-name">Nome</Label><Input id="account-name" value={customer.name} disabled /></div>
+              <div><Label htmlFor="account-phone">Celular</Label><Input id="account-phone" value={customer.phone} disabled /></div>
+              <div><Label htmlFor="account-email">E-mail</Label><Input id="account-email" type="email" autoComplete="email" value={customerDraft.email} onChange={(e) => setCustomerDraft({ ...customerDraft, email: e.target.value })} /></div>
+              <div><Label htmlFor="account-address">Endereço para Leva e Traz</Label><Input id="account-address" autoComplete="street-address" value={customerDraft.address} onChange={(e) => setCustomerDraft({ ...customerDraft, address: e.target.value })} /></div>
               <div className="md:col-span-2 flex items-center justify-between rounded-md border p-3">
                 <div>
-                  <p className="font-medium">Notificações do andamento via WhatsApp</p>
+                  <Label htmlFor="account-whatsapp-notifications" className="font-medium">Notificações do andamento via WhatsApp</Label>
                   <p className="text-xs text-muted-foreground">Você escolhe se quer receber atualizações automáticas de status.</p>
                 </div>
-                <Switch checked={customerDraft.whatsappNotifications} onCheckedChange={(checked) => setCustomerDraft({ ...customerDraft, whatsappNotifications: checked })} />
+                <Switch id="account-whatsapp-notifications" checked={customerDraft.whatsappNotifications} onCheckedChange={(checked) => setCustomerDraft({ ...customerDraft, whatsappNotifications: checked })} />
               </div>
               <Button className="md:col-span-2" onClick={saveCustomerData}>Salvar dados da conta</Button>
             </CardContent>
@@ -208,14 +223,14 @@ const CustomerPortal = () => {
               <div className="space-y-3 rounded-md border p-3">
                 <p className="font-medium">Adicionar novo veículo</p>
                 <div className="grid gap-3 md:grid-cols-3">
-                  <div><Label>Placa</Label><Input value={newVehicle.plate} onChange={(e) => setNewVehicle({ ...newVehicle, plate: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7) })} /></div>
-                  <div><Label>Marca</Label><Input value={newVehicle.brand} onChange={(e) => setNewVehicle({ ...newVehicle, brand: e.target.value })} /></div>
-                  <div><Label>Modelo</Label><Input value={newVehicle.model} onChange={(e) => setNewVehicle({ ...newVehicle, model: e.target.value })} /></div>
-                  <div><Label>Tipo</Label><Select value={newVehicle.type} onValueChange={(value: VehicleType) => setNewVehicle({ ...newVehicle, type: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="carro">Carro</SelectItem><SelectItem value="moto">Moto</SelectItem><SelectItem value="caminhao">Caminhão</SelectItem></SelectContent></Select></div>
-                  <div><Label>Porte</Label><Select value={newVehicle.size} onValueChange={(value: VehicleSize) => setNewVehicle({ ...newVehicle, size: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="P">Pequeno</SelectItem><SelectItem value="M">Médio</SelectItem><SelectItem value="G">Grande</SelectItem></SelectContent></Select></div>
-                  <div><Label>Cor</Label><Input value={newVehicle.color} onChange={(e) => setNewVehicle({ ...newVehicle, color: e.target.value })} /></div>
-                  <div><Label>Ano</Label><Input value={newVehicle.year} onChange={(e) => setNewVehicle({ ...newVehicle, year: e.target.value })} /></div>
-                  <div><Label>KM</Label><Input value={newVehicle.km} onChange={(e) => setNewVehicle({ ...newVehicle, km: e.target.value })} /></div>
+                  <div><Label htmlFor="new-vehicle-plate">Placa</Label><Input id="new-vehicle-plate" value={newVehicle.plate} onChange={(e) => setNewVehicle({ ...newVehicle, plate: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7) })} /></div>
+                  <div><Label htmlFor="new-vehicle-brand">Marca</Label><Input id="new-vehicle-brand" value={newVehicle.brand} onChange={(e) => setNewVehicle({ ...newVehicle, brand: e.target.value })} /></div>
+                  <div><Label htmlFor="new-vehicle-model">Modelo</Label><Input id="new-vehicle-model" value={newVehicle.model} onChange={(e) => setNewVehicle({ ...newVehicle, model: e.target.value })} /></div>
+                  <div><Label htmlFor="new-vehicle-type">Tipo</Label><Select value={newVehicle.type} onValueChange={(value: VehicleType) => setNewVehicle({ ...newVehicle, type: value })}><SelectTrigger id="new-vehicle-type"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="carro">Carro</SelectItem><SelectItem value="moto">Moto</SelectItem><SelectItem value="caminhao">Caminhão</SelectItem></SelectContent></Select></div>
+                  <div><Label htmlFor="new-vehicle-size">Porte</Label><Select value={newVehicle.size} onValueChange={(value: VehicleSize) => setNewVehicle({ ...newVehicle, size: value })}><SelectTrigger id="new-vehicle-size"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="P">Pequeno</SelectItem><SelectItem value="M">Médio</SelectItem><SelectItem value="G">Grande</SelectItem></SelectContent></Select></div>
+                  <div><Label htmlFor="new-vehicle-color">Cor</Label><Input id="new-vehicle-color" value={newVehicle.color} onChange={(e) => setNewVehicle({ ...newVehicle, color: e.target.value })} /></div>
+                  <div><Label htmlFor="new-vehicle-year">Ano</Label><Input id="new-vehicle-year" inputMode="numeric" value={newVehicle.year} onChange={(e) => setNewVehicle({ ...newVehicle, year: e.target.value })} /></div>
+                  <div><Label htmlFor="new-vehicle-km">KM</Label><Input id="new-vehicle-km" inputMode="numeric" value={newVehicle.km} onChange={(e) => setNewVehicle({ ...newVehicle, km: e.target.value })} /></div>
                 </div>
                 <Button onClick={saveVehicle}>Cadastrar veículo</Button>
               </div>
@@ -229,9 +244,9 @@ const CustomerPortal = () => {
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label>Veículo</Label>
+                  <Label htmlFor="request-vehicle">Veículo</Label>
                   <Select value={vehicleId} onValueChange={setVehicleId}>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectTrigger id="request-vehicle"><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
                       {vehicles.map((vehicle) => (
                         <SelectItem key={vehicle.id} value={vehicle.id}>
@@ -242,8 +257,8 @@ const CustomerPortal = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label>Serviço solicitado</Label>
-                  <Input value={serviceName} onChange={(e) => setServiceName(e.target.value)} placeholder="Ex.: Polimento técnico" />
+                  <Label htmlFor="request-service">Serviço solicitado</Label>
+                  <Input id="request-service" value={serviceName} onChange={(e) => setServiceName(e.target.value)} placeholder="Ex.: Polimento técnico" />
                 </div>
               </div>
 
