@@ -643,9 +643,15 @@ app.get('/api/admin/default-user', async (_req, res) => {
 app.get('/api/products', async (_req, res) => {
   try {
     const { rows } = await pool.query(`
-      SELECT id, product_type AS "productType", brand, name, unit, stock_current AS "stockCurrent", stock_min AS "stockMin", price_per_liter AS "pricePerLiter", active
-      FROM products
-      ORDER BY name ASC
+      SELECT
+        p.id, p.product_type AS "productType", p.brand, p.name, p.unit,
+        p.stock_current AS "stockCurrent", p.stock_min AS "stockMin",
+        p.price_per_liter AS "pricePerLiter", p.active,
+        COUNT(DISTINCT sp.service_id)::INTEGER AS "usedInServices"
+      FROM products p
+      LEFT JOIN service_products sp ON sp.product_id = p.id
+      GROUP BY p.id
+      ORDER BY p.name ASC
     `);
     return res.status(200).json(rows);
   } catch (error) {
@@ -758,6 +764,96 @@ app.delete('/api/products/:id', async (req, res) => {
     return res.status(204).send();
   } catch (error) {
     return res.status(500).json({ message: 'Erro ao remover produto.', details: error.message });
+  }
+});
+
+app.post('/api/products/:id/stock-entries', async (req, res) => {
+  const { id } = req.params;
+  const delta = Number(req.body?.delta);
+  const reason = String(req.body?.reason || '').trim();
+
+  if (!Number.isFinite(delta) || delta === 0) {
+    return res.status(400).json({ message: 'Informe uma quantidade diferente de zero.' });
+  }
+
+  try {
+    await pool.query('BEGIN');
+
+    const { rows: productRows } = await pool.query(
+      'SELECT id, name, unit, stock_current FROM products WHERE id = $1 FOR UPDATE',
+      [id],
+    );
+
+    if (productRows.length === 0) {
+      await pool.query('ROLLBACK');
+      return res.status(404).json({ message: 'Produto não encontrado.' });
+    }
+
+    const product = productRows[0];
+    const beforeQty = Number(product.stock_current);
+    const afterQty = beforeQty + delta;
+
+    if (afterQty < 0) {
+      await pool.query('ROLLBACK');
+      return res.status(422).json({
+        message: `Estoque insuficiente para ${product.name} (atual: ${beforeQty}, saída: ${Math.abs(delta)}).`,
+      });
+    }
+
+    await pool.query(
+      'UPDATE products SET stock_current = $1, updated_at = NOW() WHERE id = $2',
+      [afterQty, id],
+    );
+
+    const { rows: movementRows } = await pool.query(
+      `INSERT INTO stock_movements (product_id, movement_type, qty, unit, stock_before, stock_after, details)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, product_id AS "productId", movement_type AS "movementType", qty, unit,
+         stock_before AS "stockBefore", stock_after AS "stockAfter", details, created_at AS "createdAt"`,
+      [
+        id,
+        delta > 0 ? 'manual_in' : 'manual_out',
+        Math.abs(delta),
+        product.unit,
+        beforeQty,
+        afterQty,
+        JSON.stringify({ reason: reason || null }),
+      ],
+    );
+
+    await pool.query('COMMIT');
+    return res.status(201).json({ ...movementRows[0], productName: product.name, stockCurrent: afterQty });
+  } catch (error) {
+    await pool.query('ROLLBACK');
+    return res.status(500).json({ message: 'Erro ao registrar movimentação de estoque.', details: error.message });
+  }
+});
+
+app.get('/api/stock/movements', async (req, res) => {
+  const limit = Math.min(Math.max(Number(req.query.limit) || 30, 1), 200);
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT
+        sm.id,
+        sm.product_id AS "productId",
+        CONCAT(p.product_type, ' - ', p.brand, ' - ', p.name) AS "productName",
+        sm.movement_type AS "movementType",
+        sm.qty,
+        sm.unit,
+        sm.stock_before AS "stockBefore",
+        sm.stock_after AS "stockAfter",
+        sm.details,
+        sm.created_at AS "createdAt"
+      FROM stock_movements sm
+      INNER JOIN products p ON p.id = sm.product_id
+      ORDER BY sm.created_at DESC
+      LIMIT $1`,
+      [limit],
+    );
+    return res.status(200).json(rows);
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao listar movimentações de estoque.', details: error.message });
   }
 });
 

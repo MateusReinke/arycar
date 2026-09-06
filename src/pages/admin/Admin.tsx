@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import ServiceForm from '@/components/admin/ServiceForm';
 import EmployeeManager from '@/components/admin/EmployeeManager';
 import StockManager from '@/components/admin/StockManager';
+import StockAlerts from '@/components/admin/StockAlerts';
+import PriceTable from '@/components/admin/PriceTable';
 import CustomerVehicleManager from '@/components/admin/CustomerVehicleManager';
 import { storageService } from '@/services/storage';
 import { toast } from 'sonner';
@@ -151,11 +153,23 @@ const Admin = () => {
           <TabsTrigger value="stock" className="gap-2"><Boxes className="h-4 w-4" />Estoque</TabsTrigger>
           <TabsTrigger value="settings" className="gap-2"><MessageCircle className="h-4 w-4" />Configurações</TabsTrigger>
         </TabsList>
-        <TabsContent value="services"><ServiceForm /></TabsContent>
+        <TabsContent value="services">
+          <Tabs defaultValue="manage" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="manage">Gerenciar serviços</TabsTrigger>
+              <TabsTrigger value="prices">Tabela de preços</TabsTrigger>
+            </TabsList>
+            <TabsContent value="manage"><ServiceForm /></TabsContent>
+            <TabsContent value="prices"><PriceTable /></TabsContent>
+          </Tabs>
+        </TabsContent>
         <TabsContent value="employees"><EmployeeManager /></TabsContent>
         <TabsContent value="customers"><CustomerVehicleManager /></TabsContent>
         <TabsContent value="status"><StatusManager /></TabsContent>
-        <TabsContent value="stock"><StockManager /></TabsContent>
+        <TabsContent value="stock" className="space-y-4">
+          <StockAlerts />
+          <StockManager />
+        </TabsContent>
         <TabsContent value="settings"><WhatsAppSettings /></TabsContent>
       </Tabs>
     </div>

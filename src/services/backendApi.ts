@@ -9,6 +9,7 @@ import {
   ServiceProductConsumption,
   SizePricing,
   StockAlert,
+  StockMovement,
   Product,
   Vehicle,
   VehicleType,
@@ -86,6 +87,20 @@ const normalizeProduct = (raw: Record<string, unknown>): Product => ({
   stockMin: toNumber(raw.stockMin ?? raw.stock_min),
   pricePerLiter: toNumber(raw.pricePerLiter ?? raw.price_per_liter),
   active: Boolean(raw.active ?? true),
+  usedInServices: toNumber(raw.usedInServices ?? raw.used_in_services ?? 0),
+});
+
+const normalizeStockMovement = (raw: Record<string, unknown>): StockMovement => ({
+  id: String(raw.id ?? crypto.randomUUID()),
+  productId: String(raw.productId ?? raw.product_id ?? ''),
+  productName: String(raw.productName ?? raw.product_name ?? ''),
+  movementType: String(raw.movementType ?? raw.movement_type ?? ''),
+  qty: toNumber(raw.qty),
+  unit: String(raw.unit ?? 'un') as Product['unit'],
+  stockBefore: toNumber(raw.stockBefore ?? raw.stock_before),
+  stockAfter: toNumber(raw.stockAfter ?? raw.stock_after),
+  details: (raw.details as StockMovement['details']) ?? {},
+  createdAt: String(raw.createdAt ?? raw.created_at ?? ''),
 });
 
 const parseVehicleTypes = (value: unknown): string[] => {
@@ -212,6 +227,22 @@ export const backendApi = {
 
   async listLowStockAlerts(): Promise<StockAlert[]> {
     return requestJson<StockAlert[]>('/api/stock/alerts');
+  },
+
+  async adjustProductStock(id: string, delta: number, reason?: string): Promise<StockMovement> {
+    const created = await requestJson<Record<string, unknown>>(`/api/products/${id}/stock-entries`, {
+      method: 'POST',
+      body: JSON.stringify({ delta, reason }),
+    });
+    return normalizeStockMovement(created);
+  },
+
+  async listStockMovements(limit = 30): Promise<StockMovement[]> {
+    const rows = await requestJson<unknown[]>(`/api/stock/movements?limit=${limit}`);
+    if (!Array.isArray(rows)) return [];
+    return rows
+      .filter((row): row is Record<string, unknown> => !!row && typeof row === 'object')
+      .map((row) => normalizeStockMovement(row));
   },
 
   async login(payload: LoginPayload): Promise<AuthUser> {
